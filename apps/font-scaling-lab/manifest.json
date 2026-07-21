@@ -1,0 +1,10 @@
+{
+  "name": "Font Scaling Lab",
+  "id": "1632816540279283797",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": ["figma"],
+  "networkAccess": { "allowedDomains": ["none"] },
+  "documentAccess": "dynamic-page"
+}

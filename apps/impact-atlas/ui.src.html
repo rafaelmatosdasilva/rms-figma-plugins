@@ -1,0 +1,4387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<!--@THEME-->
+<style>
+
+/* ─── Root ───────────────────────────────────────────────────────────────── */
+
+* { box-sizing: border-box; }
+/* Scrollbars never add layout shift — space is always reserved inside padding */
+/* scrollbar-gutter removed — overlay scrollbars don't push content */
+
+.plugin-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  margin: 0 -16px; /* cancel body padding from theme */
+}
+
+/* Actionbar sits above the fixed cross-edges SVG (z-index:6) */
+.plugin-wrapper .actionbar {
+  margin: 0; /* plugin-wrapper already cancels body padding */
+  position: relative;
+  isolation: isolate;
+  z-index: 7;
+}
+
+.plugin-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ─── Left panel ────────────────────────────────────────────────────────── */
+
+.left-panel {
+  flex: 1;
+  min-width: 120px;
+  border-right: 1px solid var(--divider);
+  background: var(--bg);
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  overflow-x: clip; /* clip horizontal overflow without affecting the scrollbar */
+  overflow-y: visible;
+}
+/* Toolbar + segmented control sit above the fixed cross-edges SVG (z-index:6).
+   They need isolation:isolate so their z-index is evaluated against the SVG. */
+
+
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 344px;
+  flex-shrink: 0;
+}
+/* .actionbar identity (flex, gap, padding, height) comes from theme.css base */
+.actionbar-split {
+  justify-content: space-between; /* consumer layout: spread slot groups */
+}
+.last-scan-row {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-m);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.scan-age-text { font-size: var(--m-size); color: var(--text-muted); font-weight: var(--m-weight); white-space: nowrap; }
+/* Search icon — always visible on the left inside the field */
+.search-wrap svg.search-icon {
+  position: absolute;
+  left: var(--padding-s); /* DS input icon inset = padding/s */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;  /* DS Input icon = 16×16 (component 1:5) */
+  height: 16px;
+  color: var(--input-icon);
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  height: 24px;
+  padding: 0 10px 0 28px;
+  background: var(--surface);
+  border: var(--thickness) solid var(--border);
+  border-radius: var(--radius-full);
+  font-size: var(--m-size);
+  font-weight: var(--m-weight);
+  color: var(--text);
+  font-family: inherit;
+  outline: none;
+}
+.search-input::placeholder { color: var(--input-value-empty); }
+.search-input:focus { border-color: var(--input-border-focus); }
+.search-input.has-value { padding-right: 26px; }
+
+.search-clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 50%;
+}
+.search-clear:hover { color: var(--text); }
+.search-input.has-value ~ .search-clear { display: flex; }
+
+/* Extends base .scroll-area — adds layout-specific overrides only */
+.scroll-area {
+  flex: 1;
+  padding: 0 var(--padding-s) var(--padding-l) var(--padding-m);
+  margin: 0; /* cancel base -16px margin — this layout uses its own padding */
+  position: relative;
+  scrollbar-gutter: stable; /* always reserve 8px for scrollbar so content never shifts */
+}
+/* Nothing above the first divider — its own padding/xl top is the spacing */
+.scroll-area .dividerSection:first-child { margin-top: 0; }
+/* Section divider of the selected item: unstick once the next divider has arrived */
+.scroll-area .dividerSection.divider-away {
+  position: static;
+}
+
+/* ─── Variable list items ───────────────────────────────────────────────── */
+
+/* ─── Base node component — defined in theme.css ──────────────────────── */
+
+#var-list.has-list-selection .var-item:not(.node-selected),
+#comp-list.has-list-selection .comp-item:not(.node-selected) {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--node-label-unselected); /* DS unselected state — matches --text-muted in dark, but correct N300 in light too */
+}
+
+#var-list .var-item.node-selected,
+#comp-list .comp-item.node-selected {
+  position: sticky;
+  top: 42px; /* sit below own section divider (DS 42px height) */
+  bottom: 0;
+  z-index: 4;
+  background: var(--surface);
+  transition: top 0.18s ease;
+}
+
+/* When the selected item's own divider scrolls away (divider-away = position:static),
+   flow selected item up to fill the gap */
+#var-list .dividerSection.divider-away ~ .var-item.node-selected,
+#comp-list .dividerSection.divider-away ~ .comp-item.node-selected {
+  top: 0;
+}
+
+/* When own divider is gone, next divider sits directly below selected item (40px) not 70px */
+#var-list .dividerSection.divider-away ~ .var-item.node-selected ~ .dividerSection,
+#comp-list .dividerSection.divider-away ~ .comp-item.node-selected ~ .dividerSection {
+  top: 40px;
+  transition: top 0.18s ease;
+}
+
+.node.node-external {
+  cursor: default;
+  opacity: 0.5;
+  border-style: dashed;
+}
+.node-external-badge {
+  font-size: var(--fs-xs, 9px);
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  padding: 1px 4px;
+  margin-top: var(--gap-xs);
+  display: inline-block;
+}
+
+/* .node-disabled — defined in theme.css */
+
+/* Variable list node (left panel) — same .node base + list-specific layout */
+.var-item {
+  width: 100%;
+  margin-bottom: var(--gap-m);
+}
+
+.var-name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--m-size);
+  color: inherit; /* node label color comes from the .node state classes (node/label/* tokens) */
+  line-height: 1.4;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  direction: rtl;
+  text-align: left;
+}
+
+.var-type-icon {
+  width: 14px; height: 14px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ─── Impact tier section dividers ─────────────────────────────────────── */
+
+/* .tier-dot severity variants moved to theme.css (base-first) */
+
+/* ─── Empty / loading states ────────────────────────────────────────────── */
+
+/* .empty-state defined in theme.css base */
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 10px;
+  color: var(--text-muted);
+}
+
+
+/* ─── Right panel ───────────────────────────────────────────────────────── */
+
+.right-panel {
+  flex: 2;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+body.browser-empty .right-panel {
+  display: none;
+}
+
+/* #right-placeholder uses .empty-state base class */
+#right-placeholder {
+  background: var(--bg-detail);
+}
+
+#right-detail {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  background: var(--bg-detail); /* semantic/background/color N1000 */
+}
+
+/* list scroll-area context: full-bleed sticky headers at the DS dividerSection
+   geometry (42px = padding/xl top + 16px content + padding/xxs bottom, from theme.css).
+   Compact 28px/20px variants retired 2026-07-11 — the DS frame uses full-height
+   dividers in every list and tree context. Only layout concerns live here:
+   full-bleed margins, list gutters, stacking. Locked by RENDERED_ASSERTIONS (Gate [16]). */
+.scroll-area .dividerSection {
+  position: sticky;
+  top: 0;
+  height: 42px; /* DS dividerSection h — fixed (equals base hug: 24+16+2) so Gate [16] can assert it in hidden views */
+  margin-left: -12px;
+  margin-right: -8px;
+  padding-left: var(--padding-m);
+  padding-right: var(--padding-s);
+  margin-top: var(--gap-m);
+  margin-bottom: var(--gap-m);
+  z-index: 7;
+  isolation: isolate;
+}
+/* Detail list view: sections stack flush (DS Frame 111 gap 0, pad 0) — the divider's
+   own padding/xl top is the only separation between sections */
+#list-alias-hdr,
+#list-comp-hdr { margin-top: 0; margin-bottom: 0; }
+
+/* Dividers that come AFTER the selected item stick below: 28 (divider) + 34 (item) + 8 (gap) */
+#var-list.has-list-selection .var-item.node-selected ~ .dividerSection,
+#comp-list.has-list-selection .comp-item.node-selected ~ .dividerSection {
+  top: 84px; /* 42 (own divider) + 34 (item) + 8 (gap) */
+  z-index: 7;
+  transition: top 0.18s ease;
+}
+
+
+.mode-toggle-row {
+  /* DS panel "Top" frame = pad [16,16,0,16]: padding/l top + LR, ZERO bottom.
+     A non-zero bottom padding here stacks on top of the first divider's own
+     padding/xl and reads as an over-tall divider. Locked by RENDERED_ASSERTIONS. */
+  padding: var(--padding-l) var(--padding-l) 0 var(--padding-l);
+  flex-shrink: 0;
+  position: relative;
+  isolation: isolate;
+  z-index: 7;
+  background: var(--bg);
+}
+
+/* segmented-control tab-empty state moved to theme.css (base-first) */
+/* full-width segmented control (browser mode toggle) */
+.segmented-control.full-width { width: 100%; }
+/* Each segment takes equal share — content changes (label show/hide) never shift widths */
+.segmented-control.full-width button { flex: 1 1 0; min-width: 0; width: 0; }
+/* View-mode toggle: equal fixed width, icon stays centred — gap must stay 0 */
+#view-mode-toggle button,
+#view-mode-toggle button.selected { width: 52px; flex-shrink: 0; justify-content: center; gap: 0; }
+
+/* Progress toast sizing — ensure content isn't clipped */
+
+/* ─── Graph view ────────────────────────────────────────────────────────── */
+
+#view-graph {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+#graph-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-detail);
+}
+
+/* Full-width header row — one dividerSection per column, seamless background.
+   Dividers render at the DS base geometry (42px) — same height as every other
+   dividerSection in the plugin (compact variants retired 2026-07-11). */
+#graph-col-headers {
+  display: flex;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 7;
+  background: var(--bg-detail); /* sticky header over the detail surface (semantic/background) */
+}
+#right-detail .dividerSection { background: var(--bg-detail); } /* same surface for sticky bg */
+#graph-col-headers .dividerSection {
+  flex: 1;
+  position: static; /* wrapper is the sticky element */
+  height: 42px; /* DS dividerSection h — same fixed height as the list contexts */
+  margin: 0;
+  padding-left: var(--padding-l);
+  padding-right: var(--padding-l);
+}
+#graph-body:not(.has-content) #graph-col-headers { display: none; }
+
+/* Inner cols row holds the two scrollable columns */
+#graph-cols {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.graph-col-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+
+
+
+.graph-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 6px 16px 18px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+
+
+#graph-edges {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 2;
+}
+
+/* ─── Graph node — same .node base + graph-specific layout ─────────────── */
+
+.graph-node {
+  width: 100%;
+  min-width: 0;
+  flex-shrink: 0;
+  margin-bottom: var(--gap-m);
+}
+
+/* In the graph, when any node is selected, auto-disable the others.
+   This applies .node-disabled styles via descendant selector — no JS toggling. */
+#graph-body.has-selection .node:not(.node-selected) {
+  opacity: 0.28;
+  border-style: dashed;
+  border-color: var(--text-muted);
+  background: transparent;
+  box-shadow: none;
+}
+#graph-body.has-selection .node:not(.node-selected):hover {
+  opacity: 0.55;
+}
+
+.graph-node.more {
+  justify-content: center;
+  border-style: dashed;
+  color: var(--text-muted);
+  font-size: var(--s-size);
+  background: transparent;
+  border-color: var(--border);
+}
+.graph-node.more:hover {
+  border-color: var(--text-muted);
+  color: var(--text);
+  background: var(--bg-secondary);
+}
+
+.node-type-icon {
+  width: 14px; height: 14px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  display: flex; align-items: center; justify-content: center;
+}
+
+.node-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.node-name {
+  font-size: var(--m-size);
+  color: inherit; /* node label color comes from the .node state classes (node/label/* tokens) */
+  line-height: 1.4;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  direction: rtl;
+  text-align: left;
+}
+
+
+/* connection count badge — top-right of comp nodes */
+.node-conn-badge {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: var(--radius-md);
+  background: var(--neutral-300);
+  color: var(--neutral-1000);
+  font-size: var(--s-size);
+  font-weight: var(--s-weight);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--padding-xs);
+}
+.node-conn-badge.dim { background: var(--neutral-600); }
+
+/* focus button on comp nodes (visible on hover) */
+/* ── Node action buttons (focus / drill / goto) — shared base ── */
+.node-focus-btn,
+.node-goto-btn,
+.node-drill-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 6px;
+  /* use buttonTertiary sizing */
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: var(--thickness) solid var(--buttonTertiary-background);
+  border-radius: var(--radius-full);
+  background: var(--buttonTertiary-background);
+  color: var(--buttonTertiary-text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.1s, background 0.15s, color 0.15s;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+.node-focus-btn:hover,
+.node-goto-btn:hover,
+.node-drill-btn:hover {
+  background: var(--buttonTertiary-background-active);
+  color: var(--buttonTertiary-text-active);
+  border-color: transparent;
+}
+
+/* show on hover */
+.graph-node.comp:hover .node-focus-btn,
+.graph-node.comp:hover .node-goto-btn,
+.graph-node.desc:hover .node-drill-btn,
+.var-item:hover .var-item-chevron,
+.comp-item:hover .var-item-chevron { opacity: 1; pointer-events: auto; }
+
+/* focus + goto buttons on graph comp nodes — focus left, goto right */
+.graph-node.comp .node-focus-btn { right: 34px; }
+.graph-node.comp .node-goto-btn  { right: 6px; }
+
+/* focus button on browser comp-item rows — sits left of the chevron */
+.comp-item-focus-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 34px; /* 6px chevron pos + 24px chevron width + 4px gap */
+  width: 24px; height: 24px;
+  padding: 0;
+  border: var(--thickness) solid var(--buttonTertiary-background);
+  border-radius: var(--radius-full);
+  background: var(--buttonTertiary-background);
+  color: var(--buttonTertiary-text);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transition: opacity 0.1s, background 0.15s, color 0.15s;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+.comp-item-focus-btn:hover {
+  background: var(--buttonTertiary-background-active);
+  color: var(--buttonTertiary-text-active);
+  border-color: transparent;
+}
+
+/* Explicitly target SVGs inside action buttons — prevents .node svg (theme.css)
+   from overriding icon color via direct targeting (direct beats inherited) */
+.node-focus-btn svg,
+.node-goto-btn svg,
+.node-drill-btn svg,
+.comp-item-focus-btn svg { color: var(--buttonTertiary-text); }
+
+.node-focus-btn:hover svg,
+.node-goto-btn:hover svg,
+.node-drill-btn:hover svg,
+.comp-item-focus-btn:hover svg { color: var(--buttonTertiary-text-active); }
+
+
+/* col placeholder/loading state */
+.col-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: var(--text-muted);
+  padding: var(--padding-xl) var(--padding-m);
+  text-align: center;
+  font-size: var(--s-size);
+  opacity: 0.55;
+  width: 100%;
+}
+
+/* ─── List view ─────────────────────────────────────────────────────────── */
+
+#view-list {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 0 var(--padding-l);
+}
+
+
+.list-sec-body { flex-shrink: 0; padding-bottom: 0; } /* Rows→next divider flush (pad 0, gap 0) */
+
+.lrow.dimmed { opacity: 0.65; }
+
+.lrow-icon {
+  width: 14px; height: 14px;
+  flex-shrink: 0;
+  color: var(--buttonList-iconPrimary);
+  display: flex; align-items: center; justify-content: center;
+}
+
+.lrow-name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lrow-coll {
+  font-size: var(--s-size);
+  color: var(--listItem-description);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.lrow-badge {
+  font-size: var(--s-size);
+  font-weight: var(--s-weight);
+  background: var(--text);
+  color: var(--surface);
+  border-radius: var(--radius-full);
+  padding: 1px 6px;
+  flex-shrink: 0;
+}
+
+.lrow-selected-tag {
+  font-size: var(--s-size);
+  color: var(--text-muted);
+  font-style: italic;
+  flex-shrink: 0;
+}
+
+
+
+/* ─── External var detail (library) ────────────────────────────────────── */
+
+
+.detail-header {
+  padding: var(--padding-s) var(--padding-m);
+  border-bottom: var(--thickness) solid var(--divider);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--gap-m);
+  min-height: 36px;
+}
+
+.detail-var-name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--m-size);
+  font-weight: var(--m-weight);
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* layout padding only — base styles in theme.css */
+.section-label { padding: var(--padding-s) var(--padding-m) var(--padding-xs); }
+
+.ref-var-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  min-height: 28px;
+}
+.ref-var-row:hover { background: var(--bg-secondary); }
+
+.ref-var-name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--m-size);
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ref-coll-tag {
+  font-size: var(--s-size);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* ─── Status bar ────────────────────────────────────────────────────────── */
+
+#status-bar {
+  border-bottom: var(--thickness) solid var(--divider);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  background: var(--bg-detail);
+  order: -1;
+  position: relative;
+  z-index: 7;
+}
+/* #sb-main-row geometry comes from the .statusBar base class in theme.css */
+#sb-main-row .badge {
+  align-self: center;
+}
+
+.sb-type-icon {
+  width: 14px; height: 14px;
+  flex-shrink: 0;
+  color: var(--statusbar-icon);
+  display: flex; align-items: center; justify-content: center;
+}
+
+#sb-name {
+  font-size: var(--l-size);
+  font-weight: var(--m-weight);
+  color: var(--statusbar-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.sb-divider {
+  width: 1px;
+  height: 16px;
+  background: var(--divider);
+  flex-shrink: 0;
+}
+
+.sb-stat {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-s);
+  flex-shrink: 0;
+}
+.sb-num {
+  font-size: var(--m-size);
+  font-weight: var(--s-weight);
+  color: var(--statusbar-text);
+  min-width: 12px;
+  text-align: center;
+}
+.sb-label {
+  font-size: var(--s-size);
+  font-weight: var(--m-weight);
+  color: var(--statusbar-icon);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ─── Misc ──────────────────────────────────────────────────────────────── */
+
+.color-swatch {
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  border: var(--thickness) solid rgba(0,0,0,0.12);
+  flex-shrink: 0;
+}
+.color-swatch-empty {
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  border: var(--thickness) solid var(--swatch-border-empty);
+  background: repeating-linear-gradient(-45deg, var(--border) 0px, var(--border) 1.2px, transparent 1.2px, transparent 5.6px);
+  flex-shrink: 0;
+}
+
+/* ─── Component browser ─────────────────────────────────────────────── */
+#comp-list { flex: 1; overflow-y: overlay; }
+.comp-item { width: 100%; margin-bottom: var(--gap-m); }
+.comp-token-count {
+  flex-shrink: 0;
+  font-size: var(--s-size);
+  font-weight: var(--m-weight);
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  border: var(--thickness) solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 1px 6px;
+
+  min-width: 18px;
+  text-align: center;
+}
+/* Deselected items when selection is active — consolidated above with var-list/all-list */
+/* col-3 hidden in component detail mode */
+/* comp-mode: col3 stays visible but empty — consistent two-column layout */
+
+/* Library/remote component marker — explicit element placed before the name */
+.comp-library-tag {
+  flex-shrink: 0;
+  margin-right: 6px;
+  font-size: var(--s-size);
+  font-weight: var(--m-weight);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  opacity: 0.55;
+}
+/* Component names render LTR so leading punctuation (e.g. ".tableCell")
+   keeps its prefix in the right visual position. The rtl-start ellipsis
+   used by variable names is not needed for short component names. */
+.comp-item .var-name {
+  direction: ltr;
+}
+
+/* comp-list sticky rules now merged with var-list rules above */
+
+
+/* ─── Canvas scan ───────────────────────────────────────────────────────── */
+#canvas-scan-btn { flex-shrink: 0; display: flex; align-items: center; gap: 6px; }
+#canvas-scan-btn.scanning { opacity: 0.6; pointer-events: none; }
+.scan-status-label { font-size: var(--m-size); color: var(--text-muted); white-space: nowrap; font-weight: var(--m-weight); }
+.scan-status-change { height: 24px; padding: 0 9px; font-size: var(--m-size); flex-shrink: 0; }
+.scan-status-change.icon-only { padding: 0 var(--padding-xs); display: inline-flex; align-items: center; justify-content: center; }
+
+#canvas-scan-bar {
+  padding: 5px 12px;
+  display: flex;
+  align-items: center;
+  gap: var(--gap-m);
+  font-size: var(--s-size);
+  color: var(--text-muted);
+  border-bottom: var(--thickness) solid var(--divider);
+  flex-shrink: 0;
+}
+#canvas-scan-bar .spinner { width: 11px; height: 11px; border-width: 1.5px; flex-shrink: 0; }
+
+/* canvas usage count on var-items */
+.var-canvas-count {
+  flex-shrink: 0;
+  font-size: var(--m-size);
+  font-weight: var(--m-weight);
+  color: var(--text-muted);
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+#toast-container { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 9999; }
+.tt { position: fixed; z-index: 9998; pointer-events: none; }
+
+/* ─── Modal ──────────────────────────────────────────────────────────────── */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+.modal.is-open {
+  display: flex;
+}
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--overlay-bg);
+  backdrop-filter: blur(4px);
+}
+.modal-card {
+  position: relative;
+  background: var(--modal-background);
+  border-radius: var(--radius-modal);
+  z-index: 10001;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--padding-l);
+  gap: var(--gap-s);
+  width: 288px;
+  animation: modal-in var(--modal-duration) var(--modal-easing) both;
+}
+.modal.is-closing .modal-card    { animation: modal-out var(--modal-duration-out) var(--modal-easing-out) both; }
+.modal-overlay                   { animation: modal-bg-in var(--modal-duration) var(--modal-easing) both; }
+.modal.is-closing .modal-overlay { animation: modal-bg-out var(--modal-duration-out) var(--modal-easing-out) both; }
+.modal-icon {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--gap-m);
+}
+.modal-card h2 {
+  font-size: var(--l-size);
+  font-weight: var(--m-weight);
+  margin: 0;
+  color: var(--modal-title);
+}
+.modal-body {
+  font-size: var(--m-size);
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: var(--gap-s) 0 0;
+}
+.modal-body p { margin: 0; }
+.modal-footer {
+  display: flex;
+  flex-direction: row;
+  gap: var(--gap-m);
+  width: 100%;
+  margin-top: var(--gap-l);
+}
+.modal-footer button {
+  flex: 1;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#modal-confirm-btn:disabled { opacity: 0.24; pointer-events: none; }
+
+/* ─── Depth selector modal ───────────────────────────────────────────────── */
+#deep-scan-modal .modal-card {
+  width: 320px;
+  align-items: flex-start;
+  text-align: left;
+  gap: 0;
+}
+#deep-scan-modal .modal-icon { margin-bottom: var(--gap-l); }
+#deep-scan-modal h2 { font-size: var(--l-size); margin-bottom: 24px; }
+#deep-scan-modal .modal-subtitle {
+  font-size: var(--m-size);
+  color: var(--text-muted);
+  margin: 0 0 var(--gap-xl);
+}
+
+.depth-options {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-s);
+  margin-bottom: -4px;
+}
+.depth-option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--gap-m);
+  position: relative;
+  padding-bottom: 0;
+}
+/* Vertical connector — accent colour always, hidden via scaleY(0), grows from top dot */
+.depth-option:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 16px;
+  bottom: -4px;
+  width: 0;
+  border-left: 2px dashed var(--accent);
+  transform: scaleY(0);
+  transform-origin: top center;
+  transition: transform    0.32s cubic-bezier(0.4, 0, 0.2, 1),
+              border-style 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Selection: dashed, grow down ── */
+.depth-options[data-depth="2"] #depth-opt-1::after,
+.depth-options[data-depth="3"] #depth-opt-1::after { transform: scaleY(1); border-left-style: dashed; }
+.depth-options[data-depth="3"] #depth-opt-2::after { transform: scaleY(1); border-left-style: dashed; }
+
+/* ── Sequential stagger: growing deeper → 1→2 first at 2x speed, 2→3 follows ── */
+.depth-options.lines-going-deeper #depth-opt-1::after,
+.depth-options.lines-going-deeper[data-depth="3"] #depth-opt-2::after { transition-duration: 0.16s; }
+.depth-options.lines-going-deeper[data-depth="3"] #depth-opt-2::after { transition-delay: 0.16s; }
+/* ── Sequential stagger: going back → 2→3 shrinks at 2x speed, 1→2 follows ── */
+.depth-options.lines-going-back #depth-opt-2::after,
+.depth-options.lines-going-back[data-depth="1"] #depth-opt-1::after { transition-duration: 0.16s; }
+.depth-options.lines-going-back[data-depth="1"] #depth-opt-1::after { transition-delay: 0.16s; }
+
+/* ── Done: solid, grow down (declared after selection so it overrides dashed) ── */
+.depth-options[data-done="2"] #depth-opt-1::after,
+.depth-options[data-done="3"] #depth-opt-1::after { transform: scaleY(1); border-left-style: solid; }
+.depth-options[data-done="3"] #depth-opt-2::after { transform: scaleY(1); border-left-style: solid; }
+
+/* Pass-through circles: no outer ring, just the inner dot in accent */
+.depth-options[data-depth="2"] #depth-opt-1 .depth-circle,
+.depth-options[data-depth="3"] #depth-opt-1 .depth-circle,
+.depth-options[data-depth="3"] #depth-opt-2 .depth-circle {
+  border-color: transparent;
+  background: transparent;
+}
+.depth-options[data-depth="2"] #depth-opt-1 .depth-circle::after,
+.depth-options[data-depth="3"] #depth-opt-1 .depth-circle::after,
+.depth-options[data-depth="3"] #depth-opt-2 .depth-circle::after { background: var(--accent); transform: scale(1); }
+
+/* Dot scales in from 0.6 when a depth is selected */
+.depth-circle::after { transform: scale(0.6); }
+.depth-options[data-depth="1"] .depth-circle::after,
+.depth-options[data-depth="2"] .depth-circle::after,
+.depth-options[data-depth="3"] .depth-circle::after { transform: scale(1); }
+
+/* Endpoint circle: accent ring, no fill, accent dot — ID selector beats .done specificity */
+.depth-options[data-depth="1"] #depth-opt-1 .depth-circle,
+.depth-options[data-depth="2"] #depth-opt-2 .depth-circle,
+.depth-options[data-depth="3"] #depth-opt-3 .depth-circle { border-color: var(--accent); background: transparent; }
+.depth-options[data-depth="1"] #depth-opt-1 .depth-circle::after,
+.depth-options[data-depth="2"] #depth-opt-2 .depth-radio-input:checked + .depth-circle::after,
+.depth-options[data-depth="3"] #depth-opt-3 .depth-circle::after { background: var(--accent); }
+
+.depth-circle-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: var(--gap-xs);
+  flex-shrink: 0;
+}
+.depth-radio-input { display: none; }
+
+.depth-circle {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  border: var(--thickness) solid var(--radioButton-border-unselected);
+  background: var(--radioButton-background);
+  flex-shrink: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+              background   0.24s cubic-bezier(0.4, 0, 0.2, 1),
+              transform    0.24s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity      0.24s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+.depth-circle::after {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: transparent;
+  transition: background 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+              transform  0.24s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* Completed/done state */
+.depth-option.done .depth-circle {
+  border-color: var(--radioButton-border-selected);
+  background: var(--radioButton-border-selected);
+}
+/* Default checked state */
+.depth-radio-input:checked + .depth-circle { border-color: var(--radioButton-border-current); background: var(--radioButton-background-selected); }
+.depth-radio-input:checked + .depth-circle::after { background: var(--radioButton-border-current); }
+/* Done dot — declared after :checked so it overrides and contrasts the filled background */
+.depth-option.done .depth-circle::after { background: var(--radioButton-background); }
+
+/* ── No external libraries: disable Level 2 ── */
+/* Connectors only appear when Level 3 is selected (handled by data-depth="3" rules above) */
+.depth-option.unavailable { pointer-events: none; opacity: 0.4; }
+.depth-option.unavailable .depth-radio-input { pointer-events: none; }
+/* Unavailable circle: center dot only, no outer ring */
+.depth-option.unavailable .depth-circle {
+  border-color: transparent;
+  background: transparent;
+}
+.depth-option.unavailable .depth-circle::after { background: var(--radioButton-border); }
+.depth-desc-unavailable { display: none; }
+.depth-option.unavailable .depth-desc-default { display: none; }
+.depth-option.unavailable .depth-desc-unavailable { display: block; }
+
+/* ── "Would be un-done" feedback: selecting a lower level un-fills circles above it ── */
+.depth-options[data-depth="1"] #depth-opt-2.done .depth-circle,
+.depth-options[data-depth="1"] #depth-opt-3.done .depth-circle,
+.depth-options[data-depth="2"] #depth-opt-3.done .depth-circle {
+  background: transparent;
+  border-color: var(--radioButton-border);
+}
+.depth-options[data-depth="1"] #depth-opt-2.done .depth-circle::after,
+.depth-options[data-depth="1"] #depth-opt-3.done .depth-circle::after,
+.depth-options[data-depth="2"] #depth-opt-3.done .depth-circle::after { background: transparent; }
+
+/* Shrink done connectors above selection back to top dot */
+.depth-options[data-done="2"][data-depth="1"] #depth-opt-1::after,
+.depth-options[data-done="3"][data-depth="1"] #depth-opt-1::after { transform: scaleY(0); }
+.depth-options[data-done="3"][data-depth="2"] #depth-opt-2::after { transform: scaleY(0); }
+/* When Local is selected, also hide the Extended→Full connector */
+.depth-options[data-done="3"][data-depth="1"] #depth-opt-2::after { transform: scaleY(0); }
+
+.depth-option { cursor: pointer; }
+.depth-text-col {
+  flex: 1;
+  padding-bottom: var(--padding-l);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-xs);
+}
+.depth-text-col .depth-label {
+  display: block;
+  font-size: var(--m-size);
+  color: var(--radioButton-text);
+  line-height: 1.3;
+}
+.depth-option.done .depth-label { color: var(--radioButton-text-selected); }
+/* "Would be un-done" options revert to unselected text styling */
+.depth-options[data-depth="1"] #depth-opt-2 .depth-label,
+.depth-options[data-depth="1"] #depth-opt-3 .depth-label,
+.depth-options[data-depth="2"] #depth-opt-3 .depth-label { color: var(--radioButton-text-unselected); }
+.depth-text-col .depth-desc {
+  font-size: var(--m-size);
+  color: var(--radioButton-description);
+  line-height: 1.4;
+}
+/* Selected endpoint label: full contrast */
+.depth-options[data-depth="1"] #depth-opt-1 .depth-label,
+.depth-options[data-depth="2"] #depth-opt-2 .depth-label,
+.depth-options[data-depth="3"] #depth-opt-3 .depth-label { color: var(--radioButton-text-current); }
+
+</style>
+</head>
+<body>
+
+<div class="plugin-wrapper">
+
+  <!-- ═══════════════════════ TOP ACTIONBAR -->
+  <div class="actionbar actionbar-split">
+    <div id="canvas-scan-btn" class="scan-status-row">
+      <button class="buttonTertiary scan-status-change icon-only" id="scan-status-change-btn" title="Change scan type">
+        <svg width="16" height="16"><use href="#icon-settings"/></svg>
+      </button>
+      <span class="scan-status-label" id="scan-status-level">Local Scan</span>
+    </div>
+
+    <div class="search-wrap" id="search-wrap">
+      <svg class="search-icon" width="16" height="16"><use href="#icon-search"/></svg>
+      <input class="search-input" id="search-input" type="text" placeholder="Search…" autocomplete="off"/>
+      <button class="search-clear" id="search-clear" tabindex="-1" aria-label="Clear search">
+        <svg width="16" height="16"><use href="#icon-clear"/></svg>
+      </button>
+    </div>
+
+    <div id="last-scan-bar" class="last-scan-row hidden">
+      <span class="scan-age-text">Scanned <span id="scan-age-label">—</span></span>
+      <button id="rescan-btn" class="buttonTertiary buttonRescan" title="Rescan">
+        <svg width="16" height="16"><use href="#icon-update"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="dividerLine"></div>
+
+  <div class="plugin-layout">
+
+    <!-- ═══════════════════════════════════════════ LEFT PANEL: VAR LIST -->
+    <div class="left-panel">
+
+      <div class="mode-toggle-row">
+        <div class="segmented-control full-width" id="browser-mode-toggle">
+          <span class="seg-pill" aria-hidden="true"></span>
+          <button id="btn-mode-tokens" class="selected"><svg width="16" height="16"><use href="#icon-variable"/></svg><span class="tab-label">Tokens</span></button>
+          <button id="btn-mode-comps"><svg width="16" height="16"><use href="#icon-component"/></svg><span class="tab-label">Components</span></button>
+        </div>
+      </div>
+
+      <div id="canvas-scan-bar" class="hidden"></div>
+
+      <div id="browser-body" style="flex:1;min-height:0;position:relative;display:flex;flex-direction:column;">
+        <div id="browser-loading" class="loading-state hidden">
+          <span id="loading-text" style="font-size:var(--m-size)">Loading…</span>
+        </div>
+
+        <div id="all-list" class="scroll-area hidden"></div>
+        <div id="var-list" class="scroll-area hidden"></div>
+        <div id="comp-list" class="scroll-area hidden"></div>
+
+        <div id="browser-empty" class="empty-state hidden" style="position:absolute;inset:0;">
+          <div class="empty-state-content">
+            <svg width="28" height="28"><use href="#icon-empty-search"/></svg>
+            <p id="browser-empty-text">No results match<br>your search.</p>
+            <button class="buttonSecondary" id="browser-empty-clear"><span>Clear search</span></button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══════════════════════════════════════════ RIGHT PANEL -->
+    <div class="right-panel">
+
+      <!-- Placeholder: no var selected -->
+      <div id="right-placeholder" class="empty-state">
+        <div class="empty-state-content">
+          <svg width="48" height="48"><use href="#icon-variable" id="right-placeholder-icon"/></svg>
+          <p id="right-placeholder-text">Select an item<br>to see what it affects.</p>
+        </div>
+      </div>
+
+      <!-- Graph / list detail (shown after selecting a local var) -->
+      <div id="right-detail" class="hidden">
+
+        <!-- Status bar — ancestors breadcrumb (top row) + name/impact/toggle (main row) -->
+        <div id="status-bar" class="hidden">
+          <div id="sb-main-row" class="statusBar">
+            <div class="statusBar-title">
+              <div class="sb-type-icon" id="sb-type-icon"></div>
+              <span id="sb-name"></span>
+            </div>
+            <span id="sb-impact" class="badge"></span>
+            <span id="sb-canvas-count" class="var-canvas-count hidden"></span>
+            <button id="sb-focus-btn" class="buttonTertiary hidden" data-tip="Focus on canvas">
+              <svg width="16" height="16"><use href="#icon-focus"/></svg>
+            </button>
+            <div style="flex:1;"></div>
+            <button id="sb-export-btn" class="buttonQuaternary" data-tip="Copy report to clipboard">
+              <svg width="16" height="16"><use href="#icon-copy"/></svg>
+            </button>
+            <div class="segmented-control" id="view-mode-toggle" style="flex-shrink:0;">
+              <span class="seg-pill" aria-hidden="true"></span>
+              <button id="btn-view-graph" class="selected" title="Graph view">
+                <svg width="14" height="14"><use href="#icon-tree"/></svg>
+              </button>
+              <button id="btn-view-list" title="List view">
+                <svg width="16" height="16"><use href="#icon-list"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Toolbar: column headers + view toggle -->
+        <!-- ── Graph view ── -->
+        <div id="view-graph">
+          <div id="graph-body">
+            <!-- Single full-width header row spanning both columns -->
+            <div id="graph-col-headers">
+              <div class="dividerSection" id="gcol-2-lbl-wrap"><span id="gcol-2-lbl">Alias tokens</span><span class="div-sep">·</span><span class="count" id="gcol-2-count"></span></div>
+              <div class="dividerSection" id="gcol-3-lbl-wrap">Components<span class="div-sep">·</span><span class="count" id="gcol-3-count"></span></div>
+            </div>
+            <div id="graph-cols">
+              <div class="graph-col-wrap" id="gcol-2-wrap">
+                <div class="graph-col" id="gcol-2"></div>
+              </div>
+              <div class="graph-col-wrap" id="gcol-3-wrap">
+                <div class="graph-col" id="gcol-3"></div>
+              </div>
+            </div>
+            <svg id="graph-edges" aria-hidden="true"></svg>
+            <div id="graph-empty" class="empty-state hidden" style="position:absolute;inset:0;z-index:1;">
+              <div class="empty-state-content">
+                <svg width="32" height="32"><use href="#icon-empty-graph"/></svg>
+                <p>No alias tokens or components<br>reference this variable.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── List view ── -->
+        <div id="view-list" class="scroll-area hidden">
+
+          <div class="dividerSection hidden" id="list-alias-hdr"></div>
+          <div class="list-sec-body" id="list-alias-body"></div>
+
+          <div class="dividerSection hidden" id="list-comp-hdr"></div>
+          <div class="list-sec-body" id="list-comp-body"></div>
+
+        </div>
+
+      </div>
+
+      <!-- Library variable detail (remote var selected) -->
+      <div id="right-library" class="hidden" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+        <div class="detail-header">
+          <div class="var-type-icon" id="lib-detail-type"></div>
+          <span class="detail-var-name" id="lib-detail-name"></span>
+        </div>
+        <div style="padding:4px 12px 6px;font-size:var(--s-size);color:var(--text-muted);flex-shrink:0;border-bottom:1px solid var(--divider);" id="lib-detail-coll"></div>
+        <div class="section-label">Referenced by</div>
+        <div id="lib-ref-list" style="flex:1;overflow-y:auto;"></div>
+        <div id="lib-ref-empty" class="empty-state hidden"><div class="empty-state-content"><p>No local variables alias this.</p></div></div>
+      </div>
+
+    </div>
+
+  </div><!-- /.plugin-layout -->
+
+</div><!-- /.plugin-wrapper -->
+
+<!-- Cross-panel connection lines: left list → graph nodes -->
+<svg id="cross-edges" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:6;">
+  <path id="ce-spine" fill="none" stroke-linecap="round"/>
+  <path id="ce-bracket" fill="none" stroke-linecap="round"/>
+</svg>
+
+<div id="toast-container"></div>
+<div id="progress-container"></div>
+
+<!-- Depth Selector Modal -->
+<div id="deep-scan-modal" class="modal">
+  <div class="modal-overlay"></div>
+  <div class="modal-card">
+    <h2>Choose scan type</h2>
+
+    <div class="depth-options">
+
+      <!-- Level 1: always done — status only, not a radio -->
+      <div class="depth-option done" id="depth-opt-1">
+        <div class="depth-circle-col">
+          <input class="depth-radio-input" type="radio" name="scan-depth" id="depth-radio-1" value="1"/>
+          <label class="depth-circle" for="depth-radio-1"></label>
+        </div>
+        <label class="depth-text-col" for="depth-radio-1">
+          <span class="depth-label">Local</span>
+          <span class="depth-desc">Scans only the current file for tokens, components, and their relationships.</span>
+        </label>
+      </div>
+
+      <!-- Level 2: radio -->
+      <div class="depth-option" id="depth-opt-2">
+        <div class="depth-circle-col">
+          <input class="depth-radio-input" type="radio" name="scan-depth" id="depth-radio-2" value="2"/>
+          <label class="depth-circle" for="depth-radio-2"></label>
+        </div>
+        <label class="depth-text-col" for="depth-radio-2">
+          <span class="depth-label">Extended</span>
+          <span class="depth-desc depth-desc-default">Scans the current file and linked libraries for token and component relationships.</span>
+          <span class="depth-desc depth-desc-unavailable">No external libraries linked to this file.</span>
+        </label>
+      </div>
+
+      <!-- Level 3: radio -->
+      <div class="depth-option" id="depth-opt-3">
+        <div class="depth-circle-col">
+          <input class="depth-radio-input" type="radio" name="scan-depth" id="depth-radio-3" value="3"/>
+          <label class="depth-circle" for="depth-radio-3"></label>
+        </div>
+        <label class="depth-text-col" for="depth-radio-3">
+          <span class="depth-label">Full</span>
+          <span class="depth-desc">Scans everything above, then checks the entire canvas to find every component usage.</span>
+        </label>
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button class="buttonSecondary" id="modal-cancel-btn"><span>Cancel</span></button>
+      <button class="buttonPrimary" id="modal-confirm-btn">Apply and Scan</button>
+    </div>
+  </div>
+</div>
+
+<div id="tt" class="tt"></div>
+
+<!--@UI-->
+<script>
+
+// Returns the selection highlight color — matches .node.node-selected border
+// Uses #D4D4D4 in dark mode, accent blue in light mode
+function getSelectionColor() {
+  var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  return getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || (isDark ? '#ededed' : '#0a0a0a');
+}
+
+// ─── State ────────────────────────────────────────────────────────────────────
+
+var _variables           = [];
+var _collections         = [];
+var _remoteVariables     = [];
+var _remoteCollections   = [];
+var _filterQuery         = '';
+var _searchTimer         = null;
+var _selectedId          = null;
+var _selectedRemoteId    = null;
+var _currentComponents   = null;   // null = not yet fetched; [] = empty
+var _componentIndexBuilt = false;
+var _indexBuilding       = false;
+
+// Graph state
+var _currentChain        = null;
+var _varComponentCounts  = {};
+var _viewMode            = 'graph';
+var _detailMode          = null;   // 'variable' | 'component' | null — what the right panel is showing
+var _currentComp         = null;   // the comp object when _detailMode === 'component'
+var _graphDescVars       = [];     // descendant vars currently visible in col-2
+var _graphCompList       = [];     // component nodes currently visible in col-3
+var _allDescVars         = [];     // full descendant list (for expand)
+var _allCompList         = [];     // full sorted component list (for expand)
+var _descCompEdges       = [];     // [{descIdx, compIdx}] for alias→component edges
+var _rootCompIdxs        = [];     // compIdx[] for components that bind to the root variable directly
+var _edgeRafPending      = false;
+var _selectedGraphNodeEl = null;   // currently highlighted graph node
+var _collapseTimer       = null;   // timer for display:none after fade
+
+// Section-divider tracking — unstick the selected item's own divider once
+// the next section's divider has scrolled into its sticky position.
+var _trackedSelDiv  = null;   // divider that owns the selected item
+var _trackedNextDiv = null;   // next divider after the selected item
+var _trackedNextTop = 0;      // natural offsetTop of the next divider
+var _trackedList    = null;   // scroll container being tracked
+
+// Component browser state
+var _browserMode          = 'all';  // 'all' | 'tokens' | 'components'
+var _allBrowserComponents = [];
+var _selectedCompNodeId   = null;
+var _compBrowserLoaded    = false;
+
+// Origin scroll positions — restored when a sticky-selected item is re-clicked
+var _selectedVarOriginScroll  = null;
+var _selectedCompOriginScroll = null;
+
+// Canvas deep-scan state
+var _displayDepth        = 1;      // What depth is currently displayed (can go up or down freely)
+var _hasExternalLibraries = false; // Detected at init — hides Extended if false
+var _externalScanDone    = false;  // Remote vars loaded (now happens automatically at init)
+var _lastScanDepth       = null;   // persisted across sessions via clientStorage
+var _lastScanTimestamp   = null;   // Unix ms of last completed scan (from cache or fresh)
+var _canvasScanDone      = false;  // Level 3 completed (canvas instance count)
+var _canvasScanRunning   = false;
+var _canvasBindings      = {}; // varId → total (instances + direct)
+var _canvasInstanceCounts = {}; // varId → instance count
+var _canvasDirectCounts   = {}; // varId → direct canvas-node count
+var _canvasComponents     = []; // per-component canvas scan results
+
+
+// Column resize state
+
+// ─── Boot ──────────────────────────────────────────────────────────────────────
+
+window.onmessage = function (event) {
+  var msg = event.data.pluginMessage;
+  if (!msg) return;
+  switch (msg.type) {
+    case 'init-data':         return onInitData(msg);
+    case 'init-progress':     return onInitProgress(msg);
+    case 'remote-vars-ready': return; // no-op: remote vars now arrive in init-data
+    case 'index-progress':    return onIndexProgress(msg.text, msg.scanned, msg.total);
+    case 'index-ready':       return onIndexReady(msg.components, msg.remoteVars, msg.remoteColls, msg.varComponentCounts, msg.varImpactScores);
+    case 'chain-result':           return onChainResult(msg.chain, msg.styles, msg.components, msg.impact);
+    case 'referenced-by':          return onReferencedBy(msg);
+    case 'component-browser-ready':
+      _compBrowserLoaded    = true;
+      _allBrowserComponents = (msg.components || []).filter(function (c) { return c.nodeName && c.nodeName.trim() !== ''; });
+      // Merge any variables the UI doesn't know yet (remote vars bound directly
+      // to components that were fetched by buildComponentIndex but never sent)
+      if (msg.vars && msg.vars.length) {
+        var _cbKnown = {};
+        for (var _i = 0; _i < _variables.length; _i++)       _cbKnown[_variables[_i].id] = true;
+        for (var _j = 0; _j < _remoteVariables.length; _j++) _cbKnown[_remoteVariables[_j].id] = true;
+        for (var _k = 0; _k < msg.vars.length; _k++) {
+          var _v = msg.vars[_k];
+          if (_cbKnown[_v.id]) continue;
+          if (_v.isRemote && _externalScanDone) _remoteVariables.push(_v);
+          else             _variables.push(_v);
+          _cbKnown[_v.id] = true;
+        }
+      }
+      if (_browserMode === 'components') renderComponentBrowser();
+      return;
+    case 'usage-scan-progress':    return onCanvasScanProgress(msg.pct);
+    case 'usage-scan-ready':       return onCanvasScanReady(msg);
+    case 'usage-scan-error':       return onCanvasScanError(msg.message);
+    case 'usage-scan-cancelled':   return onCanvasScanCancelled();
+    case 'canvas-scan-cancelled':  return onCanvasScanCancelled(); // legacy compat
+    case 'scan-cache-restore':
+      _lastScanTimestamp = msg.ts;
+      _lastScanDepth     = msg.depth;
+      msg._fromCache = true;  // prevent onCanvasScanReady from overwriting ts with Date.now()
+      onCanvasScanReady(msg);
+      showScanBar(msg.ts, msg.depth);
+      return;
+    case 'scan-cache-write-failed':
+      showToast('Cache write #' + msg.attempt + ' failed: ' + (msg.error || '?'));
+      return;
+    case 'scan-cache-none':
+      return; // No cache — local analysis runs automatically at init; full scan is user's choice
+    case 'error':             return onError(msg.message);
+  }
+};
+
+_initStartTime = Date.now();
+showScanProgress('Loading…', '', function () {
+  parent.postMessage({ pluginMessage: { type: 'close' } }, '*');
+});
+parent.postMessage({ pluginMessage: { type: 'init' } }, '*');
+
+// ─── Init ──────────────────────────────────────────────────────────────────────
+
+var _initStartTime      = null;
+var _initTargetPct      = 0;
+var _initDisplayPct     = 0;
+var _initTickTimer      = null;
+var _initHasCachedScan  = false;
+var _initLabel          = 'Local scan';
+
+function _initTick() {
+  _initTickTimer = null;
+  if (_initDisplayPct >= 99) { _updateInitDisplay(); return; }
+
+  var gap = _initTargetPct - _initDisplayPct;
+  if (gap > 0.5) {
+    // Behind real target — catch up with easing
+    _initDisplayPct += Math.max(0.5, gap * 0.06);
+  } else {
+    // Reached target — keep slowly creeping (max 8% ahead of real target, cap 99)
+    var cap = Math.min(99, _initTargetPct + 8);
+    if (_initDisplayPct < cap) _initDisplayPct += 0.08;
+  }
+  _initDisplayPct = Math.min(_initDisplayPct, 99);
+  _updateInitDisplay();
+  _initTickTimer = setTimeout(_initTick, 120);
+}
+
+var _initEtaShown = false; // once ETA appears, never remove it
+
+function _updateInitDisplay() {
+  var pct     = Math.round(_initDisplayPct);
+  var eta     = '';
+  var elapsed = (Date.now() - _initStartTime) / 1000;
+  if (_initDisplayPct > 0 && elapsed >= 5) {
+    // Use display pct so ETA updates continuously, not just on backend messages
+    // Apply 1.5x multiplier for conservative estimate
+    var remaining = Math.round(elapsed / _initDisplayPct * (100 - _initDisplayPct) * 1.5);
+    if (remaining >= 60) {
+      var m = Math.floor(remaining / 60), s = remaining % 60;
+      eta = '~' + m + 'm ' + (s > 0 ? s + 's' : '') + ' remaining';
+    } else if (remaining > 0) {
+      eta = '~' + remaining + 's remaining';
+    }
+  }
+  if (eta) _initEtaShown = true;
+  showScanProgress(_initLabel + '… ' + pct + '%', _initEtaShown ? (eta || '…') : '');
+}
+
+function onInitProgress(msg) {
+  var pct = (msg && typeof msg === 'object' ? msg.pct : msg) || 0;
+  if (msg && msg.hasCachedScan) {
+    _initHasCachedScan = true;
+    var d = msg.cachedDepth;
+    _initLabel = d >= 3 ? 'Full scan' : d === 2 ? 'Extended scan' : 'Local scan';
+    return; // toast stays — onInitData dismisses it when content is ready
+  }
+  if (_initHasCachedScan) return; // suppress bar — cached view renders on init-data
+  _initTargetPct = Math.max(_initTargetPct, pct); // never go backward
+  if (!_initStartTime) _initStartTime = Date.now();
+  if (!_initTickTimer) _initTickTimer = setTimeout(_initTick, 0);
+}
+
+function onInitData(msg) {
+  _variables         = msg.variables   || [];
+  _collections       = msg.collections || [];
+  _remoteVariables   = msg.remoteVars  || [];
+  _remoteCollections = msg.remoteColls || [];
+
+  // Component index is always built at startup — absorb data immediately
+  _componentIndexBuilt = true;
+  _varComponentCounts  = msg.varComponentCounts || {};
+  _hasExternalLibraries = !!msg.hasExternalLibraries;
+  // Mark external vars as loaded if remote vars came in with init-data
+  if (_remoteVariables.length > 0) _externalScanDone = true;
+  // _lastScanDepth is session-only — set by triggerCanvasScan(), never loaded from storage
+
+  var allVarsInit = _variables.concat(_remoteVariables);
+  for (var k = 0; k < allVarsInit.length; k++) {
+    var vid = allVarsInit[k].id;
+    if (msg.varImpactScores && msg.varImpactScores[vid] !== undefined)
+      allVarsInit[k].impactScore = msg.varImpactScores[vid];
+    if (_varComponentCounts[vid] !== undefined)
+      allVarsInit[k].componentCount = _varComponentCounts[vid];
+  }
+
+  // Component browser data included with init — mark as loaded immediately
+  if (msg.browserComponents) {
+    _allBrowserComponents = (msg.browserComponents || []).filter(function (c) { return c.nodeName && c.nodeName.trim() !== ''; });
+    _compBrowserLoaded    = true;
+  }
+
+  _initStartTime     = null;
+  _initTargetPct     = 0;
+  _initDisplayPct    = 0;
+  _initEtaShown      = false;
+  _initHasCachedScan = false;
+  if (_initTickTimer) { clearTimeout(_initTickTimer); _initTickTimer = null; }
+  var progCont = document.getElementById('progress-container');
+  if (progCont) progCont.innerHTML = '';
+
+  document.getElementById('browser-loading').classList.add('hidden');
+  // Default to Tokens tab
+  _browserMode = 'tokens';
+  syncBrowserModeButtons('tokens');
+  updatePlaceholderText('tokens');
+  var phIcon = document.getElementById('right-placeholder-icon');
+  if (phIcon) phIcon.setAttribute('href', '#icon-variable');
+
+  if (msg.cachedScan) {
+    // Restore cached canvas scan in the same paint as init — no double-render
+    _lastScanTimestamp = msg.cachedScan.ts;
+    _lastScanDepth     = msg.cachedScan.depth;
+    var cs = Object.assign({}, msg.cachedScan, { _fromCache: true });
+    onCanvasScanReady(cs);
+    showScanBar(msg.cachedScan.ts, msg.cachedScan.depth);
+  } else {
+    renderBrowser();
+  }
+}
+
+function onRemoteVarsReady(remoteVars, remoteColls) {
+  remoteVars  = remoteVars  || [];
+  remoteColls = remoteColls || [];
+
+  var existingIds = {};
+  for (var i = 0; i < _remoteVariables.length; i++) existingIds[_remoteVariables[i].id] = true;
+  for (var j = 0; j < remoteVars.length; j++) {
+    if (!existingIds[remoteVars[j].id]) _remoteVariables.push(remoteVars[j]);
+  }
+  var existingCollIds = {};
+  for (var k = 0; k < _remoteCollections.length; k++) existingCollIds[_remoteCollections[k].id] = true;
+  for (var l = 0; l < remoteColls.length; l++) {
+    if (!existingCollIds[remoteColls[l].id]) _remoteCollections.push(remoteColls[l]);
+  }
+
+  renderBrowser();
+}
+
+// ─── Divider component (used by list and graph views) ───────────────────────
+
+function makeDivider(label, tier, count) {
+  return '<div class="dividerSection">' +
+    (tier ? '<span class="tier-dot ' + tier + '"></span>' : '') +
+    label +
+    '<span class="div-sep">·</span>' +
+    '<span class="count">' + count + '</span>' +
+  '</div>';
+}
+
+// Inner content only — for pre-existing .dividerSection containers (#list-alias-hdr, #list-comp-hdr)
+// that must not be double-wrapped in another .dividerSection div.
+function makeDividerContent(label, tier, count) {
+  return (tier ? '<span class="tier-dot ' + tier + '"></span>' : '') +
+    label +
+    '<span class="div-sep">·</span>' +
+    '<span class="count">' + count + '</span>';
+}
+
+// ─── Left panel browser ──────────────────────────────────────────────────────
+
+// Loose multi-word search: every space-separated word must appear somewhere
+// in the combined searchable string (name + "/" + collectionName).
+// Searching "border color" matches "buttonSecondary/border/color".
+function matchesSearch(name, collectionName, query) {
+  if (!query) return true;
+  var haystack = (name + '/' + (collectionName || '')).toLowerCase();
+  var words = query.toLowerCase().split(/\s+/);
+  for (var wi = 0; wi < words.length; wi++) {
+    if (words[wi] && haystack.indexOf(words[wi]) === -1) return false;
+  }
+  return true;
+}
+
+// Update tab empty-state based on current search query results
+function updateBrowserTabStates() {
+  if (!_filterQuery) {
+    // No search — all tabs always have content (or at least aren't search-empty)
+    var btnT = document.getElementById('btn-mode-tokens');
+    var btnC = document.getElementById('btn-mode-comps');
+    if (btnT) btnT.classList.remove('tab-empty');
+    if (btnC) btnC.classList.remove('tab-empty');
+    return;
+  }
+  var q = _filterQuery.toLowerCase();
+  var hasVars = false;
+  for (var i = 0; i < _variables.length; i++) {
+    if (matchesSearch(_variables[i].name, _variables[i].collectionName, q)) { hasVars = true; break; }
+  }
+  if (!hasVars && _displayDepth >= 2) {
+    for (var j = 0; j < _remoteVariables.length; j++) {
+      if (matchesSearch(_remoteVariables[j].name, _remoteVariables[j].collectionName, q)) { hasVars = true; break; }
+    }
+  }
+  var hasComps = false;
+  for (var k = 0; k < _allBrowserComponents.length; k++) {
+    var c = _allBrowserComponents[k];
+    if (_displayDepth < 2 && c.isRemote) continue;
+    if (matchesSearch(c.nodeName, '', q)) { hasComps = true; break; }
+  }
+  var btnTokens = document.getElementById('btn-mode-tokens');
+  var btnComps  = document.getElementById('btn-mode-comps');
+  if (btnTokens) btnTokens.classList.toggle('tab-empty', !hasVars);
+  if (btnComps)  btnComps.classList.toggle('tab-empty',  !hasComps);
+  // If the active tab has no results but the other does, switch immediately
+  if (_browserMode === 'tokens' && !hasVars && hasComps) {
+    switchBrowserMode('components');
+  } else if (_browserMode === 'components' && !hasComps && hasVars) {
+    switchBrowserMode('tokens');
+  }
+}
+
+function renderBrowser() {
+  if (_browserMode === 'components') { renderComponentBrowser(); return; }
+  var q = _filterQuery.toLowerCase();
+
+  var allVars = [];
+  for (var i = 0; i < _variables.length; i++) {
+    if (matchesSearch(_variables[i].name, _variables[i].collectionName, q)) allVars.push(_variables[i]);
+  }
+  // Only include external library variables when display depth >= 2
+  if (_displayDepth >= 2) {
+    for (var j = 0; j < _remoteVariables.length; j++) {
+      if (matchesSearch(_remoteVariables[j].name, _remoteVariables[j].collectionName, q)) allVars.push(_remoteVariables[j]);
+    }
+  }
+
+  allVars.sort(function (a, b) {
+    var diff = varImpactScore(b) - varImpactScore(a);
+    if (diff !== 0) return diff;
+    return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
+  });
+
+  var listEl  = document.getElementById('var-list');
+  if (allVars.length === 0) {
+    listEl.innerHTML = '';
+    showBrowserEmpty(true);
+    document.body.classList.add('browser-empty');
+    if (q) updateBrowserTabStates();
+    return;
+  }
+  showBrowserEmpty(false);
+  document.body.classList.remove('browser-empty');
+
+  var high = [], medium = [], low = [], none = [];
+  for (var k = 0; k < allVars.length; k++) {
+    var v = allVars[k];
+    var s = varImpactScore(v);
+    if (s === 0)      none.push(v);
+    else if (s > 100) high.push(v);
+    else if (s > 40)  medium.push(v);
+    else              low.push(v);
+  }
+
+  function scoreAlphSort(arr) {
+    return arr.slice().sort(function(a, b) {
+      var diff = varImpactScore(b) - varImpactScore(a);
+      return diff !== 0 ? diff : (a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
+    });
+  }
+
+  var html = '';
+  function renderSection(label, tier, vars) {
+    if (vars.length === 0) return;
+    html += makeDivider(label, tier, vars.length);
+    var sorted = scoreAlphSort(vars);
+    for (var i = 0; i < sorted.length; i++) html += renderVarRow(sorted[i]);
+  }
+  renderSection('High',   'high',   high);
+  renderSection('Medium', 'medium', medium);
+  renderSection('Low',    'low',    low);
+  renderSection('Unused',     'none',   none);
+
+  listEl.innerHTML = html;
+  document.getElementById('comp-list').classList.add('hidden');
+  listEl.classList.remove('hidden');
+  setupDividerTracking('var-list');
+  updateBrowserTabStates();
+}
+
+function renderAllBrowser() {
+  var q = _filterQuery.toLowerCase();
+  var emptyEl  = document.getElementById('browser-empty');
+  var allListEl = document.getElementById('all-list');
+
+  // Collect filtered vars
+  var vars = [];
+  for (var i = 0; i < _variables.length; i++) {
+    var v = _variables[i];
+    if (matchesSearch(v.name, v.collectionName, q)) vars.push(v);
+  }
+  if (_displayDepth >= 2) {
+    for (var j = 0; j < _remoteVariables.length; j++) {
+      var rv = _remoteVariables[j];
+      if (matchesSearch(rv.name, rv.collectionName, q)) vars.push(rv);
+    }
+  }
+
+  // Collect filtered components (exclude remote components when display depth < 2)
+  var comps = [];
+  for (var k = 0; k < _allBrowserComponents.length; k++) {
+    var c = _allBrowserComponents[k];
+    if (_displayDepth < 2 && c.isRemote) continue;
+    if (matchesSearch(c.nodeName, '', q)) comps.push(c);
+  }
+
+  if (vars.length === 0 && comps.length === 0) {
+    allListEl.innerHTML = '';
+    showBrowserEmpty(true);
+    document.getElementById('var-list').classList.add('hidden');
+    document.getElementById('comp-list').classList.add('hidden');
+    allListEl.classList.remove('hidden');
+    document.body.classList.add('browser-empty');
+    return;
+  }
+  showBrowserEmpty(false);
+  document.body.classList.remove('browser-empty');
+
+  // Classify vars into tiers
+  var vHigh = [], vMedium = [], vLow = [], vNone = [];
+  for (var vi = 0; vi < vars.length; vi++) {
+    var s = varImpactScore(vars[vi]);
+    if      (s > 100) vHigh.push(vars[vi]);
+    else if (s > 40)  vMedium.push(vars[vi]);
+    else if (s > 0)   vLow.push(vars[vi]);
+    else              vNone.push(vars[vi]);
+  }
+
+  // Classify components into tiers
+  var cHigh = [], cMedium = [], cLow = [];
+  for (var ci = 0; ci < comps.length; ci++) {
+    var bc = comps[ci].boundCount || 0;
+    if      (bc >= 5) cHigh.push(comps[ci]);
+    else if (bc >= 2) cMedium.push(comps[ci]);
+    else              cLow.push(comps[ci]);
+  }
+
+  function scoreSort(a, b) { return varImpactScore(b) - varImpactScore(a) || a.name.localeCompare(b.name); }
+  function boundSort(a, b) { return (b.boundCount || 0) - (a.boundCount || 0) || a.nodeName.localeCompare(b.nodeName); }
+
+  var html = '';
+  function renderTier(label, tier, varsArr, compsArr) {
+    if (varsArr.length === 0 && compsArr.length === 0) return;
+    var count = varsArr.length + compsArr.length;
+    html += makeDivider(label, tier, count);
+    var sv = varsArr.slice().sort(scoreSort);
+    var sc = compsArr.slice().sort(boundSort);
+    for (var i = 0; i < sv.length; i++) html += renderVarRow(sv[i]);
+    for (var j = 0; j < sc.length; j++) html += makeCompItem(sc[j]);
+  }
+
+  renderTier('High',   'high',   vHigh,   cHigh);
+  renderTier('Medium', 'medium', vMedium, cMedium);
+  renderTier('Low',    'low',    vLow,    cLow);
+  renderTier('Unused',     'none',   vNone,   []);
+
+  allListEl.innerHTML = html;
+  document.getElementById('var-list').classList.add('hidden');
+  document.getElementById('comp-list').classList.add('hidden');
+  allListEl.classList.remove('hidden');
+  setupDividerTracking('all-list');
+  updateBrowserTabStates();
+}
+
+function renderVarRow(v) {
+  var isRemote   = !!v.isRemote;
+  var isSelected = isRemote ? v.id === _selectedRemoteId : v.id === _selectedId;
+  return '<button class="node var-item' + (isSelected ? ' node-selected' : '') + '" data-id="' + esc(v.id) + '" data-remote="' + (isRemote ? '1' : '0') + '">' +
+    '<div class="var-type-icon">' + varTypeIconHtml(v.resolvedType, 12) + '</div>' +
+    '<span class="var-name">' + esc(nodeLabelName(v.name)) + '</span>' +
+    '<span class="node-goto-btn var-item-chevron"><svg width="16" height="16"><use href="#icon-arrow-right"/></svg></span>' +
+  '</button>';
+}
+
+function varImpactScoreBase(v) {
+  if (v.isRemote) return (v.aliasCount || 0) * 6 + (v.componentCount || 0) * 4;
+  return (v.dependentCount || 0) * 6 + (v.componentCount || 0) * 4;
+}
+
+function varImpactScore(v) {
+  // depth=1 → local only (component count + token refs, no canvas instances)
+  if (_displayDepth <= 1) return varImpactScoreBase(v);
+  // depth=2 → component-based (extended libs included, but no instance traversal)
+  if (_displayDepth === 2) return v._preCanvasScore !== undefined ? v._preCanvasScore : varImpactScoreBase(v);
+  // depth=3 → full (includes canvas instance counts)
+  if (v.impactScore !== undefined) return v.impactScore;
+  return varImpactScoreBase(v);
+}
+
+// ─── Single source of truth for selection clearing ────────────────────────────
+// Call this before setting any new selection so no stale .node-selected can survive.
+function clearAllSelections() {
+  _selectedId               = null;
+  _selectedRemoteId         = null;
+  _selectedCompNodeId       = null;
+  _currentComponents        = null;
+  _selectedVarOriginScroll  = null;
+  _selectedCompOriginScroll = null;
+  if (_trackedSelDiv) _trackedSelDiv.classList.remove('divider-away');
+  _trackedSelDiv = null; _trackedNextDiv = null; _trackedList = null;
+  ['all-list', 'var-list', 'comp-list'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('has-list-selection');
+    el.querySelectorAll('.node-selected').forEach(function (n) { n.classList.remove('node-selected'); });
+  });
+}
+
+function onVarClick(e) {
+  // Support both direct call (currentTarget = item) and delegated call (item passed as arg)
+  var item     = (e instanceof Event) ? e.target.closest('.var-item') : e;
+  if (!item) return;
+  if (e instanceof Event && e.target.closest('.node-drill-btn, .node-focus-btn')) return;
+  var id       = item.getAttribute('data-id');
+  var isRemote = item.getAttribute('data-remote') === '1';
+  if (!id) return;
+
+  var _activeVarList = document.getElementById('var-list');
+
+  // Re-click on already-selected item → scroll to origin, then deselect
+  if ((isRemote && id === _selectedRemoteId) || (!isRemote && id === _selectedId)) {
+    var originScroll = _selectedVarOriginScroll;
+    if (originScroll !== null) _activeVarList.scrollTo({ top: originScroll, behavior: 'smooth' });
+    setTimeout(function () {
+      clearAllSelections();
+      resetRightPanel();
+    }, 320);
+    return;
+  }
+
+  // Record origin scroll, then wipe every other selection
+  var savedScroll = _activeVarList.scrollTop;
+  clearAllSelections();
+  _selectedVarOriginScroll = savedScroll;
+
+  if (isRemote) {
+    _selectedRemoteId = id;
+    _selectedId       = null;
+  } else {
+    _selectedId       = id;
+    _selectedRemoteId = null;
+    _currentComponents = null;
+  }
+  var items = _activeVarList.querySelectorAll('.var-item');
+  for (var i = 0; i < items.length; i++) {
+    var iid  = items[i].getAttribute('data-id');
+    var irem = items[i].getAttribute('data-remote') === '1';
+    items[i].classList.toggle('node-selected', iid === id && irem === isRemote);
+  }
+  _activeVarList.classList.add('has-list-selection');
+  setupDividerTracking('var-list');
+
+  var col3El = document.getElementById('gcol-3');
+  if (col3El) col3El.scrollTop = 0;
+
+  if (isRemote) {
+    _currentComponents = null;
+    resetRightPanel();
+    var rv = findRemoteVar(id);
+    parent.postMessage({ pluginMessage: {
+      type: 'analyze-remote', variableId: id,
+      varName:        rv ? rv.name        : null,
+      resolvedType:   rv ? rv.resolvedType : null,
+      collectionName: rv ? (rv.collectionName || rv.libraryName || '') : '',
+    } }, '*');
+  } else {
+    resetRightPanel();
+    parent.postMessage({ pluginMessage: { type: 'analyze', variableId: id } }, '*');
+  }
+}
+
+// ─── Panel visibility ─────────────────────────────────────────────────────────
+
+function showRightPanel(which) {
+  document.getElementById('right-placeholder').classList.toggle('hidden', which !== 'placeholder');
+  document.getElementById('right-detail').classList.toggle('hidden', which !== 'detail');
+  var libEl = document.getElementById('right-library');
+  libEl.classList.toggle('hidden', which !== 'library');
+  libEl.style.display = which === 'library' ? 'flex' : 'none';
+
+  // Re-position the pill whenever the detail panel becomes visible —
+  // offsetLeft/offsetWidth are 0 on hidden elements so init can't do it.
+  if (which === 'detail') {
+    updateSegPill(document.getElementById('view-mode-toggle'), true);
+  }
+}
+
+function resetRightPanel() {
+  // Always clear selection state before rebuilding the graph
+  clearGraphSelectionState();
+  _detailMode  = null;
+  _currentComp = null;
+
+  var col2 = document.getElementById('gcol-2');
+  var col3 = document.getElementById('gcol-3');
+  if (col2) col2.innerHTML = '';
+  if (col3) col3.innerHTML = '';
+  var svg = document.getElementById('graph-edges');
+  if (svg) svg.innerHTML = '';
+  clearCrossEdges();
+  var bodyEl = document.getElementById('graph-body');
+  if (bodyEl) bodyEl.classList.remove('has-content', 'comp-mode');
+  var lbl2reset = document.getElementById('gcol-2-lbl');
+  if (lbl2reset) lbl2reset.textContent = 'Alias tokens';
+  var c2 = document.getElementById('gcol-2-count');
+  var c3 = document.getElementById('gcol-3-count');
+  if (c2) c2.textContent = '';
+  if (c3) c3.textContent = '';
+  var g3hdr = document.getElementById('gcol-3-lbl-wrap');
+  if (g3hdr) g3hdr.style.display = 'none';
+  _graphDescVars = [];
+  _graphCompList = [];
+  _allDescVars   = [];
+  _allCompList   = [];
+  _descCompEdges = [];
+  var ccEl = document.getElementById('sb-canvas-count');
+  if (ccEl) ccEl.classList.add('hidden');
+  var focusBtn = document.getElementById('sb-focus-btn');
+  if (focusBtn) focusBtn.classList.add('hidden');
+
+  // Delay the placeholder — if content arrives within 120ms we skip the flash
+  clearTimeout(_placeholderTimer);
+  _placeholderTimer = setTimeout(function () {
+    showRightPanel('placeholder');
+  }, 120);
+}
+
+// ─── Chain result ─────────────────────────────────────────────────────────────
+
+function onChainResult(chain, styles, components, impact) {
+  clearTimeout(_placeholderTimer); // content arrived — skip placeholder flash
+  _currentChain      = chain;
+  _currentComponents = (components !== null && components !== undefined) ? components : null;
+  _detailMode        = 'variable';
+  _currentComp       = null;
+  // Impact score is canonical from init/canvas scan — do not overwrite with detail analysis result.
+
+  // Reset detail view scroll on every new selection
+  var viewList = document.getElementById('view-list');
+  if (viewList) viewList.scrollTop = 0;
+  var gcol2 = document.getElementById('gcol-2');
+  var gcol3 = document.getElementById('gcol-3');
+  if (gcol2) gcol2.scrollTop = 0;
+  if (gcol3) gcol3.scrollTop = 0;
+
+  renderGraph(chain);
+  if (_viewMode === 'list') {
+    renderListView(chain);
+    renderListComponents(_currentComponents);
+  }
+
+  // Auto-select the single item when there's only one linked alias or component
+  requestAnimationFrame(function () {
+    var descs = chain.descendants || [];
+    var comps = _currentComponents || [];
+    if (_viewMode === 'list') {
+      if (descs.length === 1 && comps.length !== 1) {
+        var aliasRow = document.querySelector('#list-alias-body .buttonList[data-id]');
+        if (aliasRow) onListAliasClick({ currentTarget: aliasRow, target: aliasRow });
+      } else if (comps.length === 1 && descs.length !== 1) {
+        var compRow = document.querySelector('#list-comp-body .buttonList[data-node-id]');
+        if (compRow) onListCompClick({ target: compRow });
+      }
+    } else {
+      if (descs.length === 1 && comps.length !== 1) {
+        var descNode = document.querySelector('#gcol-2 .var-node');
+        if (descNode) descNode.click();
+      } else if (comps.length === 1 && descs.length !== 1) {
+        var compNode = document.querySelector('#gcol-3 .comp-item');
+        if (compNode) compNode.click();
+      }
+    }
+  });
+
+  updateStatusBar(chain, _currentComponents !== null ? _currentComponents.length : null);
+  var sb = document.getElementById('status-bar');
+  if (sb) sb.classList.remove('hidden');
+  showRightPanel('detail');
+ 
+
+  // Component index is built at init — no lazy scan needed
+}
+
+// ─── Graph rendering ──────────────────────────────────────────────────────────
+
+function renderGraph(chain) {
+  if (!chain) return;
+
+  var col2 = document.getElementById('gcol-2');
+  var col3 = document.getElementById('gcol-3');
+  if (!col2 || !col3) return;
+
+  col2.innerHTML = '';
+  col3.innerHTML = '';
+  _graphDescVars       = [];
+  _graphCompList       = [];
+  _allDescVars         = [];
+  _allCompList         = [];
+  _descCompEdges       = [];
+  _rootCompIdxs        = [];
+  _selectedGraphNodeEl = null;
+
+  var svg = document.getElementById('graph-edges');
+  if (svg) svg.innerHTML = '';
+
+  // ── Col 2: Descendants ──
+  var descendants = chain.descendants || [];
+  _allDescVars   = descendants;
+  _graphDescVars = descendants;
+  var graphEmptyEl = document.getElementById('graph-empty');
+  if (graphEmptyEl) graphEmptyEl.classList.add('hidden');
+
+  var hasDescs = descendants.length > 0;
+  var hasComps = _currentComponents !== null && _currentComponents.length > 0;
+
+  var cnt2        = document.getElementById('gcol-2-count');
+  var gcol2lbl    = document.getElementById('gcol-2-lbl-wrap');
+  var gcol3lbl    = document.getElementById('gcol-3-lbl-wrap');
+  var gcol2wrap   = document.getElementById('gcol-2-wrap');
+  var gcol3wrap   = document.getElementById('gcol-3-wrap');
+  var colHeaders  = document.getElementById('graph-col-headers');
+  var bodyElG     = document.getElementById('graph-body');
+
+  if (cnt2) cnt2.textContent = hasDescs ? descendants.length : '';
+
+  // Both columns always visible — divider labels hidden via visibility (not display)
+  // to preserve column alignment in the flex header row
+  if (gcol2lbl)  gcol2lbl.style.visibility  = hasDescs ? '' : 'hidden';
+  if (gcol2wrap) gcol2wrap.style.display     = '';
+  if (gcol3lbl)  gcol3lbl.style.visibility   = hasComps ? '' : 'hidden';
+  if (gcol3wrap) gcol3wrap.style.display     = '';
+  if (colHeaders) colHeaders.style.display = (hasDescs || hasComps) ? '' : 'none';
+  if (bodyElG) bodyElG.classList.add('has-content');
+
+  // ── Col 2: Descendants ──
+  if (hasDescs) {
+    var descHtml = '';
+    for (var di = 0; di < descendants.length; di++) {
+      descHtml += makeVarNode(descendants[di], 'desc', descendants[di].id);
+    }
+    col2.innerHTML = descHtml;
+  } else {
+    col2.innerHTML = '';
+  }
+
+  // ── Col 3: Components ──
+  if (_currentComponents !== null) {
+    renderComponents(_currentComponents);
+  } else {
+    col3.innerHTML = '<div class="col-placeholder"><div class="spinner"></div><span id="comp-load-text">Indexing…</span></div>';
+    if (bodyElG) bodyElG.classList.add('has-content');
+    scheduleDrawEdges();
+  }
+
+  scheduleDrawEdges();
+}
+
+function makeVarNode(v, cssClass, dataId) {
+  var isExternal = !!(v && v.isExternal);
+  // External vars are not in the local list — don't set data-id or drill button
+  var idAttr   = (dataId && !isExternal) ? ' data-id="' + esc(dataId) + '"' : '';
+  var externalAttr = isExternal ? ' data-external="1"' : '';
+  var drillBtn = (cssClass === 'desc' && !isExternal)
+    ? '<button class="node-drill-btn" data-drill-id="' + esc(dataId) + '" data-tip="Select in list">' +
+        '<svg width="16" height="16"><use href="#icon-arrow-right"/></svg>' +
+      '</button>'
+    : '';
+  var externalBadge = isExternal
+    ? '<span class="node-external-badge" data-tip="From external library — run Full scan to explore">Library</span>'
+    : '';
+  return '<div class="node graph-node ' + cssClass + (isExternal ? ' node-external' : '') + '"' + idAttr + externalAttr + '>' +
+    '<div class="node-type-icon">' + varTypeIconHtml(v.resolvedType, 12) + '</div>' +
+    '<div class="node-body">' +
+      '<div class="node-name" title="' + esc(v.name) + '">' + esc(nodeLabelName(v.name)) + '</div>' +
+      externalBadge +
+    '</div>' +
+    drillBtn +
+  '</div>';
+}
+
+function nodeLabelName(name) {
+  return name || '';
+}
+
+function makeCompNodeHtml(c) {
+  var count = c.boundCount || 1;
+  var gotoBtn =
+    '<button class="node-goto-btn" data-goto-node-id="' + esc(c.nodeId) + '" data-tip="Select component">' +
+      '<svg width="16" height="16"><use href="#icon-arrow-right"/></svg>' +
+    '</button>';
+  var focusBtn = c.pageId
+    ? '<button class="node-focus-btn" data-node-id="' + esc(c.nodeId) + '" data-page-id="' + esc(c.pageId) + '" data-tip="Focus on canvas">' +
+        '<svg width="16" height="16"><use href="#icon-focus"/></svg>' +
+      '</button>'
+    : '';
+  return '<div class="node graph-node comp" data-node-id="' + esc(c.nodeId) + '" data-page-id="' + esc(c.pageId) + '">' +
+    '<div class="node-type-icon">' + nodeTypeIcon(c.nodeType) + '</div>' +
+    '<div class="node-body">' +
+      '<div class="node-name" title="' + esc(c.nodeName) + '">' + esc(nodeLabelName(c.nodeName)) + '</div>' +
+    '</div>' +
+    focusBtn +
+    gotoBtn +
+  '</div>';
+}
+
+// ─── Component rendering ──────────────────────────────────────────────────────
+
+function renderComponents(components) {
+  _graphCompList = [];
+  _allCompList   = [];
+  _descCompEdges = [];
+  _rootCompIdxs  = [];
+
+  var col3 = document.getElementById('gcol-3');
+  if (!col3) return;
+
+  // Filter out nameless components and respect display depth
+  components = (!components ? [] : components).filter(function (c) {
+    if (_displayDepth < 2 && c.isRemote) return false;
+    return c.nodeName && c.nodeName.trim() !== '';
+  });
+
+  var cnt3      = document.getElementById('gcol-3-count');
+  var bodyElC   = document.getElementById('graph-body');
+  var gcol3hdr  = document.getElementById('gcol-3-lbl-wrap');
+  var gcol3wrap = document.getElementById('gcol-3-wrap');
+  var colHdrs   = document.getElementById('graph-col-headers');
+  var hasAlias  = _graphDescVars.length > 0;
+  if (components.length === 0) {
+    col3.innerHTML = '';
+    if (cnt3)      cnt3.textContent = '';
+    if (gcol3hdr)  gcol3hdr.style.display  = 'none';
+    if (gcol3wrap) gcol3wrap.style.display  = 'none';
+    if (colHdrs)   colHdrs.style.display    = hasAlias ? '' : 'none';
+    var ge = document.getElementById('graph-empty');
+    if (ge) ge.classList.toggle('hidden', hasAlias);
+    if (bodyElC) bodyElC.classList.toggle('has-content', hasAlias);
+    scheduleDrawEdges();
+    return;
+  }
+  // Components exist — ensure col-3 is visible
+  if (gcol3hdr)  gcol3hdr.style.display  = '';
+  if (gcol3wrap) gcol3wrap.style.display  = '';
+  if (colHdrs)   colHdrs.style.display    = '';
+  if (cnt3) cnt3.textContent = components.length;
+  if (gcol3hdr) gcol3hdr.style.display = '';
+  if (bodyElC) bodyElC.classList.add('has-content');
+
+  // Sort by bound count desc
+  var sorted = components.slice().sort(function (a, b) {
+    return (b.boundCount || 0) - (a.boundCount || 0);
+  });
+  _allCompList   = sorted;
+  _graphCompList = sorted;
+
+  // Build id→descIdx and name→descIdx for edge matching.
+  // ID matching is preferred (reliable across name normalization); name is a fallback.
+  var descIdIdx   = {};
+  var descNameIdx = {};
+  for (var d = 0; d < _graphDescVars.length; d++) {
+    if (_graphDescVars[d].id)   descIdIdx[_graphDescVars[d].id]     = d;
+    if (_graphDescVars[d].name) descNameIdx[_graphDescVars[d].name] = d;
+  }
+  var rootId   = (_currentChain && _currentChain.self) ? _currentChain.self.id   : null;
+  var rootName = (_currentChain && _currentChain.self) ? _currentChain.self.name : null;
+
+  for (var ci = 0; ci < sorted.length; ci++) {
+    var comp = sorted[ci];
+    var seen = {};
+    var bindsRoot = false;
+    var bindsAnyAlias = false;
+    for (var bvi = 0; bvi < (comp.boundVars || []).length; bvi++) {
+      var bv = comp.boundVars[bvi];
+      // Root binding (id preferred, name fallback)
+      if ((bv.id && bv.id === rootId) || (!bv.id && bv.name === rootName)) bindsRoot = true;
+      // Alias binding
+      var dIdx;
+      if (bv.id   && descIdIdx[bv.id]     !== undefined) dIdx = descIdIdx[bv.id];
+      else if (bv.name && descNameIdx[bv.name] !== undefined) dIdx = descNameIdx[bv.name];
+      if (dIdx !== undefined && !seen[dIdx]) {
+        seen[dIdx] = true;
+        bindsAnyAlias = true;
+        _descCompEdges.push({ descIdx: dIdx, compIdx: ci });
+      }
+    }
+    // If the component binds directly to the root (or doesn't bind to any alias
+    // but is in the chain anyway), track it for root→component edge drawing.
+    if (bindsRoot || !bindsAnyAlias) _rootCompIdxs.push(ci);
+  }
+
+  var html = '';
+  for (var i = 0; i < sorted.length; i++) {
+    html += makeCompNodeHtml(sorted[i]);
+  }
+  col3.innerHTML = html;
+
+  // Stamp root-bound nodes with a "direct" badge + tooltip
+  var col3Nodes   = Array.from(col3.querySelectorAll('.graph-node.comp'));
+  var rootVarName = (_currentChain && _currentChain.self) ? _currentChain.self.name : '';
+  for (var ri = 0; ri < _rootCompIdxs.length; ri++) {
+    var rEl = col3Nodes[_rootCompIdxs[ri]];
+    if (!rEl) continue;
+    rEl.setAttribute('data-binds-root', '1');
+    rEl.setAttribute('data-tip', 'Binds “' + rootVarName + '” directly — not via this alias');
+  }
+
+  // Re-apply selection state: gcol-3 was just rebuilt so all new nodes need
+  // gnode classes. If the selected node is still in the DOM (gcol-0/1/2),
+  // re-run selectGraphNode to mark the new component nodes correctly.
+  // If the selected node was a gcol-3 node it is now gone — clear selection.
+  if (_selectedGraphNodeEl) {
+    if (_selectedGraphNodeEl.isConnected) {
+      selectGraphNode(_selectedGraphNodeEl);
+    } else {
+      clearGraphSelectionState();
+      scheduleDrawEdges();
+    }
+    return;
+  }
+
+  scheduleDrawEdges();
+}
+
+
+
+// ─── Graph node selection ─────────────────────────────────────────────────────
+
+var _GRAPH_COL_IDS = ['gcol-2', 'gcol-3'];
+
+function _scrollColsToTop() {
+  for (var i = 0; i < _GRAPH_COL_IDS.length; i++) {
+    var col = document.getElementById(_GRAPH_COL_IDS[i]);
+    if (col) col.scrollTop = 0;
+  }
+}
+
+function _showAllGraphNodes() {
+  // No-op: nodes are never display:none, dimming is CSS-only
+}
+
+// Compute the strict HIGHLIGHT set (drives gnode-selected class).
+// Per spec: variable click → only that + its directly bound components.
+// Component click → only that + variables that directly bind to it.
+function computeHighlightSet(colId, nodeIdx) {
+  var h = { 'gcol-2': {}, 'gcol-3': {} };
+  h[colId][nodeIdx] = true;
+  if (colId === 'gcol-2') {
+    for (var ei = 0; ei < _descCompEdges.length; ei++) {
+      if (_descCompEdges[ei].descIdx === nodeIdx) h['gcol-3'][_descCompEdges[ei].compIdx] = true;
+    }
+  } else if (colId === 'gcol-3') {
+    for (var ej = 0; ej < _descCompEdges.length; ej++) {
+      if (_descCompEdges[ej].compIdx === nodeIdx) h['gcol-2'][_descCompEdges[ej].descIdx] = true;
+    }
+  }
+  return h;
+}
+
+function selectGraphNode(node) {
+  if (_collapseTimer) { clearTimeout(_collapseTimer); _collapseTimer = null; }
+  _selectedGraphNodeEl = node;
+
+  var col = node.closest('.graph-col');
+  if (!col) return;
+  var colId    = col.id;
+  var colNodes = Array.from(col.querySelectorAll('.graph-node:not(.more)'));
+  var nodeIdx  = colNodes.indexOf(node);
+
+  var bodyEl = document.getElementById('graph-body');
+  if (bodyEl) bodyEl.classList.add('has-selection');
+
+  // Visual highlight set (strict)
+  var highlight = computeHighlightSet(colId, nodeIdx);
+  for (var c = 0; c < _GRAPH_COL_IDS.length; c++) {
+    var curColId = _GRAPH_COL_IDS[c];
+    var colEl    = document.getElementById(curColId);
+    if (!colEl) continue;
+    var nodes = Array.from(colEl.querySelectorAll('.graph-node'));
+    for (var n = 0; n < nodes.length; n++) {
+      nodes[n].classList.toggle('node-selected', highlight[curColId][n] === true);
+    }
+  }
+
+  // Edge connected set — ALWAYS include col-1[0] so the path back to the
+  // origin variable is drawn even if col-1 isn't visually highlighted.
+  var connected = buildConnectedSet(colId, nodeIdx);
+
+  if (colId === 'gcol-2' || colId === 'gcol-3') {
+    var _cid = colId, _idx = nodeIdx, _conn = connected;
+    requestAnimationFrame(function () { drawEdges(_cid, _idx, _conn); drawCrossEdges(); });
+  } else {
+    drawEdges(colId, nodeIdx, connected);
+    drawCrossEdges();
+  }
+}
+
+function clearGraphSelectionState() {
+  _selectedGraphNodeEl = null;
+  if (_collapseTimer) { clearTimeout(_collapseTimer); _collapseTimer = null; }
+
+  // Restore collapsed nodes to display:block BEFORE removing has-selection
+  // so the opacity fade-in plays from 0 → natural value
+  _showAllGraphNodes();
+
+  var bodyEl = document.getElementById('graph-body');
+  if (bodyEl) bodyEl.classList.remove('has-selection');
+
+  var nodes = document.querySelectorAll('#graph-body .graph-node');
+  for (var i = 0; i < nodes.length; i++) {
+    nodes[i].classList.remove('node-selected');
+  }
+}
+
+function clearGraphSelection() {
+  clearGraphSelectionState();
+  drawEdges();
+  drawCrossEdges();
+}
+
+function buildConnectedSet(colId, nodeIdx) {
+  var connected = {};
+  function add(cid, idx) {
+    if (!connected[cid]) connected[cid] = {};
+    connected[cid][idx] = true;
+  }
+  // Wrap in a has() shim since we're not using Set
+  function has(obj, idx) { return obj && obj[idx] === true; }
+
+  if (colId === 'gcol-2') {
+    // Direct components only
+    for (var ei = 0; ei < _descCompEdges.length; ei++) {
+      if (_descCompEdges[ei].descIdx === nodeIdx) {
+        add('gcol-3', _descCompEdges[ei].compIdx);
+      }
+    }
+  }
+  else if (colId === 'gcol-3') {
+    // Only the alias vars that directly feed this component
+    for (var ei2 = 0; ei2 < _descCompEdges.length; ei2++) {
+      if (_descCompEdges[ei2].compIdx === nodeIdx) {
+        add('gcol-2', _descCompEdges[ei2].descIdx);
+      }
+    }
+  }
+
+  // Attach has helper
+  connected._has = has;
+  return connected;
+}
+
+// ─── Edge drawing ─────────────────────────────────────────────────────────────
+
+function scheduleDrawEdges() {
+  if (_edgeRafPending) return;
+  _edgeRafPending = true;
+  requestAnimationFrame(function () {
+    _edgeRafPending = false;
+    // Preserve selection if still valid
+    if (_selectedGraphNodeEl && _selectedGraphNodeEl.isConnected) {
+      var col = _selectedGraphNodeEl.closest('.graph-col');
+      if (col) {
+        var colId    = col.id;
+        var colNodes = Array.from(col.querySelectorAll('.graph-node:not(.more)'));
+        var idx      = colNodes.indexOf(_selectedGraphNodeEl);
+        if (idx !== -1) {
+          drawEdges(colId, idx, buildConnectedSet(colId, idx));
+          drawCrossEdges();
+          return;
+        }
+      }
+    }
+    drawEdges();
+    drawCrossEdges();
+  });
+}
+
+function alignColumnToSelection(selNode, connected) {
+  // For each column that has connected nodes, scroll it so the vertical
+  // midpoint of the connected-node group aligns with the selected node's midpoint.
+  var bodyEl = document.getElementById('graph-body');
+  if (!bodyEl) return;
+
+  var selRect = selNode.getBoundingClientRect();
+  var selMid  = selRect.top + selRect.height / 2; // viewport Y
+
+  var allColIds = _GRAPH_COL_IDS;
+  for (var c = 0; c < allColIds.length; c++) {
+    var cid   = allColIds[c];
+    var colEl = document.getElementById(cid);
+    if (!colEl) continue;
+
+    // Skip the column the selected node belongs to
+    if (selNode.closest('.graph-col') === colEl) continue;
+
+    var connMap = connected[cid];
+    if (!connMap) continue;
+
+    var nodes = Array.from(colEl.querySelectorAll('.graph-node:not(.more)'));
+    var connNodes = [];
+    for (var n = 0; n < nodes.length; n++) {
+      if (connMap[n] === true) connNodes.push(nodes[n]);
+    }
+    if (connNodes.length === 0) continue;
+
+    // Find the vertical midpoint of the connected group (in viewport coords)
+    var topRect = connNodes[0].getBoundingClientRect();
+    var botRect = connNodes[connNodes.length - 1].getBoundingClientRect();
+    var groupMid = (topRect.top + botRect.bottom) / 2;
+
+    // Adjust scrollTop so groupMid lands at selMid
+    var delta = groupMid - selMid;
+    colEl.scrollTop = colEl.scrollTop + delta;
+  }
+}
+
+function drawEdges(selColId, selNodeIdx, connected) {
+  if (_viewMode !== 'graph') return;
+  var svg = document.getElementById('graph-edges');
+  if (!svg) return;
+  svg.innerHTML = '';
+
+  // No graph selection → draw all alias→component edges as dashed overview lines
+  if (selColId === undefined) {
+    var bodyElOv = document.getElementById('graph-body');
+    if (!bodyElOv || _descCompEdges.length === 0) return;
+    var bodyRectOv = bodyElOv.getBoundingClientRect();
+    var accentOv   = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#595959';
+    var col2Ov = Array.from(document.querySelectorAll('#gcol-2 .graph-node:not(.more)'));
+    var col3Ov = Array.from(document.querySelectorAll('#gcol-3 .graph-node:not(.more)'));
+    for (var oi = 0; oi < _descCompEdges.length; oi++) {
+      var oe = _descCompEdges[oi];
+      if (oe.descIdx >= col2Ov.length || oe.compIdx >= col3Ov.length) continue;
+      var dr = col2Ov[oe.descIdx].getBoundingClientRect();
+      var cr = col3Ov[oe.compIdx].getBoundingClientRect();
+      var ox1 = dr.right  - bodyRectOv.left, oy1 = dr.top  + dr.height / 2 - bodyRectOv.top;
+      var ox2 = cr.left   - bodyRectOv.left, oy2 = cr.top  + cr.height / 2 - bodyRectOv.top;
+      var ocx = (ox1 + ox2) / 2;
+      var op  = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      op.setAttribute('d', 'M' + ox1 + ',' + oy1 + ' C' + ocx + ',' + oy1 + ' ' + ocx + ',' + oy2 + ' ' + ox2 + ',' + oy2);
+      op.setAttribute('fill', 'none');
+      op.setAttribute('stroke', accentOv);
+      op.setAttribute('stroke-width', '1.5');
+      op.setAttribute('stroke-opacity', '0.2');
+      svg.appendChild(op);
+    }
+    return;
+  }
+
+  var bodyEl = document.getElementById('graph-body');
+  if (!bodyEl) return;
+  var bodyRect = bodyEl.getBoundingClientRect();
+
+  var hasSel = true;
+
+  function nr(el) {
+    var r = el.getBoundingClientRect();
+    return { x: r.left - bodyRect.left, y: r.top - bodyRect.top, w: r.width, h: r.height };
+  }
+
+  function bezier(x1, y1, x2, y2) {
+    var cx = (x1 + x2) / 2;
+    return 'M' + x1 + ',' + y1 + ' C' + cx + ',' + y1 + ' ' + cx + ',' + y2 + ' ' + x2 + ',' + y2;
+  }
+
+  function addEdge(x1, y1, x2, y2, fromCol, fromIdx, toCol, toIdx, fallbackDash) {
+    var fromSel  = fromCol === selColId && fromIdx === selNodeIdx;
+    var toSel    = toCol   === selColId && toIdx   === selNodeIdx;
+    var fromConn = connected._has(connected[fromCol], fromIdx);
+    var toConn   = connected._has(connected[toCol],   toIdx);
+
+    // For alias/component selections: both endpoints must be selected or
+    // connected — prevents unrelated upstream edges from lighting up.
+    // For ancestor/semantic selections: either endpoint is enough.
+    var active;
+    if (selColId === 'gcol-2' || selColId === 'gcol-3') {
+      active = (fromSel || fromConn) && (toSel || toConn);
+    } else {
+      active = (fromSel || toSel || fromConn || toConn);
+    }
+
+    // Only draw highlighted edges; skip all non-active ones
+    if (!active) return;
+
+    var strokeColor = getSelectionColor();
+    var stroke = strokeColor, width = 1.5, opacity = 1, dash = undefined;
+
+    var p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    p.setAttribute('d', bezier(x1, y1, x2, y2));
+    p.setAttribute('fill', 'none');
+    p.setAttribute('stroke', stroke);
+    p.setAttribute('stroke-width', String(width));
+    p.setAttribute('stroke-opacity', String(opacity));
+    if (dash) p.setAttribute('stroke-dasharray', dash);
+    svg.appendChild(p);
+  }
+
+  var col2 = Array.from(document.querySelectorAll('#gcol-2 .graph-node:not(.more)'));
+  var col3 = Array.from(document.querySelectorAll('#gcol-3 .graph-node:not(.more)'));
+
+  // Descendant → component edges
+  if (_descCompEdges.length > 0) {
+    for (var ei = 0; ei < _descCompEdges.length; ei++) {
+      var e    = _descCompEdges[ei];
+      var dIdx = e.descIdx;
+      var cIdx = e.compIdx;
+      if (dIdx < col2.length && cIdx < col3.length) {
+        var dr2 = nr(col2[dIdx]);
+        var cr  = nr(col3[cIdx]);
+        addEdge(dr2.x + dr2.w, dr2.y + dr2.h / 2, cr.x, cr.y + cr.h / 2,
+                'gcol-2', dIdx, 'gcol-3', cIdx);
+      }
+    }
+  } else if (col2.length > 0 && col3.length > 0 &&
+             selColId !== 'gcol-2' && selColId !== 'gcol-3') {
+    // Fallback dashed edges only shown for ancestor/semantic selections —
+    // suppressed for alias/component selections to avoid spurious fan lines.
+    for (var fdi = 0; fdi < col2.length; fdi++) {
+      for (var fci = 0; fci < col3.length; fci++) {
+        var fdr = nr(col2[fdi]);
+        var fcr = nr(col3[fci]);
+        addEdge(fdr.x + fdr.w, fdr.y + fdr.h / 2, fcr.x, fcr.y + fcr.h / 2,
+                'gcol-2', fdi, 'gcol-3', fci, '4 3');
+      }
+    }
+  }
+}
+
+// ─── Cross-panel edges (left list → graph) ────────────────────────────────────
+
+function clearCrossEdges() {
+  var sp = document.getElementById('ce-spine');
+  var br = document.getElementById('ce-bracket');
+  if (sp) { sp.setAttribute('d', ''); sp.setAttribute('stroke-opacity', '0'); }
+  if (br) { br.setAttribute('d', ''); br.setAttribute('stroke-opacity', '0'); }
+  var svg = document.getElementById('cross-edges');
+  if (svg) {
+    var dyn = svg.querySelectorAll('.ce-dynamic');
+    for (var i = dyn.length - 1; i >= 0; i--) dyn[i].parentNode.removeChild(dyn[i]);
+  }
+}
+
+function drawCrossEdges() {
+  if (_viewMode !== 'graph') { clearCrossEdges(); return; }
+
+  // Scope to the active (visible) list so hidden lists with stale
+  // node-selected items don't return a getBoundingClientRect of {0,0,0,0}
+  var _ceListId = _browserMode === 'components' ? 'comp-list' : 'var-list';
+  var _ceList = document.getElementById(_ceListId);
+  var selItem;
+  if (_selectedCompNodeId) {
+    selItem = _ceList ? _ceList.querySelector('.comp-item.node-selected')
+                      : document.querySelector('.comp-item.node-selected');
+  } else if (_selectedId || _selectedRemoteId) {
+    selItem = _ceList ? _ceList.querySelector('.var-item.node-selected')
+                      : document.querySelector('.var-item.node-selected');
+  }
+  if (!selItem) { clearCrossEdges(); return; }
+
+  // Guard: if selItem is inside a hidden container its rect will be {0,0,0,0}
+  var _tmpRect = selItem.getBoundingClientRect();
+  if (_tmpRect.width === 0 && _tmpRect.height === 0) { clearCrossEdges(); return; }
+
+  var svg = document.getElementById('cross-edges');
+  if (!svg) return;
+
+  // Remove previous dynamic paths
+  var prev = svg.querySelectorAll('.ce-dynamic');
+  for (var d = prev.length - 1; d >= 0; d--) prev[d].parentNode.removeChild(prev[d]);
+
+  var hasGraphSel = !!_selectedGraphNodeEl;
+
+  var targets;
+  if (hasGraphSel && _selectedGraphNodeEl.getAttribute('data-binds-root') === '1') {
+    targets = [_selectedGraphNodeEl];
+  } else if (hasGraphSel) {
+    var aa = document.querySelectorAll('#gcol-2 .graph-node:not(.more)');
+    targets = aa.length === 0
+      ? document.querySelectorAll('#gcol-3 .graph-node.node-selected')
+      : document.querySelectorAll('#gcol-2 .graph-node.node-selected');
+  } else {
+    var fanT = document.querySelectorAll('#gcol-2 .graph-node:not(.more)');
+    targets = fanT.length > 0 ? fanT : document.querySelectorAll('#gcol-3 .graph-node:not(.more)');
+  }
+
+  if (!targets || targets.length === 0) { clearCrossEdges(); return; }
+
+  var strokeColor = hasGraphSel
+    ? getSelectionColor()
+    : (getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#595959');
+  var opacity = hasGraphSel ? '1' : '0.2';
+
+  var selRect = selItem.getBoundingClientRect();
+  var x1 = selRect.right;
+  var y1 = selRect.top + selRect.height / 2;
+
+  for (var i = 0; i < targets.length; i++) {
+    var r  = targets[i].getBoundingClientRect();
+    // Skip nodes with zero size (hidden container) or fully outside the viewport
+    if (r.width === 0 && r.height === 0) continue;
+    if (r.bottom < 0 || r.top > window.innerHeight) continue;
+    var x2 = r.left;
+    var y2 = r.top + r.height / 2;
+    var cx = (x1 + x2) / 2;
+    var p  = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    p.setAttribute('class', 'ce-dynamic');
+    p.setAttribute('d', 'M'+x1+','+y1+' C'+cx+','+y1+' '+cx+','+y2+' '+x2+','+y2);
+    p.setAttribute('fill', 'none');
+    p.setAttribute('stroke', strokeColor);
+    p.setAttribute('stroke-width', '1.5');
+    p.setAttribute('stroke-opacity', opacity);
+    svg.appendChild(p);
+  }
+}
+function switchView(mode) {
+  _viewMode = mode;
+  var graphEl  = document.getElementById('view-graph');
+  var listEl   = document.getElementById('view-list');
+  var btnGraph = document.getElementById('btn-view-graph');
+  var btnList  = document.getElementById('btn-view-list');
+  if (!graphEl || !listEl) return;
+
+  var isGraph = mode === 'graph';
+  graphEl.classList.toggle('hidden', !isGraph);
+  listEl.classList.toggle('hidden', isGraph);
+  if (btnGraph) btnGraph.classList.toggle('selected', isGraph);
+  if (btnList)  btnList.classList.toggle('selected', !isGraph);
+  updateSegPill(document.getElementById('view-mode-toggle'));
+ 
+
+  if (isGraph) {
+    scheduleDrawEdges();
+  } else {
+    clearCrossEdges();
+    if (_detailMode === 'component' && _currentComp) {
+      renderListComponentDetail(_currentComp);
+    } else {
+      renderListView(_currentChain);
+      renderListComponents(_currentComponents);
+    }
+  }
+}
+
+// ─── Status bar ───────────────────────────────────────────────────────────────
+
+
+function updateStatusBar(chain, compCount) {
+  if (!chain) return;
+  var v = chain.self;
+
+  document.getElementById('sb-type-icon').innerHTML = varTypeIconHtml(v.resolvedType, 12);
+  document.getElementById('sb-name').textContent    = v.name;
+
+  var sv    = _selectedId ? findVar(_selectedId) : findRemoteVar(_selectedRemoteId);
+  var score = sv ? varImpactScore(sv) : 0;
+  // If stored score is 0 but we have live component data, use component count as floor
+  if (score === 0 && _currentComponents && _currentComponents.length > 0) {
+    score = _currentComponents.length;
+  }
+  var chip  = document.getElementById('sb-impact');
+  if (score === 0) {
+    chip.textContent = 'Unused';
+    chip.className   = 'badge none';
+  } else {
+    var tier = score <= 40 ? 'low' : score <= 100 ? 'medium' : 'high';
+    chip.textContent = tier.charAt(0).toUpperCase() + tier.slice(1);
+    chip.className   = 'badge ' + tier;
+  }
+
+  var ccEl = document.getElementById('sb-canvas-count');
+  if (ccEl) ccEl.classList.add('hidden');
+
+  // Hide focus button when viewing a variable (only show for components)
+  var focusBtn = document.getElementById('sb-focus-btn');
+  if (focusBtn) focusBtn.classList.add('hidden');
+
+  // Hide export and tree/list toggle when there is nothing to report or browse
+  var hasDescs = (chain.descendants || []).length > 0;
+  var hasComps = compCount !== null && compCount > 0;
+  var exportBtn = document.getElementById('sb-export-btn');
+  if (exportBtn) exportBtn.classList.toggle('hidden', !hasDescs && !hasComps);
+  var toggle = document.getElementById('view-mode-toggle');
+  if (toggle) toggle.classList.toggle('hidden', !hasDescs && !hasComps);
+}
+
+// ─── List view rendering ──────────────────────────────────────────────────────
+
+
+function renderListView(chain) {
+  if (!chain) return;
+
+  var aliasHdr   = document.getElementById('list-alias-hdr');
+  var aliasBody  = document.getElementById('list-alias-body');
+  var compHdrEl  = document.getElementById('list-comp-hdr');
+  var compBodyEl = document.getElementById('list-comp-body');
+
+  // Restore components section in case component was previously selected
+  if (compHdrEl)  { compHdrEl.classList.remove('hidden'); }
+  if (compBodyEl) compBodyEl.style.display = '';
+
+  var descs = (chain.descendants || []).slice();
+  if (aliasHdr) {
+    if (descs.length === 0) {
+      aliasHdr.classList.add('hidden');
+    } else {
+      aliasHdr.innerHTML = makeDividerContent('Alias tokens', null, descs.length);
+      aliasHdr.classList.remove('hidden');
+    }
+  }
+  if (aliasBody) {
+    var aliasHtml = '';
+    for (var di = 0; di < descs.length; di++) {
+      var d = descs[di];
+      aliasHtml += '<div class="buttonList" data-id="' + esc(d.id) + '">' +
+        '<div class="lrow-icon">' + varTypeIconHtml(d.resolvedType, 12) + '</div>' +
+        '<span class="lrow-name">' + esc(nodeLabelName(d.name)) + '</span>' +
+        '<svg width="16" height="16" class="buttonList-arrow"><use href="#icon-arrow-right"/></svg>' +
+      '</div>';
+    }
+    aliasBody.innerHTML = aliasHtml;
+    aliasBody.style.display = descs.length === 0 ? 'none' : '';
+  }
+
+  // When there are no alias tokens, the comp header is the first visible item —
+  // ensure it is shown and labelled even before renderListComponents fills the count.
+  if (descs.length === 0 && compHdrEl) {
+    if (!compHdrEl.innerHTML.trim()) {
+      compHdrEl.innerHTML = makeDividerContent('Components', null, '');
+    }
+    compHdrEl.classList.remove('hidden');
+  }
+}
+
+function renderListComponents(components) {
+  var compHdr  = document.getElementById('list-comp-hdr');
+  var compBody = document.getElementById('list-comp-body');
+  if (!compBody) return;
+
+  if (components === null) {
+    if (compHdr) { compHdr.innerHTML = makeDividerContent('Components', null, ''); compHdr.classList.remove('hidden'); }
+    compBody.style.display = '';
+    compBody.innerHTML = '<div class="lrow dimmed" style="justify-content:center;gap:8px;">' +
+      '<div class="spinner" style="width:12px;height:12px;border-width:1.5px;"></div>' +
+      '<span style="font-size:var(--s-size);color:var(--text-muted)">Indexing components…</span>' +
+    '</div>';
+    return;
+  }
+
+  var filteredComps = (components || []).filter(function (c) {
+    if (_displayDepth < 2 && c.isRemote) return false;
+    return c.nodeName && c.nodeName.trim() !== '';
+  });
+
+  if (filteredComps.length === 0) {
+    if (compHdr) compHdr.classList.add('hidden');
+    compBody.style.display = 'none';
+    return;
+  }
+
+  if (compHdr) { compHdr.innerHTML = makeDividerContent('Components', null, filteredComps.length); compHdr.classList.remove('hidden'); }
+  compBody.style.display = '';
+
+  var sorted = filteredComps.slice().sort(function (a, b) {
+    return (b.boundCount || 0) - (a.boundCount || 0);
+  });
+  var html = '';
+  for (var i = 0; i < sorted.length; i++) {
+    var c = sorted[i];
+    html += '<div class="buttonList" data-node-id="' + esc(c.nodeId) + '" data-page-id="' + esc(c.pageId) + '">' +
+      '<div class="lrow-icon">' + nodeTypeIcon(c.nodeType) + '</div>' +
+      '<span class="lrow-name">' + esc(c.nodeName) + '</span>' +
+      '<button class="buttonList-action buttonTertiary" data-node-id="' + esc(c.nodeId) + '" data-page-id="' + esc(c.pageId) + '" data-tip="Focus on canvas" tabindex="-1"><svg width="16" height="16"><use href="#icon-focus"/></svg></button>' +
+      '<svg width="16" height="16" class="buttonList-arrow"><use href="#icon-arrow-right"/></svg>' +
+    '</div>';
+  }
+  compBody.innerHTML = html;
+  // Delegated on #list-comp-body — nothing to attach per row.
+}
+
+// ─── Component scan ───────────────────────────────────────────────────────────
+
+function startComponentScan() {
+  if (_indexBuilding) return;
+  if (!_selectedId && !_selectedRemoteId) return;
+  _indexBuilding     = true;
+  _currentComponents = null;
+
+  var col3 = document.getElementById('gcol-3');
+  if (col3) {
+    col3.innerHTML = '<div class="col-placeholder"><div class="spinner"></div><span id="comp-load-text">Indexing…</span></div>';
+  }
+
+  if (_selectedId) {
+    parent.postMessage({ pluginMessage: { type: 'build-component-index', variableId: _selectedId } }, '*');
+  } else {
+    parent.postMessage({ pluginMessage: { type: 'build-component-index-remote', variableId: _selectedRemoteId } }, '*');
+  }
+}
+
+function onIndexProgress(text, scanned, total) {
+  var el = document.getElementById('comp-load-text');
+  if (!el) return;
+  if (scanned != null && total != null && total > 0) {
+    el.textContent = scanned + ' / ' + total;
+  } else if (text) {
+    el.textContent = text;
+  }
+}
+
+function onIndexReady(components, remoteVars, remoteColls, varComponentCounts, varImpactScores) {
+  _componentIndexBuilt = true;
+  _indexBuilding       = false;
+  _currentComponents   = components || [];
+  _varComponentCounts  = varComponentCounts || {};
+
+  // 1. Merge remote vars from component scan
+  {
+    var remoteIdxMap    = {};
+    var remoteLibKeyMap = {};
+    for (var i = 0; i < _remoteVariables.length; i++) {
+      remoteIdxMap[_remoteVariables[i].id] = i;
+      if (_remoteVariables[i].libraryKey) remoteLibKeyMap[_remoteVariables[i].libraryKey] = i;
+    }
+
+    // Only merge remote vars into the list if a Full scan has been run —
+    // prevents external vars discovered during analysis from appearing prematurely
+    if (remoteVars && remoteVars.length > 0 && _externalScanDone) {
+      for (var j = 0; j < remoteVars.length; j++) {
+        var rv = remoteVars[j];
+        if (remoteIdxMap[rv.id] !== undefined) {
+          _remoteVariables[remoteIdxMap[rv.id]].componentCount = rv.dependentCount;
+        } else if (rv.libraryKey && remoteLibKeyMap[rv.libraryKey] !== undefined) {
+          var stub = _remoteVariables[remoteLibKeyMap[rv.libraryKey]];
+          stub.id             = rv.id;
+          stub.libraryKey     = rv.libraryKey;
+          stub.componentCount = rv.dependentCount;
+          if (rv.hex) stub.hex = rv.hex;
+          remoteIdxMap[rv.id] = remoteLibKeyMap[rv.libraryKey];
+        } else {
+          _remoteVariables.push({
+            id: rv.id, libraryKey: rv.libraryKey || null, name: rv.name,
+            resolvedType: rv.resolvedType, variableCollectionId: rv.variableCollectionId,
+            hex: rv.hex, aliasCount: 0, componentCount: rv.dependentCount, isRemote: true,
+          });
+        }
+      }
+    }
+
+    if (varComponentCounts) {
+      for (var rc = 0; rc < _remoteVariables.length; rc++) {
+        var rvid = _remoteVariables[rc].id;
+        if (rvid && rvid.indexOf('LIB_KEY:') !== 0 && varComponentCounts[rvid] !== undefined) {
+          _remoteVariables[rc].componentCount = varComponentCounts[rvid];
+        }
+      }
+    }
+
+    if (remoteColls && remoteColls.length > 0) {
+      var rcIdxMap = {};
+      for (var rci = 0; rci < _remoteCollections.length; rci++) rcIdxMap[_remoteCollections[rci].id] = true;
+      for (var rcj = 0; rcj < remoteColls.length; rcj++) {
+        if (!rcIdxMap[remoteColls[rcj].id]) _remoteCollections.push(remoteColls[rcj]);
+      }
+    }
+  }
+
+  // 2. Update local vars
+  var idxMap = {};
+  for (var li = 0; li < _variables.length; li++) idxMap[_variables[li].id] = li;
+  if (remoteVars) {
+    for (var lj = 0; lj < remoteVars.length; lj++) {
+      if (idxMap[remoteVars[lj].id] !== undefined) {
+        _variables[idxMap[remoteVars[lj].id]].dependentCount = remoteVars[lj].dependentCount;
+      }
+    }
+  }
+
+  // 3. Stamp impact scores and component counts
+  for (var k = 0; k < _variables.length; k++) {
+    var vid = _variables[k].id;
+    if (varImpactScores && varImpactScores[vid] !== undefined) _variables[k].impactScore = varImpactScores[vid];
+    if (varComponentCounts && varComponentCounts[vid] !== undefined) _variables[k].componentCount = varComponentCounts[vid];
+  }
+
+  // 4. Re-render list
+  renderBrowser();
+
+  // Scroll selected var back into view after list re-render (tiers may have shifted)
+  requestAnimationFrame(function () {
+    var activeId  = _selectedId || _selectedRemoteId;
+    var isRemote  = !_selectedId && !!_selectedRemoteId;
+    if (activeId) {
+      var sel = document.querySelector(
+        '.var-item[data-id="' + activeId + '"][data-remote="' + (isRemote ? '1' : '0') + '"]'
+      );
+      if (sel) scrollVarToCenter(sel);
+    }
+  });
+
+  // 5. Update graph components
+  renderComponents(_currentComponents);
+
+  // 6. Update list view components
+  if (_viewMode === 'list') renderListComponents(_currentComponents);
+
+  // 7. Update status bar
+  if (_currentChain) updateStatusBar(_currentChain, _currentComponents.length);
+}
+
+// ─── Rescan ───────────────────────────────────────────────────────────────────
+
+function triggerFullRescan() {
+  _variables           = [];
+  _collections         = [];
+  _remoteVariables     = [];
+  _remoteCollections   = [];
+  _selectedId          = null;
+  _selectedRemoteId    = null;
+  _currentComponents   = null;
+  _componentIndexBuilt = false;
+  _indexBuilding       = false;
+  _currentChain        = null;
+  _varComponentCounts  = {};
+  _graphDescVars       = [];
+  _graphCompList       = [];
+  _allDescVars         = [];
+  _allCompList         = [];
+  _descCompEdges       = [];
+
+  _allBrowserComponents = [];
+  _selectedCompNodeId   = null;
+  _compBrowserLoaded    = false;
+  if (_trackedSelDiv) _trackedSelDiv.classList.remove('divider-away');
+  _trackedSelDiv = null; _trackedNextDiv = null; _trackedList = null;
+
+  // Reset canvas scan state
+  _displayDepth         = 1;
+  _externalScanDone     = false;
+  _canvasScanDone       = false;
+  _canvasScanRunning    = false;
+  _canvasBindings       = {};
+  _canvasInstanceCounts = {};
+  _canvasDirectCounts   = {};
+  _canvasComponents     = [];
+  var scanBtn = document.getElementById('canvas-scan-btn');
+  if (scanBtn) scanBtn.classList.remove('scanning');
+  dismissProgress();
+
+
+
+  resetRightPanel();
+  var vl = document.getElementById('var-list');
+  vl.innerHTML = '';
+  vl.classList.add('hidden');
+  vl.classList.remove('has-list-selection');
+  var cl = document.getElementById('comp-list');
+  if (cl) { cl.innerHTML = ''; cl.classList.add('hidden'); cl.classList.remove('has-list-selection'); }
+  var al = document.getElementById('all-list');
+  if (al) { al.classList.add('hidden'); al.classList.remove('has-list-selection'); }
+  showBrowserEmpty(false);
+  _initStartTime  = Date.now();
+  _initTargetPct  = 0;
+  _initDisplayPct = 0;
+  _initEtaShown   = false;
+  _initLabel      = 'Local scan';
+  showScanProgress('Loading…', '', function () {
+    parent.postMessage({ pluginMessage: { type: 'close' } }, '*');
+  });
+
+  // Switch back to tokens mode on rescan
+  if (_browserMode === 'components') {
+    _browserMode = 'tokens';
+    syncBrowserModeButtons('tokens');
+  }
+
+  parent.postMessage({ pluginMessage: { type: 'init' } }, '*');
+}
+
+// ─── Component browser ───────────────────────────────────────────────────────
+
+function updatePlaceholderText(mode) {
+  var el = document.getElementById('right-placeholder-text');
+  if (!el) return;
+  if (mode === 'tokens') {
+    el.innerHTML = 'Select a token<br>to see what it affects.';
+  } else if (mode === 'components') {
+    el.innerHTML = 'Select a component<br>to see what it affects.';
+  } else {
+    el.innerHTML = 'Select an item<br>to see what it affects.';
+  }
+}
+
+// Sliding pill: updateSegPill + init + ResizeObserver come from ui-shared.js (base) —
+// the local duplicate was removed 2026-07 (it shadowed the shared implementation).
+
+// Sync the 3-way browser-mode segmented control so exactly the active mode's button is selected.
+function syncBrowserModeButtons(mode) {
+  var btnTokens = document.getElementById('btn-mode-tokens');
+  var btnComps  = document.getElementById('btn-mode-comps');
+  if (btnTokens) btnTokens.classList.toggle('selected', mode === 'tokens');
+  if (btnComps)  btnComps.classList.toggle('selected',  mode === 'components');
+  updateSegPill(document.getElementById('browser-mode-toggle'));
+}
+
+function switchBrowserMode(mode) {
+  if (_browserMode === mode) return;
+  _browserMode = mode;
+  updatePlaceholderText(mode);
+  // Swap placeholder icon based on active tab
+  var phIcon = document.getElementById('right-placeholder-icon');
+  if (phIcon) {
+    phIcon.setAttribute('href',
+      mode === 'components' ? '#icon-component' : '#icon-variable');
+  }
+  syncBrowserModeButtons(mode);
+
+  var varList  = document.getElementById('var-list');
+  var compList = document.getElementById('comp-list');
+  var inp      = document.getElementById('search-input');
+
+  // Clear selections when switching away from a mode
+  if (mode !== 'components') {
+    _selectedCompNodeId = null;
+    if (compList) { compList.classList.remove('has-list-selection'); compList.querySelectorAll('.node-selected').forEach(function (el) { el.classList.remove('node-selected'); }); }
+  }
+  if (mode !== 'tokens') {
+    _selectedId = null; _selectedRemoteId = null;
+    if (varList) { varList.classList.remove('has-list-selection'); varList.querySelectorAll('.node-selected').forEach(function (el) { el.classList.remove('node-selected'); }); }
+  }
+
+  if (_trackedSelDiv) _trackedSelDiv.classList.remove('divider-away');
+  _trackedSelDiv = null; _trackedNextDiv = null; _trackedList = null;
+  _selectedVarOriginScroll  = null;
+
+  if (mode === 'components') {
+    if (varList)  varList.classList.add('hidden');
+    if (compList) compList.classList.remove('hidden');
+
+    if (_selectedCompNodeId) compList.classList.add('has-list-selection');
+    renderComponentBrowser();
+    if (_selectedCompNodeId) {
+      var selComp = null;
+      for (var sci = 0; sci < _allBrowserComponents.length; sci++) {
+        if (_allBrowserComponents[sci].nodeId === _selectedCompNodeId) { selComp = _allBrowserComponents[sci]; break; }
+      }
+      if (selComp) {
+        renderComponentDetail(selComp);
+        requestAnimationFrame(function () {
+          var selEl = compList.querySelector('.comp-item.node-selected');
+          if (selEl) scrollVarToCenter(selEl, compList, 'instant');
+          setupDividerTracking('comp-list');
+          scheduleDrawEdges();
+        });
+      } else { resetRightPanel(); }
+    } else { resetRightPanel(); }
+  } else {
+    var bodyEl2 = document.getElementById('graph-body');
+    if (bodyEl2) bodyEl2.classList.remove('comp-mode');
+    var lbl2 = document.getElementById('gcol-2-lbl');
+    if (lbl2) lbl2.textContent = 'Alias tokens';
+    if (compList) compList.classList.add('hidden');
+    if (varList)  varList.classList.remove('hidden');
+
+    if (_selectedId || _selectedRemoteId) varList.classList.add('has-list-selection');
+    renderBrowser();
+    if (_selectedId || _selectedRemoteId) {
+      requestAnimationFrame(function () {
+        var selEl = varList.querySelector('.var-item.node-selected');
+        if (selEl) scrollVarToCenter(selEl, varList, 'instant');
+        setupDividerTracking('var-list');
+        scheduleDrawEdges();
+      });
+    } else { resetRightPanel(); }
+  }
+
+  if (varList)  varList.scrollTop  = 0;
+  if (compList) compList.scrollTop = 0;
+  _selectedVarOriginScroll  = null;
+  _selectedCompOriginScroll = null;
+}
+
+function makeCompItem(c) {
+  var isSelected = c.nodeId === _selectedCompNodeId;
+  var libTag = '';
+  var classes = 'node comp-item';
+  if (isSelected) classes += ' node-selected';
+  var pageIdAttr = c.pageId ? esc(c.pageId) : '';
+  var focusBtn = (c.nodeId && c.pageId)
+    ? '<span class="comp-item-focus-btn" data-node-id="' + esc(c.nodeId) + '" data-page-id="' + pageIdAttr + '" data-tip="Focus on canvas"><svg width="16" height="16"><use href="#icon-focus"/></svg></span>'
+    : '';
+  return '<button class="' + classes +
+    '" data-node-id="' + esc(c.nodeId) + '" data-page-id="' + pageIdAttr + '">' +
+    '<div class="node-type-icon">' + nodeTypeIcon(c.nodeType) + '</div>' +
+    libTag +
+    '<span class="var-name">' + esc(c.nodeName) + '</span>' +
+    focusBtn +
+    '<span class="node-goto-btn var-item-chevron"><svg width="16" height="16"><use href="#icon-arrow-right"/></svg></span>' +
+    '</button>';
+}
+
+function renderComponentBrowser() {
+  var compList = document.getElementById('comp-list');
+  var emptyEl  = document.getElementById('browser-empty');
+  if (!compList) return;
+
+  if (!_compBrowserLoaded) {
+    compList.innerHTML = '<div class="empty-state"><div class="empty-state-content"><p>Component data loads with init.<br>Run a Usage Scan to add instance counts.</p></div></div>';
+    return;
+  }
+
+  var q = _filterQuery.toLowerCase();
+  var filtered = _allBrowserComponents.filter(function (c) {
+    if (_displayDepth < 2 && c.isRemote) return false;
+    return matchesSearch(c.nodeName, '', q);
+  });
+
+  if (filtered.length === 0) {
+    compList.innerHTML = '';
+    // Check if tokens have results and auto-switch before showing empty state
+    updateBrowserTabStates();
+    if (_browserMode !== 'components') return; // switched away — don't render empty state here
+    if (emptyEl) {
+      var p = emptyEl.querySelector('p');
+      if (p) p.innerHTML = _allBrowserComponents.length === 0
+        ? 'No components with<br>bound variables found.'
+        : 'No components match<br>your search.';
+      showBrowserEmpty(true);
+    }
+    document.body.classList.add('browser-empty');
+    return;
+  }
+  showBrowserEmpty(false);
+  document.body.classList.remove('browser-empty');
+
+  // Group by bound-token count tiers
+  var high = [], medium = [], low = [];
+  for (var gi = 0; gi < filtered.length; gi++) {
+    var bc = filtered[gi].boundCount || 1;
+    if (bc >= 5)      high.push(filtered[gi]);
+    else if (bc >= 2) medium.push(filtered[gi]);
+    else              low.push(filtered[gi]);
+  }
+
+  function compScoreSort(arr) {
+    return arr.slice().sort(function(a, b) {
+      var diff = (b.boundCount || 0) - (a.boundCount || 0);
+      return diff !== 0 ? diff : (a.nodeName < b.nodeName ? -1 : a.nodeName > b.nodeName ? 1 : 0);
+    });
+  }
+
+  function makeCompSection(label, tier, items) {
+    if (items.length === 0) return '';
+    var s = makeDivider(label, tier, items.length);
+    var sorted = compScoreSort(items);
+    for (var si = 0; si < sorted.length; si++) s += makeCompItem(sorted[si]);
+    return s;
+  }
+
+  var html = makeCompSection('High',   'high',   high) +
+             makeCompSection('Medium', 'medium', medium) +
+             makeCompSection('Low',    'low',    low);
+  compList.innerHTML = html;
+  compList.classList.toggle('has-list-selection', !!_selectedCompNodeId);
+  updateBrowserTabStates();
+
+  // Listeners are handled by the delegated handler on #comp-list — nothing to attach here.
+}
+
+function onCompItemClick(e) {
+  if (e instanceof Event) {
+    var focusTarget = e.target.closest('.comp-item-focus-btn, .node-focus-btn');
+    if (focusTarget) {
+      var fnId = focusTarget.getAttribute('data-node-id');
+      var fnPage = focusTarget.getAttribute('data-page-id');
+      if (fnId) parent.postMessage({ pluginMessage: { type: 'focus-node', nodeId: fnId, pageId: fnPage } }, '*');
+      return;
+    }
+  }
+  var btn    = (e instanceof Event) ? e.target.closest('.comp-item') : e;
+  if (!btn) return;
+  var nodeId = btn.getAttribute('data-node-id');
+  if (!nodeId) return;
+  clearSearchIfActive();
+
+  var _activeCompList = document.getElementById('comp-list');
+
+  // Re-click on already-selected item → scroll to origin, then deselect
+  if (nodeId === _selectedCompNodeId) {
+    var originScroll2 = _selectedCompOriginScroll;
+    if (originScroll2 !== null) _activeCompList.scrollTo({ top: originScroll2, behavior: 'smooth' });
+    setTimeout(function () {
+      clearAllSelections();
+      resetRightPanel();
+    }, 320);
+    return;
+  }
+
+  // Record origin scroll, then wipe every other selection
+  var savedCompScroll = _activeCompList.scrollTop;
+  clearAllSelections();
+  _selectedCompOriginScroll = savedCompScroll;
+  _selectedCompNodeId = nodeId;
+
+  var items = _activeCompList.querySelectorAll('.comp-item');
+  for (var i = 0; i < items.length; i++) {
+    items[i].classList.toggle('node-selected', items[i].getAttribute('data-node-id') === nodeId);
+  }
+  _activeCompList.classList.add('has-list-selection');
+  setupDividerTracking('comp-list');
+
+  var comp = null;
+  for (var j = 0; j < _allBrowserComponents.length; j++) {
+    if (_allBrowserComponents[j].nodeId === nodeId) { comp = _allBrowserComponents[j]; break; }
+  }
+  if (!comp) return;
+  renderComponentDetail(comp);
+  scheduleDrawEdges();
+}
+
+function renderComponentDetail(comp) {
+  clearTimeout(_placeholderTimer); // content arrived — skip placeholder flash
+  showRightPanel('detail');
+
+  _detailMode  = 'component';
+  _currentComp = comp;
+
+  var geEl = document.getElementById('graph-empty');
+  if (geEl) geEl.classList.add('hidden');
+
+  var bodyEl = document.getElementById('graph-body');
+  if (bodyEl) bodyEl.classList.add('comp-mode', 'has-content');
+  clearGraphSelectionState();
+
+  var lbl2 = document.getElementById('gcol-2-lbl');
+  if (lbl2) lbl2.textContent = 'Bound tokens';
+
+  // Show col-headers — both columns always visible
+  var colHeaders = document.getElementById('graph-col-headers');
+  if (colHeaders) colHeaders.style.display = '';
+  var g3hdr = document.getElementById('gcol-3-lbl-wrap');
+  if (g3hdr) { g3hdr.style.display = ''; g3hdr.style.visibility = 'hidden'; }
+  var g2hdr = document.getElementById('gcol-2-lbl-wrap');
+  if (g2hdr) g2hdr.style.visibility = '';
+
+  // Always show both columns — consistent two-column layout
+  var gcol2wrap = document.getElementById('gcol-2-wrap');
+  var gcol3wrap = document.getElementById('gcol-3-wrap');
+  if (gcol2wrap) gcol2wrap.style.display = '';
+  if (gcol3wrap) gcol3wrap.style.display = '';
+
+  var col2 = document.getElementById('gcol-2');
+  var col3 = document.getElementById('gcol-3');
+  if (col2) {
+    var vars = comp.boundVars || [];
+    var html = '';
+    for (var i = 0; i < vars.length; i++) html += makeVarNode(vars[i], 'desc', vars[i].id);
+    col2.innerHTML = html;
+  }
+  if (col3) col3.innerHTML = '';
+
+  var cnt2 = document.getElementById('gcol-2-count');
+  var cnt3 = document.getElementById('gcol-3-count');
+  if (cnt2) cnt2.textContent = (comp.boundVars || []).length > 0 ? (comp.boundVars || []).length : '';
+  if (cnt3) cnt3.textContent = '';
+
+  var svgEl = document.getElementById('graph-edges');
+  if (svgEl) svgEl.innerHTML = '';
+  clearCrossEdges();
+
+  // Status bar: component name + page name as the "chip"
+  var typeIcon = document.getElementById('sb-type-icon');
+  if (typeIcon) typeIcon.innerHTML = nodeTypeIcon(comp.nodeType);
+  var nameEl = document.getElementById('sb-name');
+  if (nameEl) nameEl.textContent = comp.nodeName;
+  var chipEl = document.getElementById('sb-impact');
+  if (chipEl) {
+    var bCount = comp.boundCount || 0;
+    var tier   = bCount >= 5 ? 'high' : bCount >= 2 ? 'medium' : 'low';
+    chipEl.textContent = tier.charAt(0).toUpperCase() + tier.slice(1);
+    chipEl.className   = 'badge ' + tier;
+  }
+  // Focus button — only meaningful for local components (library masters
+  // live in another file and can't be navigated to)
+  var focusBtn = document.getElementById('sb-focus-btn');
+  if (focusBtn) {
+    if (comp.nodeId && comp.isRemote !== true) {
+      focusBtn.setAttribute('data-node-id', comp.nodeId);
+      if (comp.pageId) focusBtn.setAttribute('data-page-id', comp.pageId);
+      else focusBtn.removeAttribute('data-page-id');
+      focusBtn.classList.remove('hidden');
+    } else {
+      focusBtn.removeAttribute('data-node-id');
+      focusBtn.removeAttribute('data-page-id');
+      focusBtn.classList.add('hidden');
+    }
+  }
+  var sb = document.getElementById('status-bar');
+  if (sb) sb.classList.remove('hidden');
+ 
+
+  var ccEl2 = document.getElementById('sb-canvas-count');
+  if (ccEl2) ccEl2.classList.add('hidden');
+
+  // Only show export when component has bound tokens (otherwise nothing to report)
+  var exportBtnComp = document.getElementById('sb-export-btn');
+  if (exportBtnComp) exportBtnComp.classList.toggle('hidden', (comp.boundVars || []).length === 0);
+
+  // Keep list view in sync if it's the active view
+  if (_viewMode === 'list') renderListComponentDetail(comp);
+
+  scheduleDrawEdges();
+}
+
+// Mirrors graph-view component detail into the list view — shows the
+// component's bound tokens in the alias section and hides the components
+// section (same as graph view's .comp-mode hiding gcol-3-wrap).
+function renderListComponentDetail(comp) {
+  var aliasHdr  = document.getElementById('list-alias-hdr');
+  var aliasBody = document.getElementById('list-alias-body');
+  var compHdr   = document.getElementById('list-comp-hdr');
+  var compBody  = document.getElementById('list-comp-body');
+
+  if (compHdr)  compHdr.classList.add('hidden');
+  if (compBody) compBody.style.display = 'none';
+
+  var vars = comp.boundVars || [];
+
+  if (aliasHdr) {
+    if (vars.length === 0) {
+      aliasHdr.classList.add('hidden');
+    } else {
+      aliasHdr.innerHTML = makeDividerContent('Bound tokens', null, vars.length);
+      aliasHdr.classList.remove('hidden');
+    }
+  }
+  if (!aliasBody) return;
+  aliasBody.style.display = vars.length === 0 ? 'none' : '';
+
+  if (vars.length === 0) {
+    aliasBody.innerHTML =
+      '<div class="empty-state">' +
+        '<div class="empty-state-content">' +
+          '<svg width="28" height="28"><use href="#icon-empty-list"/></svg>' +
+          '<p>No bound tokens<br>on this component.</p>' +
+        '</div>' +
+      '</div>';
+    return;
+  }
+
+  var html = '';
+  for (var i = 0; i < vars.length; i++) {
+    var v = vars[i];
+    html += '<div class="buttonList" data-id="' + esc(v.id) + '">' +
+      '<div class="lrow-icon">' + varTypeIconHtml(v.resolvedType, 12) + '</div>' +
+      '<span class="lrow-name">' + esc(nodeLabelName(v.name)) + '</span>' +
+      '<svg width="16" height="16" class="buttonList-arrow"><use href="#icon-arrow-right"/></svg>' +
+    '</div>';
+  }
+  aliasBody.innerHTML = html;
+}
+
+function drillToTokenMode(varId) {
+  var bodyEl = document.getElementById('graph-body');
+  if (bodyEl) bodyEl.classList.remove('comp-mode');
+  var lbl2 = document.getElementById('gcol-2-lbl');
+  if (lbl2) lbl2.textContent = 'Alias tokens';
+
+  _browserMode = 'tokens';
+  syncBrowserModeButtons('tokens');
+
+  var varList  = document.getElementById('var-list');
+  var compList = document.getElementById('comp-list');
+  if (compList) compList.classList.add('hidden');
+  if (varList)  varList.classList.remove('hidden');
+
+  // Route to local or remote path depending on where the variable lives
+  if (findVar(varId)) {
+    drillIntoVar(varId);
+  } else {
+    _selectedRemoteId  = varId;
+    _selectedId        = null;
+    _currentComponents = null;
+    clearSearchIfActive(); // clear before DOM query so remote var-item is in the list
+    var items = varList.querySelectorAll('.var-item');
+    for (var i = 0; i < items.length; i++) {
+      var match = items[i].getAttribute('data-id') === varId && items[i].getAttribute('data-remote') === '1';
+      items[i].classList.toggle('node-selected', match);
+    }
+    varList.classList.add('has-list-selection');
+    var selEl = varList.querySelector('.var-item.node-selected');
+    if (selEl) scrollVarToCenter(selEl);
+    resetRightPanel();
+    var rv = findRemoteVar(varId);
+    parent.postMessage({ pluginMessage: {
+      type: 'analyze-remote', variableId: varId,
+      varName:        rv ? rv.name        : null,
+      resolvedType:   rv ? rv.resolvedType : null,
+      collectionName: rv ? (rv.collectionName || rv.libraryName || '') : '',
+    } }, '*');
+  }
+}
+
+// ─── Library (remote) variable panel ─────────────────────────────────────────
+
+function onReferencedBy(msg) {
+  document.getElementById('lib-detail-name').textContent = msg.remoteVarName;
+  document.getElementById('lib-detail-coll').textContent = msg.remoteCollName;
+  document.getElementById('lib-detail-type').innerHTML   = varTypeIconHtml(msg.remoteType, 12);
+
+  var listEl  = document.getElementById('lib-ref-list');
+  var emptyEl = document.getElementById('lib-ref-empty');
+  var refs    = msg.referencedBy || [];
+
+  if (refs.length === 0) {
+    listEl.innerHTML = '';
+    showBrowserEmpty(true);
+  } else {
+    showBrowserEmpty(false);
+    var html = '';
+    for (var i = 0; i < refs.length; i++) {
+      var r = refs[i];
+      html += '<div class="ref-var-row">' +
+        '<div class="var-type-icon">' + varTypeIconHtml(r.resolvedType, 12) + '</div>' +
+        '<span class="ref-var-name">' + esc(r.name) + '</span>' +
+        '<span class="ref-coll-tag">' + esc(r.collectionName) + '</span>' +
+      '</div>';
+    }
+    listEl.innerHTML = html;
+  }
+}
+
+// ─── Canvas scan ─────────────────────────────────────────────────────────────
+
+var _scanStartTime = null;
+var _scanEtaShown  = false;
+
+function onCanvasScanProgress(pct) {
+  if (!_canvasScanRunning) return; // cancelled — ignore stale progress from backend
+  pct = pct || 0;
+
+  var eta = '';
+  var elapsed = (Date.now() - _scanStartTime) / 1000;
+  if (pct > 0 && elapsed >= 5) {
+    var remaining = Math.round(elapsed / pct * (100 - pct) * 1.5);
+    if (remaining >= 60) {
+      var m = Math.floor(remaining / 60), s = remaining % 60;
+      eta = '~' + m + 'm ' + (s > 0 ? s + 's' : '') + ' remaining';
+    } else if (remaining > 0) {
+      eta = '~' + remaining + 's remaining';
+    }
+  }
+
+  if (eta) _scanEtaShown = true;
+  var scanLabel = _lastScanDepth === 3 ? 'Full scan… ' : 'Extended scan… ';
+  showScanProgress(scanLabel + pct + '%', _scanEtaShown ? (eta || '…') : '');
+}
+
+// label format: "Some text… 42%" — we split at the last space before the pct
+function _splitLabelPct(label) {
+  var m = label.match(/^(.*?)\s+(\d+%)$/);
+  return m ? { text: m[1], pct: m[2] } : { text: label, pct: '' };
+}
+
+function showScanProgress(label, eta, onCancel) {
+  var cont = document.getElementById('progress-container');
+  if (!cont) return;
+  var parts = _splitLabelPct(label);
+  var existing = cont.querySelector('.progress-msg');
+  if (existing) {
+    var textEl  = existing.querySelector('.scan-text');
+    var pctEl   = existing.querySelector('.scan-pct');
+    var etaEl   = existing.querySelector('.scan-eta');
+    var hasEta  = !!(eta && eta.length);
+    if (textEl) textEl.textContent = parts.text;
+    if (pctEl) {
+      pctEl.textContent = parts.pct;
+      pctEl.classList.toggle('pct-visible', !!(parts.pct && parts.pct !== '0%'));
+    }
+    if (etaEl)  etaEl.textContent  = eta || '';
+    existing.classList.toggle('has-eta', hasEta);
+    return;
+  }
+  cont.innerHTML =
+    '<div class="progress-msg progress-msg--scan">' +
+      '<div class="toast-content">' +
+        '<div class="toast-spinner"></div>' +
+        '<div class="scan-info">' +
+          '<span class="scan-label"><span class="scan-text">' + parts.text + '</span> <span class="scan-pct">' + parts.pct + '</span></span>' +
+          '<span class="scan-eta">' + (eta || '') + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<button class="buttonTertiary" id="scan-cancel-btn"><span>Cancel</span></button>' +
+    '</div>';
+  var cancelBtn = document.getElementById('scan-cancel-btn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', function () {
+      var c = document.getElementById('progress-container');
+      if (c) c.innerHTML = '';
+      if (typeof onCancel === 'function') onCancel();
+    });
+  }
+}
+
+function onCanvasScanCancelled() {
+  _canvasScanRunning = false;
+  // Cancelled scan doesn't count — revert lastScanDepth to current display depth
+  // so the modal pre-selects the right level and the timestamp stays unchanged.
+  _lastScanDepth = _displayDepth;
+  var btn = document.getElementById('canvas-scan-btn');
+  if (btn) btn.classList.remove('scanning');
+  var rescanBtn = document.getElementById('rescan-btn');
+  if (rescanBtn) rescanBtn.disabled = false;
+  dismissProgress();
+}
+
+function formatScanAge(ts) {
+  var d = Date.now() - ts;
+  var m = Math.floor(d / 60000);
+  if (m < 1)  return 'just now';
+  if (m < 60) return m + 'm ago';
+  var h = Math.floor(m / 60);
+  if (h < 24) return h + 'h ago';
+  var days = Math.floor(h / 24);
+  if (days < 7) return days + ' day' + (days === 1 ? '' : 's') + ' ago';
+  var dt = new Date(ts);
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var label = dt.getDate() + ' ' + months[dt.getMonth()];
+  if (dt.getFullYear() !== new Date().getFullYear()) label += ' ' + dt.getFullYear();
+  return label;
+}
+
+function showScanBar(ts, depth) {
+  var bar = document.getElementById('last-scan-bar');
+  if (!bar) return;
+  var lbl = document.getElementById('scan-age-label');
+  if (lbl) lbl.textContent = formatScanAge(ts);
+  bar.classList.remove('hidden');
+  // Re-wire rescan button (clone to drop any stale listener)
+  var btn = document.getElementById('rescan-btn');
+  if (btn) {
+    var fresh = btn.cloneNode(true);
+    btn.parentNode.replaceChild(fresh, btn);
+    fresh.addEventListener('click', function() {
+      if (_displayDepth <= 1) {
+        triggerFullRescan(); // local analysis re-runs via init
+      } else {
+        triggerCanvasScan(_displayDepth);
+      }
+    });
+  }
+}
+
+function onCanvasScanReady(msg) {
+  var scanDepth = msg.depth || 3;
+  _externalScanDone = scanDepth >= 2;
+  _canvasScanDone   = scanDepth >= 3;
+  _displayDepth     = scanDepth;
+  _canvasScanRunning = false;
+  updateScanState();
+  _canvasInstanceCounts = msg.instanceCounts || {};
+  _canvasDirectCounts   = msg.directCounts   || {};
+
+  // Merge into a single total for convenience
+  _canvasBindings = {};
+  var allIds = new Set(Object.keys(_canvasInstanceCounts).concat(Object.keys(_canvasDirectCounts)));
+  allIds.forEach(function (id) {
+    _canvasBindings[id] = (_canvasInstanceCounts[id] || 0) + (_canvasDirectCounts[id] || 0);
+  });
+
+  var total = msg.total || 0;
+
+  // Merge remote/library vars discovered during Phase 2 into the browser
+  if (msg.remoteVars && msg.remoteVars.length > 0) {
+    var existingRemoteIds = {};
+    for (var ri = 0; ri < _remoteVariables.length; ri++) existingRemoteIds[_remoteVariables[ri].id] = true;
+    for (var rj = 0; rj < msg.remoteVars.length; rj++) {
+      if (!existingRemoteIds[msg.remoteVars[rj].id]) _remoteVariables.push(msg.remoteVars[rj]);
+    }
+  }
+  if (msg.remoteColls && msg.remoteColls.length > 0) {
+    var existingCollIds = {};
+    for (var rci = 0; rci < _remoteCollections.length; rci++) existingCollIds[_remoteCollections[rci].id] = true;
+    for (var rcj = 0; rcj < msg.remoteColls.length; rcj++) {
+      if (!existingCollIds[msg.remoteColls[rcj].id]) _remoteCollections.push(msg.remoteColls[rcj]);
+    }
+  }
+
+  var btn = document.getElementById('canvas-scan-btn');
+  if (btn) btn.classList.remove('scanning');
+
+  _scanStartTime = null;
+  _scanEtaShown  = false;
+  var progCont = document.getElementById('progress-container');
+  if (progCont) progCont.innerHTML = '';
+
+  var newCompCounts  = msg.updatedComponentCounts || null;
+  var newScores      = msg.updatedImpactScores    || null;
+
+  // Bake canvas data into each variable's cached impact score (local + remote)
+  var allVarsForCanvas = _variables.concat(_remoteVariables);
+  for (var i = 0; i < allVarsForCanvas.length; i++) {
+    var v = allVarsForCanvas[i];
+    var instCount = _canvasInstanceCounts[v.id] || 0;
+    var dirCount  = _canvasDirectCounts[v.id]   || 0;
+    v.canvasInstances = instCount;
+    v.canvasDirect    = dirCount;
+    // Apply rebuilt component count (library components merged in)
+    if (newCompCounts && newCompCounts[v.id] !== undefined) {
+      v.componentCount = newCompCounts[v.id];
+    }
+    // Apply rebuilt impact score, then add canvas contribution on top
+    if (newScores && newScores[v.id] !== undefined) {
+      v.impactScore = newScores[v.id];
+    }
+    // Save pre-canvas score (depth=2 view uses this)
+    v._preCanvasScore = v.impactScore !== undefined ? v.impactScore : varImpactScoreBase(v);
+    if (instCount > 0 || dirCount > 0) {
+      var base = v._preCanvasScore;
+      v.impactScore = base + instCount * 5 + dirCount * 2;
+    }
+  }
+
+  // Merge newly discovered library components into the browser list
+  var newLibComps = msg.newLibraryComponents || [];
+  for (var li = 0; li < newLibComps.length; li++) {
+    var lc = newLibComps[li];
+    var alreadyIn = false;
+    for (var ai = 0; ai < _allBrowserComponents.length; ai++) {
+      if (_allBrowserComponents[ai].nodeId === lc.nodeId) { alreadyIn = true; break; }
+    }
+    if (!alreadyIn) _allBrowserComponents.push(lc);
+  }
+
+  // Reset all selections and go back to Tokens tab
+  _selectedId              = null;
+  _selectedRemoteId        = null;
+  _selectedCompNodeId      = null;
+  _currentComponents       = null;
+  _selectedVarOriginScroll = null;
+  _selectedCompOriginScroll = null;
+
+  resetRightPanel();
+  switchBrowserMode('tokens');
+
+  // Instance counts merged — re-render
+  renderBrowser();
+
+  // Update last-scan bar (only for fresh scans — cache restore calls showScanBar separately)
+  if (!msg._fromCache) {
+    _lastScanTimestamp = Date.now();
+    showScanBar(_lastScanTimestamp, scanDepth);
+    // Re-enable rescan button (was disabled by triggerCanvasScan)
+    var rescanBtn = document.getElementById('rescan-btn');
+    if (rescanBtn) rescanBtn.disabled = false;
+  }
+}
+
+function onCanvasScanError(message) {
+  _canvasScanRunning = false;
+  var btn = document.getElementById('canvas-scan-btn');
+  if (btn) btn.classList.remove('scanning');
+  var rescanBtn = document.getElementById('rescan-btn');
+  if (rescanBtn) rescanBtn.disabled = false;
+  var progCont = document.getElementById('progress-container');
+  if (progCont) progCont.innerHTML = '';
+  if (typeof showToast === 'function') showToast('Canvas scan failed: ' + message);
+}
+
+// ─── Error ────────────────────────────────────────────────────────────────────
+
+function onError(message) {
+  _indexBuilding = false;
+  var col3 = document.getElementById('gcol-3');
+  if (col3) col3.innerHTML = '<div class="col-placeholder"><span>Error loading</span></div>';
+  if (typeof showToast === 'function') showToast('Error: ' + message);
+}
+
+// ─── Click handlers ───────────────────────────────────────────────────────────
+
+function onListAliasClick(e) {
+  var id = e.currentTarget.getAttribute('data-id');
+  if (!id) return;
+  // Search is cleared inside drillIntoVar (called by drillToTokenMode) after _selectedId is set
+  drillToTokenMode(id);
+}
+
+function onListCompClick(e) {
+  var row    = e.target ? e.target.closest('.buttonList[data-node-id]') : e.currentTarget;
+  if (!row) return;
+  var nodeId = row.getAttribute('data-node-id');
+  if (!nodeId) return;
+  // Select in left list + render detail + redraw edges
+  navigateToComponent(nodeId);
+  scheduleDrawEdges();
+}
+
+// ─── Section-divider unstick tracking ────────────────────────────────────────
+
+function setupDividerTracking(listId) {
+  // Clear old state
+  if (_trackedSelDiv) _trackedSelDiv.classList.remove('divider-away');
+  _trackedSelDiv = null; _trackedNextDiv = null; _trackedList = null; _trackedNextTop = 0;
+
+  var container = document.getElementById(listId);
+  if (!container) return;
+  var selEl = container.querySelector('.node-selected');
+  if (!selEl) return;
+
+  // Walk backwards to find the divider that owns this item
+  var el = selEl.previousElementSibling;
+  while (el) {
+    if (el.classList.contains('dividerSection')) { _trackedSelDiv = el; break; }
+    el = el.previousElementSibling;
+  }
+  // Walk forwards to find the next divider
+  el = selEl.nextElementSibling;
+  while (el) {
+    if (el.classList.contains('dividerSection')) { _trackedNextDiv = el; break; }
+    el = el.nextElementSibling;
+  }
+
+  if (!_trackedSelDiv || !_trackedNextDiv) return; // last section — nothing to do
+
+  _trackedList    = container;
+  _trackedNextTop = _trackedNextDiv.offsetTop; // natural position relative to .scroll-area
+}
+
+function updateDividerTracking() {
+  if (!_trackedSelDiv || !_trackedNextDiv || !_trackedList) return;
+  // Next divider pins at top:70px when scrollTop >= its natural top − 70
+  var pinned = _trackedList.scrollTop >= _trackedNextTop - 70;
+  _trackedSelDiv.classList.toggle('divider-away', pinned);
+}
+
+// ─── Event listeners ──────────────────────────────────────────────────────────
+
+document.getElementById('search-input').addEventListener('input', function (e) {
+  clearTimeout(_searchTimer);
+  var val = e.target.value;
+  e.target.classList.toggle('has-value', val.length > 0);
+  _searchTimer = setTimeout(function () {
+    _filterQuery = val;
+    clearSearchSelection();
+    renderBrowser();
+  }, 120);
+});
+
+// Clear search silently when the user navigates into a detail (alias/component click).
+// Skips renderBrowser() — the calling navigation will re-render the left list itself.
+function clearSearchIfActive() {
+  if (!_filterQuery) return;
+  var inp = document.getElementById('search-input');
+  if (inp) { inp.value = ''; inp.classList.remove('has-value'); }
+  clearTimeout(_searchTimer);
+  _filterQuery = '';
+  // Re-enable any tabs that were dimmed by the search
+  var btnT = document.getElementById('btn-mode-tokens');
+  var btnC = document.getElementById('btn-mode-comps');
+  if (btnT) btnT.classList.remove('tab-empty');
+  if (btnC) btnC.classList.remove('tab-empty');
+  renderBrowser(); // rebuild DOM with full unfiltered list before caller queries it
+}
+
+function triggerClearSearch() {
+  var inp = document.getElementById('search-input');
+  inp.value = '';
+  inp.classList.remove('has-value');
+  inp.focus();
+  clearTimeout(_searchTimer);
+  _filterQuery = '';
+  clearSearchSelection();
+  renderBrowser();
+}
+document.getElementById('browser-empty-clear').addEventListener('click', triggerClearSearch);
+document.getElementById('search-clear').addEventListener('click', function () {
+  var inp = document.getElementById('search-input');
+  inp.value = '';
+  inp.classList.remove('has-value');
+  inp.focus();
+  clearTimeout(_searchTimer);
+  _filterQuery = '';
+  clearSearchSelection();
+  renderBrowser();
+});
+
+// Switch to the Components left-panel view and select the given component,
+// mirroring what happens when the user clicks it directly in the comp list.
+function navigateToComponent(nodeId) {
+  var compList = document.getElementById('comp-list');
+  if (!compList) return;
+
+  // Find comp data — check both the browser list and the current variable's component list
+  var comp = null;
+  for (var i = 0; i < _allBrowserComponents.length; i++) {
+    if (_allBrowserComponents[i].nodeId === nodeId) { comp = _allBrowserComponents[i]; break; }
+  }
+  if (!comp && _currentComponents) {
+    for (var ci = 0; ci < _currentComponents.length; ci++) {
+      if (_currentComponents[ci].nodeId === nodeId) { comp = _currentComponents[ci]; break; }
+    }
+  }
+  if (!comp) return;
+
+  // Ensure comp is in _allBrowserComponents so renderComponentBrowser renders it
+  var inBrowser = false;
+  for (var bi = 0; bi < _allBrowserComponents.length; bi++) {
+    if (_allBrowserComponents[bi].nodeId === nodeId) { inBrowser = true; break; }
+  }
+  if (!inBrowser) _allBrowserComponents.push(comp);
+
+  // Wipe everything, then set comp selection
+  clearAllSelections();
+  _selectedCompNodeId = nodeId;
+
+  // Clear active search NOW — comp is in _allBrowserComponents and _selectedCompNodeId is set,
+  // so renderBrowser() (called inside) will include and pre-select the comp in the DOM.
+  clearSearchIfActive();
+
+  // Switch to components mode
+  if (_browserMode !== 'components') switchBrowserMode('components');
+
+  _selectedCompOriginScroll = compList.scrollTop;
+
+  var items = compList.querySelectorAll('.comp-item');
+  var targetEl = null;
+  for (var j = 0; j < items.length; j++) {
+    var match = items[j].getAttribute('data-node-id') === nodeId;
+    items[j].classList.toggle('node-selected', match);
+    if (match) targetEl = items[j];
+  }
+  compList.classList.add('has-list-selection');
+  setupDividerTracking('comp-list');
+  renderComponentDetail(comp);
+
+  if (targetEl) {
+    requestAnimationFrame(function () {
+      var saved = targetEl.style.position;
+      targetEl.style.position = 'static';
+      var naturalTop = targetEl.offsetTop;
+      targetEl.style.position = saved;
+      var top = naturalTop - (compList.clientHeight / 2) + (targetEl.offsetHeight / 2);
+      compList.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+      scheduleDrawEdges();
+    });
+  } else {
+    scheduleDrawEdges();
+  }
+}
+
+function clearSearchSelection() {
+  _selectedId          = null;
+  _selectedRemoteId    = null;
+  _selectedCompNodeId  = null;
+  _currentChain        = null;
+  _currentComponents   = null;
+  // Remove the dimming class so all list items render at full opacity
+  var vl = document.getElementById('var-list');
+  var cl = document.getElementById('comp-list');
+  if (vl) vl.classList.remove('has-list-selection');
+  if (cl) cl.classList.remove('has-list-selection');
+  resetRightPanel();
+}
+
+
+
+function triggerCanvasScan(depth) {
+  if (_canvasScanRunning) return;
+  _canvasScanRunning = true;
+  _lastScanDepth = depth;
+  var btn = document.getElementById('canvas-scan-btn');
+  btn.classList.add('scanning');
+  var rescanBtn = document.getElementById('rescan-btn');
+  if (rescanBtn) rescanBtn.disabled = true;
+  _scanStartTime = Date.now();
+  _scanEtaShown  = false;
+  var label = depth === 3 ? 'Full scan… 0%' : 'Extended scan… 0%';
+  showScanProgress(label, '', function () {
+    parent.postMessage({ pluginMessage: { type: 'usage-scan-cancel' } }, '*');
+    var btn2 = document.getElementById('canvas-scan-btn');
+    if (btn2) btn2.classList.remove('scanning');
+    _canvasScanRunning = false;
+    _scanStartTime = null;
+  });
+  parent.postMessage({ pluginMessage: { type: 'usage-scan', depth: depth || 3 } }, '*');
+}
+
+document.getElementById('sb-focus-btn').addEventListener('click', function (e) {
+  e.stopPropagation();
+  var btn = e.currentTarget;
+  var nodeId = btn.getAttribute('data-node-id');
+  var pageId = btn.getAttribute('data-page-id');
+  if (!nodeId) return;
+  parent.postMessage({ pluginMessage: { type: 'focus-node', nodeId: nodeId, pageId: pageId } }, '*');
+});
+
+// ─── Export ──────────────────────────────────────────────────────────────────
+
+function buildExportText() {
+  var lines = [];
+
+  function typLabel(t) {
+    return t === 'COLOR' ? 'Color' : t === 'FLOAT' ? 'Number' : t === 'STRING' ? 'String' : t === 'BOOLEAN' ? 'Boolean' : t || 'Variable';
+  }
+
+
+  if (_detailMode === 'variable' && _currentChain) {
+    var v = _currentChain.self;
+    var sv = _selectedId ? findVar(_selectedId) : findRemoteVar(_selectedRemoteId);
+    var score = sv ? varImpactScore(sv) : varImpactScore(v);
+    var tier  = score === 0 ? 'Unused' : score <= 40 ? 'Low' : score <= 100 ? 'Medium' : 'High';
+
+    lines.push(v.name);
+    var headerParts = [typLabel(v.resolvedType)];
+    if (v.collectionName) headerParts.push(v.collectionName);
+    headerParts.push(tier);
+    lines.push(headerParts.join('  ·  '));
+    lines.push('');
+
+    var descs = _currentChain.descendants || [];
+    if (descs.length > 0) {
+      lines.push('Alias tokens (' + descs.length + ')');
+      for (var di = 0; di < descs.length; di++) {
+        var d = descs[di];
+        lines.push('  • ' + d.name + '  ' + typLabel(d.resolvedType) + (d.collectionName ? '  · ' + d.collectionName : ''));
+      }
+      lines.push('');
+    }
+
+    var comps = _currentComponents || [];
+    if (comps.length > 0) {
+      lines.push('Components (' + comps.length + ')');
+      for (var ci = 0; ci < comps.length; ci++) {
+        lines.push('  • ' + comps[ci].nodeName);
+      }
+    }
+
+  } else if (_detailMode === 'component' && _currentComp) {
+    var c = _currentComp;
+    lines.push(c.nodeName);
+    lines.push('');
+
+    var bvars = c.boundVars || [];
+    if (bvars.length > 0) {
+      lines.push('Bound tokens (' + bvars.length + ')');
+      for (var bvi = 0; bvi < bvars.length; bvi++) {
+        var bv = bvars[bvi];
+        lines.push('  • ' + bv.name + '  ' + typLabel(bv.resolvedType) + (bv.collectionName ? '  · ' + bv.collectionName : ''));
+      }
+    }
+  }
+
+  return lines.join('\n');
+}
+
+
+;
+
+
+// ─── Modal: Deep Impact Analysis ──────────────────────────────────────────────
+
+function currentCompletedDepth() {
+  return _canvasScanDone ? 3 : (_externalScanDone ? 2 : 1);
+}
+
+function showBrowserEmpty(show) {
+  var emptyEl   = document.getElementById('browser-empty');
+  var wrapEl    = document.querySelector('.mode-toggle-row');
+  var loadingEl = document.getElementById('browser-loading');
+  if (emptyEl)   emptyEl.classList.toggle('hidden', !show);
+  if (wrapEl)    wrapEl.classList.toggle('hidden', show);
+  if (show && loadingEl) loadingEl.classList.add('hidden');
+  if (!show) document.body.classList.remove('browser-empty');
+}
+
+function updateScanState() {
+  // Update toolbar label — reflect display depth, not max completed
+  var el = document.getElementById('scan-status-level');
+  var depthLabels = { 1: 'Local Scan', 2: 'Extended Scan', 3: 'Full Scan' };
+  if (el) el.textContent = depthLabels[_displayDepth] || 'Local Scan';
+  // Update modal done indicator
+  var doneDepth = _canvasScanDone ? 3 : (_externalScanDone ? 2 : 1);
+  var container = document.querySelector('.depth-options');
+  if (container) container.setAttribute('data-done', doneDepth);
+}
+
+function updateSelectionState() {
+  var selected = document.querySelector('input[name="scan-depth"]:checked');
+  var depth = selected ? parseInt(selected.value, 10) : 0;
+  var container = document.querySelector('.depth-options');
+  if (!container) return;
+  var prev = parseInt(container.getAttribute('data-depth') || '0', 10);
+  if (depth > 0) container.setAttribute('data-depth', depth);
+  else container.removeAttribute('data-depth');
+  // Track direction so connector stagger delay applies correctly
+  container.classList.toggle('lines-going-deeper', depth > prev && prev > 0);
+  container.classList.toggle('lines-going-back',   depth < prev && depth > 0);
+}
+
+function updateApplyBtn() {
+  var selected = document.querySelector('input[name="scan-depth"]:checked');
+  var depth = selected ? parseInt(selected.value, 10) : null;
+  var btn = document.getElementById('modal-confirm-btn');
+  if (!btn) return;
+  btn.disabled = !depth || (depth === 2 && !_hasExternalLibraries);
+  btn.textContent = (depth && depth <= currentCompletedDepth())
+    ? 'Apply' : 'Apply and Scan';
+}
+
+function openDeepScanModal() {
+  var modal = document.getElementById('deep-scan-modal');
+  if (!modal) return;
+  if (_closeModalTimer) { clearTimeout(_closeModalTimer); _closeModalTimer = null; modal.classList.remove('is-closing'); }
+
+  // Pre-select current display depth; fall back to completed; retry cancelled scan if deeper
+  var completed = currentCompletedDepth();
+  var defaultDepth = (_lastScanDepth && _lastScanDepth > completed)
+    ? _lastScanDepth
+    : _displayDepth;
+  document.querySelectorAll('input[name="scan-depth"]').forEach(function (r) { r.checked = false; });
+  var radio = document.getElementById('depth-radio-' + defaultDepth);
+  if (radio) radio.checked = true;
+
+  var opt2 = document.getElementById('depth-opt-2');
+  var opt3 = document.getElementById('depth-opt-3');
+  if (opt2) opt2.classList.toggle('unavailable', !_hasExternalLibraries);
+  if (opt2) opt2.classList.toggle('done', _externalScanDone);
+  if (opt3) opt3.classList.toggle('done', _canvasScanDone);
+
+  updateScanState();
+  updateSelectionState();
+  updateApplyBtn();
+  modal.classList.add('is-open');
+}
+
+var _closeModalTimer = null;
+
+function closeDeepScanModal() {
+  var modal = document.getElementById('deep-scan-modal');
+  if (!modal) return;
+  modal.classList.add('is-closing');
+  _closeModalTimer = setTimeout(function () {
+    modal.classList.remove('is-open', 'is-closing');
+    _closeModalTimer = null;
+    // Reset radios back to current display depth so next open is always clean
+    var container = document.querySelector('.depth-options');
+    if (container) container.removeAttribute('data-depth');
+    document.querySelectorAll('input[name="scan-depth"]').forEach(function (r) { r.checked = false; });
+    var radio = document.getElementById('depth-radio-' + _displayDepth);
+    if (radio) radio.checked = true;
+  }, 160);
+}
+
+document.getElementById('scan-status-change-btn').addEventListener('click', function (e) {
+  e.preventDefault();
+  openDeepScanModal();
+});
+
+document.getElementById('modal-cancel-btn').addEventListener('click', closeDeepScanModal);
+
+document.getElementById('modal-confirm-btn').addEventListener('click', function () {
+  var selected = document.querySelector('input[name="scan-depth"]:checked');
+  var depth = selected ? parseInt(selected.value, 10) : 3;
+  closeDeepScanModal();
+  if (depth <= currentCompletedDepth()) {
+    // Already have the data — just update display depth and re-render instantly
+    _displayDepth = depth;
+    updateScanState();
+    renderBrowser();
+    // Re-render detail badge so it matches the updated list tiers
+    if (_currentChain) updateStatusBar(_currentChain, _currentComponents ? _currentComponents.length : null);
+  } else {
+    // Need new data — trigger scan
+    triggerCanvasScan(depth);
+  }
+});
+
+// Make entire depth-option row clickable (JS delegation — belt-and-suspenders)
+;[1, 2, 3].forEach(function (d) {
+  var opt = document.getElementById('depth-opt-' + d);
+  if (!opt) return;
+  opt.addEventListener('click', function () {
+    var radio = document.getElementById('depth-radio-' + d);
+    if (radio && !radio.checked) { radio.checked = true; updateSelectionState(); updateApplyBtn(); }
+  });
+  var radio = document.getElementById('depth-radio-' + d);
+  if (radio) radio.addEventListener('change', function () { updateSelectionState(); updateApplyBtn(); });
+});
+
+
+document.getElementById('deep-scan-modal').querySelector('.modal-overlay').addEventListener('click', closeDeepScanModal);
+
+
+document.getElementById('sb-export-btn').addEventListener('click', function () {
+  var text = buildExportText();
+  if (!text) return;
+  // Figma plugin iframes don't have navigator.clipboard — use execCommand fallback
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try {
+    document.execCommand('copy');
+    showToast('Copied to clipboard');
+  } catch (err) {
+    showToast('Copy failed — select text manually');
+  }
+  document.body.removeChild(ta);
+});
+
+document.getElementById('btn-view-graph').addEventListener('click', function () { switchView('graph'); });
+document.getElementById('btn-view-list').addEventListener('click',  function () { switchView('list');  });
+document.getElementById('btn-mode-tokens').addEventListener('click', function () { switchBrowserMode('tokens');     });
+document.getElementById('btn-mode-comps').addEventListener('click',  function () { switchBrowserMode('components'); });
+
+
+// Update pill position on window resize
+
+// ── Delegated click handlers (one listener per container, never re-attached) ──
+document.getElementById('var-list').addEventListener('click', onVarClick);
+document.getElementById('comp-list').addEventListener('click', onCompItemClick);
+document.getElementById('list-alias-body').addEventListener('click', function (e) {
+  var row = e.target.closest('.buttonList[data-id]');
+  if (row) onListAliasClick({ currentTarget: row, target: e.target });
+});
+document.getElementById('list-comp-body').addEventListener('click', function (e) {
+  var focusBtn = e.target.closest('.buttonList-action[data-node-id]');
+  if (focusBtn) {
+    var nodeId = focusBtn.getAttribute('data-node-id');
+    var pageId = focusBtn.getAttribute('data-page-id');
+    if (nodeId) parent.postMessage({ pluginMessage: { type: 'focus-node', nodeId: nodeId, pageId: pageId } }, '*');
+    return;
+  }
+  if (e.target.closest('.buttonList[data-node-id]')) onListCompClick(e);
+});
+
+// Scroll a var-item to vertical centre of #var-list.
+// Forces position:static momentarily so offsetTop reflects the natural flow
+// position regardless of any active sticky constraint.
+function scrollVarToCenter(el, containerOrBehavior, behavior) {
+  // Accepts (el, container, behavior) or legacy (el, behavior) where container is inferred
+  var container = (containerOrBehavior && typeof containerOrBehavior === 'object')
+    ? containerOrBehavior
+    : document.getElementById(_browserMode === 'components' ? 'comp-list' : 'var-list');
+  if (typeof containerOrBehavior === 'string') behavior = containerOrBehavior;
+  if (!el || !container) return;
+  var saved = el.style.position;
+  el.style.position = 'static';
+  var naturalTop = el.offsetTop;
+  el.style.position = saved;
+  var top = naturalTop - (container.clientHeight / 2) + (el.offsetHeight / 2);
+  container.scrollTo({ top: Math.max(0, top), behavior: behavior || 'smooth' });
+}
+
+
+function drillIntoVar(id) {
+  if (!id) return;
+
+  var drillList = document.getElementById('var-list');
+
+  clearAllSelections();
+  _selectedId = id;
+
+  // Clear active search now — _selectedId is set so renderBrowser() (called inside)
+  // will render the var-item with node-selected, ensuring the DOM query below finds it
+  // even if the alias token didn't match the original search query.
+  clearSearchIfActive();
+
+  var items = drillList.querySelectorAll('.var-item');
+
+  // Find the match element — measure BEFORE adding sticky class
+  var matchEl = null;
+  for (var i = 0; i < items.length; i++) {
+    var isMatch = items[i].getAttribute('data-id') === id && items[i].getAttribute('data-remote') !== '1';
+    if (isMatch) matchEl = items[i];
+  }
+
+  // Measure natural offsetTop while element has no sticky position applied
+  var scrollTarget = null;
+  if (matchEl) {
+    var naturalTop = matchEl.offsetTop;
+    scrollTarget = Math.max(0, naturalTop - (drillList.clientHeight / 2) + (matchEl.offsetHeight / 2));
+    matchEl.classList.add('node-selected');
+  }
+
+  // Record origin so re-clicking the sticky item scrolls back to it
+  _selectedVarOriginScroll = scrollTarget !== null ? scrollTarget : drillList.scrollTop;
+
+  drillList.classList.add('has-list-selection');
+  if (scrollTarget !== null) drillList.scrollTo({ top: scrollTarget, behavior: 'smooth' });
+  setupDividerTracking('var-list');
+
+  resetRightPanel();
+  var col3 = document.getElementById('gcol-3');
+  if (col3) col3.scrollTop = 0;
+  parent.postMessage({ pluginMessage: { type: 'analyze', variableId: id } }, '*');
+}
+
+// Unified delegated click handler on graph body
+document.getElementById('graph-body').addEventListener('click', function (e) {
+  // Drill button on alias nodes → select in list + re-analyze
+  var drillBtn = e.target.closest('.node-drill-btn');
+  if (drillBtn) {
+    var drillId = drillBtn.getAttribute('data-drill-id');
+    if (_browserMode === 'components') drillToTokenMode(drillId);
+    else drillIntoVar(drillId);
+    return;
+  }
+
+  // Focus button on comp nodes → navigate Figma, don't change selection
+  var gotoBtn = e.target.closest('.node-goto-btn');
+  if (gotoBtn) {
+    e.stopPropagation();
+    var gotoNodeId = gotoBtn.getAttribute('data-goto-node-id');
+    if (gotoNodeId) navigateToComponent(gotoNodeId);
+    return;
+  }
+
+  var focusBtn = e.target.closest('.node-focus-btn');
+  if (focusBtn) {
+    var nodeId = focusBtn.getAttribute('data-node-id');
+    var pageId = focusBtn.getAttribute('data-page-id');
+    if (nodeId) parent.postMessage({ pluginMessage: { type: 'focus-node', nodeId: nodeId, pageId: pageId } }, '*');
+    return;
+  }
+
+  // Selection — works for ALL node types (anc, sel, desc, comp)
+  var node = e.target.closest('.graph-node:not(.more)');
+  if (node) {
+    if (node === _selectedGraphNodeEl) {
+      clearGraphSelection();
+    } else {
+      selectGraphNode(node);
+    }
+  } else {
+    // Clicked empty space — deselect
+    clearGraphSelection();
+  }
+});
+
+// Redraw edges when columns are scrolled — throttled so we skip intermediate
+// scroll pixels and only fire once the user pauses (or at most every 60ms).
+var _edgeScrollTimer    = null;
+var _placeholderTimer   = null; // delay before showing empty/placeholder state
+function scheduleDrawEdgesThrottled() {
+  if (_edgeScrollTimer) return; // already scheduled
+  _edgeScrollTimer = setTimeout(function () {
+    _edgeScrollTimer = null;
+    scheduleDrawEdges();
+  }, 60);
+}
+['gcol-2', 'gcol-3'].forEach(function (id) {
+  var col = document.getElementById(id);
+  if (col) col.addEventListener('scroll', scheduleDrawEdgesThrottled, { passive: true });
+});
+
+// Redraw edges when the graph body is resized (window resize)
+if (typeof ResizeObserver !== 'undefined') {
+  new ResizeObserver(function () { scheduleDrawEdgesThrottled(); })
+    .observe(document.getElementById('graph-body'));
+}
+
+// Redraw cross-edges when the left list is scrolled; also update divider tracking
+document.getElementById('var-list').addEventListener('scroll', function () {
+  requestAnimationFrame(drawCrossEdges);
+  updateDividerTracking();
+}, { passive: true });
+
+document.getElementById('comp-list').addEventListener('scroll', function () {
+  requestAnimationFrame(drawCrossEdges);
+  updateDividerTracking();
+}, { passive: true });
+
+
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function findVar(id) {
+  for (var i = 0; i < _variables.length; i++) {
+    if (_variables[i].id === id) return _variables[i];
+  }
+  return null;
+}
+
+function findRemoteVar(id) {
+  for (var i = 0; i < _remoteVariables.length; i++) {
+    if (_remoteVariables[i].id === id) return _remoteVariables[i];
+  }
+  return null;
+}
+
+function nodeTypeIcon(type) {
+  switch (type) {
+    case 'TEXT':         return '<svg width="10" height="10"><use href="#icon-node-text"/></svg>';
+    case 'COMPONENT':
+    case 'COMPONENT_SET':
+    case 'INSTANCE':    return '<svg width="16" height="16" style="flex-shrink:0"><use href="#icon-component"/></svg>';
+    case 'ELLIPSE':     return '<svg width="10" height="10"><use href="#icon-node-ellipse"/></svg>';
+    case 'VECTOR':      return '<svg width="10" height="10"><use href="#icon-node-vector"/></svg>';
+    default:            return '<svg width="10" height="10"><use href="#icon-node-frame"/></svg>';
+  }
+}
+
+function renderTypeBadge(type, hex) {
+  if (type === 'COLOR') {
+    if (hex) return '<div class="color-swatch" style="background:' + esc(hex) + '"></div>';
+    return '<div class="color-swatch-empty"></div>';
+  }
+  var label = type === 'FLOAT' ? 'NUM' : type === 'STRING' ? 'STR' : type === 'BOOLEAN' ? 'BOO' : type;
+  return '<span class="text-badge badge-' + esc(type) + '">' + label + '</span>';
+}
+
+function esc(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "name": "Tokens to Ink",
+  "id": "1627749854119339734",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": ["figma"],
+  "permissions": ["teamlibrary"],
+  "networkAccess": { "allowedDomains": ["none"] },
+  "documentAccess": "dynamic-page"
+}

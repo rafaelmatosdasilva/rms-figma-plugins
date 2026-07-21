@@ -1,0 +1,11 @@
+{
+  "name": "Impact Atlas",
+  "id": "1643205375147564994",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": ["figma"],
+  "networkAccess": { "allowedDomains": ["none"] },
+  "documentAccess": "dynamic-page",
+  "permissions": ["teamlibrary"]
+}

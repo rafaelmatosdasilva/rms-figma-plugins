@@ -1,0 +1,24 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      # Fail if the committed build output is stale — i.e. someone changed a
+      # source file but committed without rebuilding. Keeps the sideloadable
+      # code.js / ui.html in sync with src.
+      - name: Check committed build output is up to date
+        run: git diff --exit-code

@@ -1,0 +1,13 @@
+{
+  "name": "@rms/tokens-to-ink",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node ../../scripts/inject-theme.mjs apps/tokens-to-ink/ui.src.html apps/tokens-to-ink/ui.html && esbuild src/code.js --bundle --platform=browser --format=iife --minify --outfile=code.js",
+    "build:watch": "node ../../scripts/watch.mjs apps/tokens-to-ink"
+  },
+  "dependencies": {
+    "@rms/core": "workspace:*"
+  }
+}

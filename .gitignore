@@ -1,0 +1,28 @@
+node_modules/
+.DS_Store
+*.local.json
+*.local.mjs
+.env
+.env.*
+dist/
+component-state-tokens.json
+parity-check-result.json
+
+# Local editor / agent config
+.claude/
+
+# DS visual-regression baselines — kept locally for parity, not shipped
+.parity-refs/
+
+# Internal reference / work-in-progress — kept locally, not shipped
+apps/style-guide/
+apps/*/drafts/
+packages/ui/COMPONENTS.md
+
+# Internal DS-parity tooling + baselines — kept locally, not shipped
+ds-config.json
+parity-map.mjs
+structure-contract.mjs
+parity-history.json
+bound-tokens.json
+packages/ui/src/*.snapshot.json

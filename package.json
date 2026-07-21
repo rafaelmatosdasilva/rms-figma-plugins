@@ -1,0 +1,16 @@
+{
+  "name": "rms-ds-figma-plugins",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "pnpm@10.33.2",
+  "scripts": {
+    "build": "pnpm -r build",
+    "build:watch": "pnpm -r build:watch",
+    "build:tokens": "pnpm --filter @rms/tokens-to-ink build",
+    "build:font-scaling-lab": "pnpm --filter @rms/font-scaling-lab build",
+    "build:impact-atlas": "pnpm --filter @rms/impact-atlas build"
+  },
+  "devDependencies": {
+    "esbuild": "^0.21.0"
+  }
+}

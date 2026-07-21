@@ -1,0 +1,13 @@
+{
+  "name": "@rms/impact-atlas",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node ../../scripts/inject-theme.mjs apps/impact-atlas/ui.src.html apps/impact-atlas/ui.html && esbuild src/code.js --bundle --platform=browser --format=iife --target=es2019 --minify --outfile=code.js",
+    "build:watch": "node ../../scripts/watch.mjs apps/impact-atlas"
+  },
+  "dependencies": {
+    "@rms/core": "workspace:*"
+  }
+}

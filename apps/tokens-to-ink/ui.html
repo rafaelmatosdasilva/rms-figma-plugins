@@ -1,0 +1,2518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<style>
+:root{--font-family: Inter;--m-size: 11px;--m-weight: 600;--m-lh: 17.3px;--s-size: 10px;--s-weight: 700;--s-lh: 15.1px;--l-size: 13px;--l-weight: 600;--radius-full: 24px;--radius-modal: var(--radius-full);--radius-swatch: var(--radius-full);--radius-md: 12px;--radius-toast: 24px;--radius-tooltip: 8px;--radius-sm: 4px;--thickness: 1.5px;--modal-duration: .28s;--modal-duration-out: .16s;--modal-easing: cubic-bezier(.22, 1, .36, 1);--modal-easing-out: cubic-bezier(.4, 0, .84, .16);--modal-offset: 16px;--neutral-100: #0a0a0a;--neutral-200: #2b2b2b;--neutral-300: #404040;--neutral-400: #595959;--neutral-500: #828282;--neutral-600: #adadad;--neutral-700: #d6d6d6;--neutral-800: #ededed;--neutral-900: #f7f7f7;--neutral-1000: #ffffff;--min-height: 24px;--gap-xs: 2px;--gap-s: 4px;--gap-m: 8px;--gap-l: 12px;--gap-xl: 16px;--padding-xxs: 2px;--padding-xs: 4px;--padding-s: 8px;--padding-m: 12px;--padding-l: 16px;--padding-xl: 24px;--node-background: var(--neutral-800);--node-background-selected: var(--neutral-1000);--node-border-hover: var(--neutral-400);--node-border-selected: var(--neutral-100);--node-border-disabled: var(--neutral-700);--node-label-selected: var(--neutral-200);--node-label-disabled: var(--neutral-400);--node-icon-selected: var(--neutral-400);--node-icon-unselected: var(--neutral-600);--node-icon-disabled: var(--neutral-500);--node-border-unselected: var(--neutral-800);--node-label-unselected: var(--neutral-300);--bg: var(--neutral-900);--bg-detail: var(--neutral-800);--bg-secondary: var(--neutral-800);--surface: var(--neutral-1000);--border: var(--neutral-700);--divider: var(--neutral-700);--divider-border: 1px solid var(--divider);--text: var(--neutral-100);--text-secondary: var(--neutral-300);--text-muted: var(--neutral-400);--accent: var(--neutral-100);--node-border-selected-hover: var(--neutral-200);--red: #c20000;--green: #00804b;--yellow: #cf9e00;--semantic-positive: var(--green);--semantic-warning: var(--yellow);--semantic-negative: var(--red);--buttonTertiary-background: var(--neutral-800);--buttonTertiary-text: var(--neutral-100);--buttonTertiary-background-active: var(--neutral-1000);--buttonTertiary-text-active: var(--neutral-200);--buttonList-background-hover: var(--neutral-1000);--buttonList-background-selected: var(--neutral-1000);--buttonList-iconPrimary: var(--neutral-600);--buttonList-iconSecondary: var(--neutral-300);--buttonList-text: var(--neutral-200);--buttonList-text-hover: var(--neutral-200);--buttonList-text-selected: var(--neutral-200);--buttonSecondary-background: var(--neutral-1000);--buttonSecondary-border: var(--neutral-700);--buttonSecondary-background-hover: var(--neutral-1000);--buttonSecondary-border-hover: var(--neutral-700);--buttonSecondary-text: var(--neutral-200);--buttonQuaternary-text: var(--neutral-400);--buttonQuaternary-background-hover: var(--neutral-1000);--buttonPrimary-background: var(--neutral-300);--buttonPrimary-text: var(--neutral-1000);--swatch-border-filled: var(--buttonSecondary-border);--swatch-border-empty: var(--neutral-700);--input-border: var(--neutral-700);--input-border-focus: var(--neutral-100);--input-border-hover: var(--neutral-500);--input-value-empty: var(--neutral-500);--input-value-disabled: var(--neutral-500);--input-background-disabled: var(--neutral-1000);--input-background: var(--surface);--input-value: var(--neutral-100);--input-label: var(--neutral-400);--input-icon: var(--neutral-400);--input-min-width: 80px;--input-auto-border: rgba(0,0,0,.1);--figmaWindowChrome-background: var(--neutral-1000);--scrollbar-thumb: rgba(0,0,0,.2);--scrollbar-thumb-hover: rgba(0,0,0,.35);--overlay-bg: rgba(242,242,242,.6);--toast-background-loading: var(--neutral-1000);--toast-title-loading: var(--neutral-100);--toast-icon-loading: var(--neutral-600);--toast-background-success: var(--semantic-positive);--toast-title-success: var(--neutral-1000);--toast-icon-success: var(--neutral-1000);--toast-description-loading: var(--neutral-400);--modal-background: var(--neutral-1000);--modal-title: var(--neutral-100);--tooltip-background: var(--neutral-1000);--tooltip-border: var(--neutral-800);--tooltip-text: var(--neutral-300);--hex-sub-color: var(--neutral-300);--overflow-background: var(--neutral-1000);--overflow-border: var(--neutral-800);--overflow-text: var(--neutral-500);--overflowList-background: var(--neutral-1000);--overflowList-background-hover: var(--neutral-1000);--overflowList-border: var(--neutral-800);--overflowList-border-hover: var(--overflowList-border);--overflowList-label: var(--neutral-300);--overflowList-label-hover: var(--neutral-800);--tableRow-text: var(--neutral-200);--tableRow-background-hover: var(--neutral-800);--tableRow-icon: var(--neutral-500);--segmentedControl-background: var(--neutral-800);--segmentedControl-border: var(--neutral-700);--segmentedControl-border-selected: var(--node-border-selected);--segmentedControl-label: var(--neutral-400);--segmentedControl-label-selected: var(--neutral-200);--segmentedControl-icon: var(--neutral-500);--segmentedControl-icon-selected: var(--neutral-200);--segmentedControl-background-selected: var(--neutral-1000);--dividerSection-title: var(--neutral-400);--dividerSection-number: var(--neutral-500);--dividerSection-divider: var(--neutral-600);--badge-neutral: var(--neutral-700);--statusbar-text: var(--neutral-100);--statusbar-icon: var(--neutral-600);--emptyState-title: var(--neutral-100);--emptyState-icon-neutral: var(--neutral-400);--radioButton-background: var(--neutral-1000);--radioButton-border: var(--neutral-600);--radioButton-border-selected: var(--neutral-100);--radioButton-text: var(--neutral-200);--radioButton-text-current: var(--neutral-100);--radioButton-description: var(--neutral-400);--radioButton-background-selected: var(--toast-background-loading);--radioButton-border-current: var(--neutral-100);--radioButton-border-unselected: var(--neutral-100);--radioButton-text-selected: var(--neutral-200);--radioButton-text-unselected: var(--neutral-200);--listItem-description: var(--neutral-400)}@media (prefers-color-scheme: dark){:root{--neutral-100: #ededed;--neutral-200: #d4d4d4;--neutral-300: #b8b8b8;--neutral-400: #808080;--neutral-500: #5e5e5e;--neutral-600: #3b3b3b;--neutral-700: #303030;--neutral-800: #2c2c2c;--neutral-900: #212121;--neutral-1000: #121212;--bg-secondary: var(--neutral-900);--surface: var(--neutral-800);--border: var(--neutral-600);--divider: var(--neutral-600);--text-muted: var(--neutral-300);--buttonTertiary-background: var(--neutral-900);--buttonTertiary-text: var(--neutral-300);--buttonTertiary-text-active: var(--neutral-100);--buttonQuaternary-text: var(--neutral-300);--buttonSecondary-background: var(--neutral-800);--buttonSecondary-border: var(--neutral-600);--buttonSecondary-background-hover: var(--neutral-700);--buttonSecondary-border-hover: var(--neutral-500);--buttonSecondary-text: var(--neutral-200);--buttonPrimary-background: var(--neutral-100);--swatch-border-filled: var(--buttonSecondary-border);--swatch-border-empty: var(--buttonSecondary-border);--input-border: var(--buttonSecondary-border);--input-border-focus: var(--neutral-100);--input-border-hover: var(--neutral-400);--input-value-empty: var(--neutral-400);--input-value-disabled: var(--neutral-100);--input-background-disabled: var(--neutral-900);--input-auto-border: rgba(255,255,255,.08);--figmaWindowChrome-background: var(--neutral-800);--scrollbar-thumb: rgba(255,255,255,.2);--scrollbar-thumb-hover: rgba(255,255,255,.4);--overlay-bg: rgba(44,44,44,.6);--node-background-selected: var(--neutral-700);--node-border-hover: var(--neutral-300);--node-label-selected: var(--neutral-100);--node-label-disabled: var(--neutral-600);--node-border-disabled: var(--neutral-600);--segmentedControl-label-selected: var(--neutral-100);--segmentedControl-icon: var(--neutral-300);--segmentedControl-icon-selected: var(--neutral-100);--segmentedControl-background-selected: var(--neutral-700);--dividerSection-title: var(--neutral-200);--dividerSection-number: var(--neutral-300);--dividerSection-divider: var(--neutral-500);--statusbar-icon: var(--neutral-400);--tableRow-icon: var(--neutral-400);--toast-icon-loading: var(--neutral-500);--overflow-background: var(--neutral-700);--overflow-border: var(--neutral-600);--overflow-text: var(--neutral-300);--overflowList-background: var(--neutral-700);--overflowList-background-hover: var(--neutral-800);--overflowList-border: var(--neutral-600);--overflowList-label: var(--neutral-100);--overflowList-label-hover: var(--neutral-100);--badge-neutral: var(--neutral-300);--emptyState-icon-neutral: var(--neutral-400);--radioButton-border: var(--neutral-400);--radioButton-description: var(--neutral-300);--input-label: var(--neutral-300);--input-icon: var(--neutral-200);--node-border-unselected: var(--neutral-600);--node-icon-selected: var(--neutral-300);--node-icon-unselected: var(--neutral-400);--node-icon-disabled: var(--neutral-600);--listItem-description: var(--neutral-300);--buttonList-background-hover: var(--neutral-800);--buttonList-background-selected: var(--neutral-600);--buttonList-iconPrimary: var(--neutral-500);--buttonList-iconSecondary: var(--neutral-200);--buttonList-text: var(--neutral-300);--buttonList-text-hover: var(--neutral-100);--buttonList-text-selected: var(--neutral-100);--segmentedControl-border: var(--neutral-600);--segmentedControl-label: var(--neutral-300);--red: #fe6767;--green: #0cdf88;--yellow: #f7c522;--bg-detail: var(--neutral-1000)}}*{margin:0;padding:0;box-sizing:border-box}html{background:var(--bg)!important;overflow:hidden}body{overflow-x:hidden;font-family:var(--font-family),ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:var(--m-size);font-weight:var(--m-weight);color:var(--text);background:var(--bg);padding:0 var(--padding-l);line-height:var(--m-lh);display:flex;flex-direction:column;height:100vh;overflow:hidden}button{height:var(--min-height);padding-top:0;padding-bottom:0;box-sizing:border-box;border:none;outline:none;-webkit-appearance:none;appearance:none;font-family:inherit;cursor:pointer;font-weight:var(--m-weight);transition:background .15s ease,color .15s ease,opacity .15s ease}button:disabled{opacity:.5;cursor:not-allowed;pointer-events:none}.buttonTertiary:disabled:hover,.buttonSecondary:disabled:hover,.buttonPrimary:disabled:hover,.buttonQuaternary:disabled:hover,.overflowList:disabled:hover{background:initial;color:initial;outline:none}.buttonQuaternary:disabled:hover:before{background:transparent}#scan-btn:disabled{opacity:.24}.node{display:flex;align-items:center;gap:var(--gap-s);background:var(--node-background);border:var(--thickness) solid transparent;border-radius:var(--radius-full);padding:0 var(--padding-s);min-height:40px;flex-shrink:0;cursor:pointer;position:relative;box-sizing:border-box;text-align:left;font-family:inherit;font-size:var(--m-size);font-weight:var(--m-weight);color:var(--node-label-unselected);transition:border-color .1s,background .1s,color .1s;user-select:text}.node.node-selected{border-color:var(--node-border-selected);background:var(--node-background-selected);color:var(--node-label-selected)}.node:hover{border-color:var(--node-border-hover)}.node.node-selected:hover{border-color:var(--node-border-selected-hover)}.node.node-disabled{border-style:dashed;border-color:var(--node-border-disabled);background:transparent;color:var(--node-label-disabled);cursor:default;pointer-events:none}.node.node-unselected{background:transparent;border-color:var(--node-border-unselected);color:var(--node-label-unselected)}.node svg{color:var(--node-icon-unselected);flex-shrink:0}.node.node-selected svg{color:var(--node-icon-selected)}.node.node-unselected svg{color:var(--node-icon-unselected)}.node.node-disabled svg{color:var(--node-icon-disabled)}.node.no-icon .node-type-icon,.node.no-icon .var-type-icon{display:none}.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:32px var(--padding-xl);gap:var(--gap-xl);color:var(--emptyState-title);text-align:center}.empty-state-content{text-align:center}.empty-state-content>*{margin:0}.empty-state-content>*+*{margin-top:16px}.empty-state-content svg,.empty-state svg{display:block;margin:0 auto;width:56px;height:56px;color:var(--emptyState-icon-neutral);stroke-width:2px}.empty-state-content p{max-width:200px;margin:0 auto;font-size:var(--m-size);line-height:1.5;color:var(--emptyState-title)}.scroll-area{overflow-y:auto;overflow-x:hidden;min-height:0;margin:0 calc(-1 * var(--padding-l));padding-right:12px}#tt{position:fixed;background:var(--tooltip-background);border:var(--thickness) solid var(--tooltip-border);color:var(--tooltip-text);font-size:var(--s-size);font-weight:var(--s-weight);padding:var(--padding-xs) var(--padding-s);gap:var(--gap-xl);border-radius:var(--radius-tooltip);white-space:pre-wrap;word-break:break-word;max-width:240px;z-index:9999;pointer-events:none;opacity:0;transition:opacity .15s ease;line-height:var(--s-lh)}#tt.tt-visible{opacity:1}.buttonSecondary{display:inline-flex;align-items:center;justify-content:center;background:var(--buttonSecondary-background);border:var(--thickness) solid var(--buttonSecondary-border);border-radius:var(--radius-full);color:var(--buttonSecondary-text);cursor:pointer;flex-shrink:0;font-family:inherit;font-size:var(--m-size);font-weight:var(--m-weight);padding:0 var(--padding-xs);gap:var(--gap-s);transition:border-color .15s ease,color .15s ease}.buttonSecondary:hover{border-color:var(--buttonSecondary-border-hover);color:var(--buttonSecondary-text);background:var(--buttonSecondary-background-hover)}.buttonSecondary svg{order:1}.buttonSecondary span,.buttonQuaternary span{white-space:nowrap;padding:0 var(--padding-xs)}.buttonPrimary:has(svg):not(:has(span)),.buttonSecondary:has(svg):not(:has(span)),.buttonTertiary:has(svg):not(:has(span)),.buttonQuaternary:has(svg):not(:has(span)){width:24px;padding:0}.buttonAddOutput svg{transition:transform .2s ease}.output-picker.picker-open .buttonAddOutput svg{transform:rotate(45deg)}.buttonAddOutput{border-radius:50%;width:var(--min-height);height:var(--min-height);padding:0;margin-left:0;position:relative}.buttonTertiary{display:inline-flex;align-items:center;justify-content:center;height:var(--min-height);padding:0 var(--padding-xs);gap:var(--gap-s);background:var(--buttonTertiary-background);border:var(--thickness) solid var(--buttonTertiary-background);border-radius:var(--radius-full);color:var(--buttonTertiary-text);cursor:pointer;flex-shrink:0;font-size:var(--m-size);font-weight:var(--m-weight);white-space:nowrap;line-height:var(--min-height);transition:background .15s ease,color .15s ease}.buttonTertiary:hover{background:var(--buttonTertiary-background-active);color:var(--buttonTertiary-text-active);border-color:var(--buttonTertiary-text-active)}.buttonTertiary svg{display:block;flex-shrink:0;stroke:var(--buttonTertiary-text);transition:stroke .15s ease}.buttonTertiary:hover svg{stroke:var(--buttonTertiary-text-active)}.buttonTertiary span{white-space:nowrap;padding:0 var(--padding-xs)}@media (prefers-color-scheme: dark){.buttonTertiary{color:var(--buttonTertiary-text)}.buttonTertiary svg{stroke:var(--buttonTertiary-text)}.buttonTertiary:hover{color:var(--buttonTertiary-text-active);border-color:var(--buttonTertiary-text-active)}.buttonTertiary:hover svg{stroke:var(--buttonTertiary-text-active)}}.buttonQuaternary{display:inline-flex;align-items:center;justify-content:center;min-height:var(--min-height);padding:0 var(--padding-xs);gap:var(--gap-s);background:transparent;border:none;outline:none;-webkit-appearance:none;appearance:none;border-radius:var(--radius-full);color:var(--buttonQuaternary-text);cursor:pointer;flex-shrink:0;font-family:inherit;font-size:var(--m-size);font-weight:var(--m-weight);white-space:nowrap;position:relative;transition:opacity .15s ease}.buttonQuaternary:before{content:"";position:absolute;inset:0;border-radius:var(--radius-full);background:transparent;transition:background .15s ease;pointer-events:none}.buttonQuaternary>*{position:relative;z-index:1}.buttonQuaternary svg{display:block;flex-shrink:0;stroke:var(--buttonQuaternary-text)}.buttonQuaternary:hover:before{background:var(--buttonQuaternary-background-hover)}.buttonUnpair{width:24px;padding:0;font-size:0}.buttonUnpair:hover{outline:none}.output-picker{position:relative;flex-shrink:0}.output-picker-flyout{position:absolute;left:calc(100% + var(--gap-s));top:50%;transform:translateY(-50%);display:flex;flex-wrap:nowrap;gap:var(--gap-s);align-items:center;pointer-events:none;opacity:0;white-space:nowrap;z-index:10}.output-picker-flyout.open{pointer-events:auto;opacity:1;transition:opacity .1s}.buttonPrimary{display:inline-flex;align-items:center;gap:var(--gap-s);padding:6px var(--padding-s);font-size:var(--m-size);color:var(--buttonPrimary-text);cursor:pointer;white-space:nowrap;background:var(--buttonPrimary-background);border:none;border-radius:var(--radius-full);font-family:inherit;line-height:1;flex-shrink:0;transition:background .15s ease,color .15s ease}.buttonPrimary:hover{opacity:.85}.actionbar{flex-shrink:0;display:flex;flex-wrap:wrap;align-items:center;align-content:center;gap:var(--gap-m);padding:var(--padding-s) var(--padding-l);margin:0 calc(-1 * var(--padding-l));height:40px;background:var(--figmaWindowChrome-background)}#rescan-btn,.export-picker{margin-top:0;align-self:center}.buttonRescan{width:var(--min-height);height:var(--min-height);border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center}.buttonRescan svg{display:block}.inputWrap{display:flex;align-items:center;background:var(--input-background);border:var(--thickness) solid var(--input-border);border-radius:var(--radius-full);padding:0 var(--padding-s);height:var(--min-height);gap:var(--gap-s);min-width:var(--input-min-width);transition:border-color .15s ease}.inputWrap:not(.inputWrap--readonly):hover{border-color:var(--input-border-hover)}.inputWrap:not(.inputWrap--readonly):focus-within{border-color:var(--input-border-focus)!important}.inputWrap.inputWrap--readonly{background:transparent;border-color:var(--input-auto-border);pointer-events:none;opacity:.8}.inputWrap.inputWrap--disabled{background:var(--input-background-disabled);border-color:var(--input-border);pointer-events:none;opacity:.5}.inputWrap.inputWrap--disabled .inputField{color:var(--input-value-disabled)}.inputField{background:transparent;border:none;color:var(--input-value);font-family:inherit;font-size:var(--m-size);font-weight:var(--m-weight);padding:0 4px;flex:1;min-width:0;outline:none}.inputField::placeholder{color:var(--input-value-empty)}.inputField:-webkit-autofill,.inputField:-webkit-autofill:hover,.inputField:-webkit-autofill:focus{-webkit-box-shadow:0 0 0px 1000px var(--input-background) inset;-webkit-text-fill-color:var(--text);transition:background-color 9999s ease-in-out 0s}.inputWrap .inputLabel{font-size:var(--m-size);font-weight:var(--m-weight);color:var(--input-label);user-select:none;pointer-events:none;white-space:nowrap;flex-shrink:0;line-height:1}.inputWrap svg{color:var(--input-icon);flex-shrink:0}.inputWrap .icon-right{order:3}.inputWrap.no-icon-left .icon-left,.inputWrap.no-icon-right .icon-right{display:none}.inputWrap.empty{background:transparent}.inputWrap.no-value .inputField{display:none}.error-msg{background:color-mix(in srgb,var(--semantic-negative) 10%,transparent);border:var(--thickness) solid color-mix(in srgb,var(--semantic-negative) 30%,transparent);color:var(--semantic-negative);padding:8px 10px;border-radius:var(--radius-sm);margin-bottom:10px;font-size:var(--m-size)}#progress-container{position:fixed;inset:0;z-index:9997;display:flex;align-items:center;justify-content:center;pointer-events:none}#progress-container:not(:empty){background:var(--overlay-bg);backdrop-filter:blur(4px);pointer-events:none}#progress-container .progress-msg{animation:none}#toast-container:not(:empty){position:fixed;bottom:24px;left:50%;transform:translate(-50%);z-index:9998;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;white-space:nowrap}.progress-msg{background:var(--toast-background-loading);color:var(--toast-title-loading);height:48px;padding:var(--padding-s) var(--padding-m);flex-shrink:0;font-size:var(--m-size);font-weight:var(--m-weight);display:inline-flex;align-items:center;gap:var(--gap-xl);border-radius:var(--radius-toast);white-space:nowrap;pointer-events:auto;animation:modal-in var(--modal-duration) var(--modal-easing) both}.progress-msg.progress-out{animation:modal-out var(--modal-duration) var(--modal-easing-out) forwards}.progress-msg button{flex-shrink:0}.progress-msg--scan{align-items:center;transition:transform .3s cubic-bezier(.4,0,.2,1) .35s}.progress-msg--scan.has-eta{transform:translateY(-8px)}.scan-info{display:flex;flex-direction:column;gap:var(--gap-xs);justify-content:center}.scan-label{display:flex;align-items:center;gap:var(--gap-s);font-size:var(--m-size);font-weight:var(--m-weight);line-height:1.3;white-space:nowrap}.scan-pct{display:inline-block;text-align:right;max-width:0;overflow:hidden;opacity:0;transition:max-width .25s ease,opacity .2s ease .05s}.scan-pct.pct-visible{max-width:32px;opacity:1}.scan-eta{font-size:var(--m-size);line-height:1.3;max-height:0;opacity:0;overflow:hidden;transition:max-height .01s,opacity .3s ease}.progress-msg--scan.has-eta .scan-eta{max-height:2em;opacity:.6}.segmented-control{display:inline-flex;gap:0;padding:0;background:var(--segmentedControl-background);border:var(--thickness) solid var(--segmentedControl-border);border-radius:var(--radius-full);flex-shrink:0;position:relative}.seg-pill{position:absolute;top:0;bottom:0;left:0;width:0;border-radius:var(--radius-full);background:var(--segmentedControl-background-selected);border:var(--thickness) solid var(--segmentedControl-border-selected);pointer-events:none;z-index:0;transition:left .22s cubic-bezier(.4,0,.2,1),width .22s cubic-bezier(.4,0,.2,1)}.segmented-control button{display:inline-flex;align-items:center;justify-content:center;container-type:inline-size;gap:var(--gap-xs);padding:var(--padding-xxs) var(--padding-m);height:24px;background:transparent;border:var(--thickness) solid transparent;position:relative;z-index:1;border-radius:var(--radius-full);color:var(--segmentedControl-label);cursor:pointer;font-family:inherit;font-size:var(--s-size);font-weight:var(--s-weight);white-space:nowrap;transition:background .18s ease,border-color .18s ease,color .18s ease;flex-shrink:0}.segmented-control button:hover:not(.selected){color:var(--text)}.segmented-control button .tab-label{max-width:120px;opacity:1;overflow:hidden;white-space:nowrap;transition:max-width .22s cubic-bezier(.4,0,.2,1),opacity .18s ease;display:inline-block;vertical-align:middle}.segmented-control button.selected{gap:var(--gap-xs);overflow:clip;background:var(--segmentedControl-background-selected);border-color:var(--segmentedControl-border-selected);color:var(--segmentedControl-label-selected)}.segmented-control.has-pill button.selected{background:transparent;border-color:transparent}.segmented-control button.selected .tab-label{max-width:120px;opacity:1}@container (max-width: 72px){.tab-label{max-width:0!important;opacity:0!important}}.segmented-control svg{width:16px;height:16px;flex-shrink:0;color:var(--segmentedControl-icon)}.segmented-control button.selected svg{color:var(--segmentedControl-icon-selected)}.segmented-control button.no-icon svg{display:none}.seg-status{width:6px;height:6px;border-radius:var(--radius-full);background:currentColor;flex-shrink:0}.segmented-control button.no-status .seg-status{display:none}.seg-number{font-size:var(--s-size);font-weight:var(--s-weight);flex-shrink:0}.segmented-control button.no-number .seg-number{display:none}.badge{display:inline-flex;align-items:center;align-self:flex-start;gap:var(--gap-s);padding:var(--padding-xxs) var(--padding-s);border-radius:var(--radius-full);font-size:var(--s-size);font-weight:var(--s-weight);flex-shrink:0;white-space:nowrap}.badge.none{background:color-mix(in srgb,var(--badge-neutral) 12%,transparent);color:var(--badge-neutral)}.badge.high{background:color-mix(in srgb,var(--semantic-negative) 12%,transparent);color:var(--semantic-negative)}.badge.medium{background:color-mix(in srgb,var(--semantic-warning) 15%,transparent);color:var(--semantic-warning)}.badge.low{background:color-mix(in srgb,var(--semantic-positive) 12%,transparent);color:var(--semantic-positive)}.badge.clipped,.badge.truncated,.badge.overflow{background:color-mix(in srgb,var(--semantic-negative) 12%,transparent);color:var(--semantic-negative)}.badge svg{flex-shrink:0}.badge.no-icon svg{display:none}.badge.no-label .badge-label{display:none}.overflow{display:flex;flex-direction:column;background:var(--overflow-background);border:var(--thickness) solid var(--overflow-border);border-radius:var(--radius-md);padding:var(--padding-xs) 0;overflow:clip}.overflow-label{font-size:var(--s-size);font-weight:var(--s-weight);color:var(--overflow-text);padding:var(--padding-xs) var(--padding-s);white-space:nowrap}.overflowList{display:flex;align-items:center;width:100%;text-align:left;background:var(--overflowList-background);border:var(--thickness) solid var(--overflowList-border);padding:0 var(--padding-s);gap:var(--gap-s);flex-shrink:0;height:32px;font-family:inherit;font-size:var(--m-size);font-weight:var(--m-weight);color:var(--overflowList-label);cursor:pointer;white-space:nowrap;transition:background .1s ease,color .1s ease}.overflowList:hover{background:var(--overflowList-background-hover);color:var(--overflowList-label-hover);border-color:var(--overflowList-border-hover)}.buttonList{display:flex;align-items:center;gap:var(--gap-s);width:100%;text-align:left;background:transparent;border-bottom:1px solid var(--border);padding:0 var(--padding-xs);height:40px;flex-shrink:0;font-family:inherit;font-size:var(--m-size);font-weight:var(--m-weight);color:var(--buttonList-text);cursor:pointer;position:relative;transition:color .1s ease}.buttonList:before{content:"";position:absolute;inset:4px 0;border-radius:var(--radius-full);background:transparent;transition:background .1s ease;pointer-events:none}.buttonList>*{position:relative;z-index:1}.buttonList svg{color:var(--buttonList-iconPrimary);flex-shrink:0}.buttonList:hover:before{background:var(--buttonList-background-hover)}.buttonList:hover,.buttonList.hovered{color:var(--buttonList-text-hover);padding-right:var(--padding-s)}.buttonList:hover svg{color:var(--buttonList-iconPrimary)}.buttonList.hovered svg{color:var(--buttonList-iconPrimary)}.buttonList.selected:before{background:var(--buttonList-background-selected)}.buttonList.selected{color:var(--buttonList-text-selected);padding-right:var(--padding-s)}.buttonList.selected svg{color:var(--buttonList-iconPrimary)}.buttonList-arrow{display:none;flex-shrink:0;color:var(--buttonList-iconSecondary)}.buttonList.selected .buttonList-arrow,.buttonList:hover .buttonList-arrow,.buttonList.hovered .buttonList-arrow{display:block;color:var(--buttonList-iconSecondary)}.buttonList-action{display:none}.buttonList:not(.selected):hover .buttonList-action,.buttonList:not(.selected).hovered .buttonList-action{display:inline-flex;align-items:center;justify-content:center;margin-right:var(--gap-s)}.buttonList:not(.selected):hover .buttonList-action svg,.buttonList:not(.selected).hovered .buttonList-action svg{color:var(--buttonTertiary-text)}.buttonList.no-button .buttonList-action{display:none}.tableRow{display:flex;align-items:center;gap:var(--gap-m);min-height:32px;width:100%;padding:0;flex-shrink:0;background:transparent;border:none;color:var(--tableRow-text);font-family:inherit;font-size:var(--s-size);font-weight:var(--s-weight);text-align:left;cursor:pointer;position:relative;transition:background .1s}.tableRow svg{color:var(--tableRow-icon);flex-shrink:0}.tableRow:not(.selected):hover,.tableRow:not(.selected).hovered{background:var(--tableRow-background-hover)}.tableRow.selected,.tableRow.selected:hover{background:var(--buttonList-background-selected)}.tableRow .tableRow-action{opacity:0;transition:opacity .1s;background:transparent;border-color:transparent}.tableRow:not(.selected):hover .tableRow-action,.tableRow:not(.selected).hovered .tableRow-action{opacity:1}.dividerLine,.flyout-divider{height:1px;background:var(--divider);flex-shrink:0;margin:0}.actionbar+.dividerLine{margin:0 calc(-1 * var(--padding-l));background:var(--border)}.dividerSection{display:flex;align-items:center;gap:var(--gap-s);padding:var(--padding-xl) 0 var(--padding-xxs);font-size:var(--s-size);font-weight:var(--s-weight);line-height:var(--s-lh);color:var(--dividerSection-title);flex-shrink:0;position:sticky;top:0;z-index:2;background:var(--bg)}.dividerSection .count{letter-spacing:normal;text-transform:none;color:var(--dividerSection-number)}.dividerSection .div-sep{color:var(--dividerSection-divider)}.dividerSection.no-priority .tier-dot,.dividerSection.no-number .count,.dividerSection.no-number .div-sep{display:none}.tier-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}.tier-dot.low{background:var(--semantic-positive)}.tier-dot.medium{background:var(--semantic-warning)}.tier-dot.high{background:var(--semantic-negative)}.tier-dot.none{background:var(--badge-neutral);opacity:.45}.segmented-control button.tab-empty{opacity:.35;cursor:default;pointer-events:none}.toast{background:var(--toast-background-success);color:var(--toast-title-success);height:32px;padding:var(--padding-s) var(--padding-m);font-size:var(--m-size);font-weight:var(--m-weight);display:inline-flex;align-items:center;justify-content:center;gap:var(--gap-s);border-radius:var(--radius-toast);white-space:nowrap;pointer-events:auto;animation:toast-in .22s cubic-bezier(.16,.84,.44,1);z-index:9999}.toast.toast-out{animation:toast-out .22s cubic-bezier(.4,0,.84,.16) forwards}.toast-icon{color:var(--toast-icon-loading);display:inline-flex;flex-shrink:0}.toast .toast-icon{color:var(--toast-icon-success)}.toast-description{font-size:var(--m-size);color:var(--toast-description-loading);opacity:.85;white-space:nowrap}@keyframes toast-in{0%{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes toast-out{0%{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(8px)}}@keyframes modal-in{0%{opacity:0;transform:translateY(var(--modal-offset))}to{opacity:1;transform:translateY(0)}}@keyframes modal-out{0%{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(var(--modal-offset))}}@keyframes modal-bg-in{0%{opacity:0}to{opacity:1}}@keyframes modal-bg-out{0%{opacity:1}to{opacity:0}}#toast-overlay{position:fixed;inset:0;z-index:9996;background:var(--overlay-bg);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .2s ease}#toast-overlay.visible{opacity:1;pointer-events:auto}.toast-spinner{width:13px;height:13px;border:1.6px solid currentColor;border-top-color:transparent;border-radius:50%;opacity:.7;animation:toast-spin .8s linear infinite;display:inline-block;flex-shrink:0}@keyframes toast-spin{to{transform:rotate(360deg)}}.toast-content{display:flex;align-items:center;gap:var(--gap-m)}.statusBar{height:56px;display:flex;align-items:center;padding:0 var(--padding-l);gap:var(--gap-m)}.statusBar-title{display:flex;align-items:center;gap:var(--gap-s);min-width:0}.swatch{width:var(--min-height);height:var(--min-height);border-radius:var(--radius-swatch);border:var(--thickness) solid var(--swatch-border-filled);flex-shrink:0}.swatch.empty{background:repeating-linear-gradient(-45deg,var(--border) 0px,var(--border) 1.2px,transparent 1.2px,transparent 5.6px);border-color:var(--swatch-border-empty)}::-webkit-scrollbar{width:12px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-corner{background:transparent}::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:99px;border:2px solid transparent;background-clip:content-box}::-webkit-scrollbar-thumb:hover{background:var(--scrollbar-thumb-hover);background-clip:content-box}.sidePanel{position:relative;flex-shrink:0;height:100%;background:var(--bg);overflow:hidden;transition:width .18s ease;display:flex;flex-direction:column}.sidePanel.resizing{transition:none}.sidePanel--left{border-right:var(--divider-border)}.sidePanel--right{border-left:var(--divider-border)}.sidePanelResize{position:absolute;top:0;bottom:0;width:5px;cursor:ew-resize;z-index:3}.sidePanel--left .sidePanelResize{right:0}.sidePanel--right .sidePanelResize{left:0}.sidePanelResize:after{content:"";position:absolute;top:12px;bottom:12px;width:1px;background:var(--border);opacity:0;transition:opacity .15s}.sidePanel--left .sidePanelResize:after{right:2px}.sidePanel--right .sidePanelResize:after{left:2px}.sidePanelResize:hover:after,.sidePanelResize.dragging:after{opacity:1}.sidePanelHeader{display:flex;align-items:flex-start;gap:var(--gap-m);padding:10px var(--padding-l);flex-shrink:0;background:var(--bg)}.sidePanelBody{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 var(--padding-l)}#resize-handle{position:fixed;bottom:0;right:0;width:20px;height:20px;cursor:ns-resize;z-index:99999;overflow:hidden}#resize-handle svg{position:absolute;bottom:2px;right:2px;opacity:.35;transition:opacity .15s;color:var(--text-muted)}#resize-handle:hover svg{opacity:.8}.hidden{display:none!important}.spinner{width:16px;height:16px;border:var(--thickness) solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:toast-spin .7s linear infinite;flex-shrink:0}.section-label{font-size:var(--s-size);font-weight:var(--s-weight);text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);flex-shrink:0}.button-group{display:flex;flex-shrink:0;border:var(--thickness) solid var(--border);border-radius:var(--radius-sm)}.button-group button{display:flex;align-items:center;justify-content:center;width:26px;height:26px;background:transparent;border:none;color:var(--text-muted);cursor:pointer;transition:background .1s,color .1s;padding:0;font-family:inherit}.button-group button+button{border-left:var(--thickness) solid var(--border)}.button-group button.selected{background:var(--surface);color:var(--text)}.button-group button:not(.selected):hover{background:var(--bg-secondary);color:var(--text)}.button-group-label{width:auto;padding:0 9px;font-size:var(--s-size);font-weight:var(--s-weight);letter-spacing:.2px}}{}
+
+</style>
+<style>
+  /* Plugin-local vars — no DS token equivalent */
+  :root { --pantone-focus: #b06aff; }
+
+  .color-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  .color-table col:nth-child(1) { width: auto; }
+  .color-table col:nth-child(2) { width: 56px; }
+  .color-table col:nth-child(3) { width: 300px; }
+
+  .color-table td {
+    height: auto;
+    padding: var(--padding-l) 0;
+    vertical-align: middle;
+    font-size: var(--m-size);
+    overflow: visible;
+  }
+
+  .color-table td:first-child { padding-left: var(--padding-l); }
+  .color-table td:last-child  { padding-right: var(--padding-l); }
+
+  .color-table tr:not(:last-child) {
+    background-image: linear-gradient(var(--divider), var(--divider));
+    background-size: calc(100% - 32px) 1.2px;
+    background-position: 16px bottom;
+    background-repeat: no-repeat;
+  }
+
+  .td-variable {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--gap-m);
+    min-width: 0;
+    height: 100%;
+  }
+  .td-variable .var-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .var-name-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    min-width: 0;
+  }
+
+  /* Swatch identity (size, radius, border, empty stripes) comes from the DS .swatch base
+     in theme.css — .color-swatch only adds plugin-local stacking context. */
+  .color-swatch {
+    position: relative;
+    z-index: 2;
+  }
+
+  /* Small swatch next to hex value in variable column */
+  .hex-swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .var-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    color: var(--text);
+    font-size: var(--l-size);
+    font-weight: 500;
+    position: relative;
+    cursor: default;
+  }
+
+  .var-hex-sub {
+    display: flex;
+    align-items: center;
+    font-size: var(--m-size);
+    color: var(--hex-sub-color);
+    white-space: nowrap;
+    gap: var(--gap-s);
+  }
+
+  /* ── Raw (non-variable) color row ── */
+  .raw-warning-icon {
+    flex-shrink: 0;
+    color: var(--semantic-warning);
+    display: flex;
+    align-items: center;
+    margin-left: var(--gap-s);
+  }
+  .raw-warning-label {
+    font-size: var(--s-size);
+    color: var(--semantic-warning);
+    font-weight: var(--s-weight);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .raw-warning-cell {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-s);
+    margin-left: auto;
+    margin-right: -8px;
+  }
+  .color-table tr.row-raw .var-name {
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .td-cmyk {
+    font-family: inherit;
+    font-size: var(--m-size);
+    color: var(--text);
+    vertical-align: top;
+    padding-left: 0;
+    padding-right: var(--padding-l);
+  }
+
+  /* ── Fork status column ── */
+  .td-status {
+    vertical-align: top;
+    padding-left: var(--padding-l) !important;
+    padding-right: 0 !important;
+    padding-top: var(--padding-l) !important;
+    width: 56px;
+    min-width: 56px;
+    max-width: 56px;
+  }
+
+  /* Wrapper: swatch on left, arrows on right */
+  .status-cell {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    width: 100%;
+  }
+
+  /* The origin swatch block — vertically centered in the full fork height */
+  .status-origin {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-right: var(--gap-s);
+    align-self: center;
+  }
+  .status-origin .hex-label {
+    font-size: var(--s-size);
+    font-weight: var(--s-weight);
+    color: var(--text-muted);
+    white-space: nowrap;
+    line-height: 1;
+  }
+
+  /* Container for all fork arrows */
+  .status-fork {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-m);
+    width: 16px;
+    min-width: 16px;
+    max-width: 16px;
+    position: relative;
+    overflow: visible;
+    flex-shrink: 0;
+    margin-left: auto;
+    margin-right: 0;
+  }
+
+  /* One arrow row */
+  .fork-item {
+    display: flex;
+    align-items: center;
+    height: 24px;
+    width: 100%;
+    position: relative;
+  }
+
+  /* Left segment — used only for single (non-forked) arrow */
+  .fork-item .f-left {
+    height: var(--thickness);
+    background: var(--border);
+    flex-shrink: 0;
+    flex: 1;
+  }
+  /* In forked mode the SVG handles the left side; reserve space with invisible placeholder */
+  .status-fork.is-forked .fork-item .f-left {
+    width: 16px;
+    flex: none;
+    background: transparent;
+  }
+
+  /* Right flex line */
+  .fork-item .f-right {
+    flex: 1;
+    height: var(--thickness);
+    background: var(--border);
+  }
+
+  /* Arrowhead */
+  .fork-item .f-head {
+    width: 6px;
+    height: 6px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .fork-item .f-head svg {
+    display: block;
+    stroke: var(--border);
+    stroke-width: var(--thickness);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+  }
+
+  /* SVG fork overlay */
+  .fork-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    overflow: visible;
+  }
+
+
+  /* ── CMYK 4-box inputs ── */
+  .cmyk-group {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    flex: 1;
+    min-width: 0;
+    overflow: visible;
+  }
+  .cmyk-box-wrap {
+    border-radius: 0;
+    padding: 0 3px 0 8px;
+    gap: 0; flex: 1; min-width: 0;
+  }
+  .cmyk-box-wrap:first-child { border-radius: 16px 0 0 16px; }
+  .cmyk-box-wrap:nth-child(4) { border-radius: 0 16px 16px 0; }
+  .cmyk-box-wrap + .cmyk-box-wrap { margin-left: -1.5px; }
+  .cmyk-group:not(.cmyk-readonly):hover .cmyk-box-wrap { border-color: var(--input-border-hover); }
+  .cmyk-box-wrap:focus-within { border-color: var(--input-border-focus); z-index: 2; position: relative; }
+  .cmyk-box { width: 100%; text-align: left; }
+  /* Auto rows: subtler boxes */
+  .cmyk-group.cmyk-auto .cmyk-box-wrap {
+    border-color: var(--input-auto-border);
+  }
+  .cmyk-group.cmyk-auto .cmyk-box {
+    color: var(--text);
+  }
+  .cmyk-group.cmyk-auto .cmyk-box-wrap:focus-within {
+    border-color: var(--input-border-focus);
+    background: var(--surface);
+  }
+
+  .cmyk-spacer { width: 24px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+  .cmyk-group.cmyk-readonly .cmyk-box-wrap { background: transparent; border-color: var(--input-auto-border); }
+  .cmyk-box[readonly], .output-text-input[readonly] { pointer-events: none; opacity: 0.8; }
+  .btn-lib-info { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0; flex-shrink: 0; vertical-align: middle; margin-left: var(--gap-s); }
+
+  /* ── Output cell (CMYK + optional outputs stacked) ── */
+  .output-cell {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--gap-m);
+    width: 100%;
+  }
+  .output-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    column-gap: var(--gap-s);
+  }
+  .output-row > * { margin-left: 0 !important; margin-right: 0 !important; }
+  .output-add-row {
+    justify-content: flex-start;
+    width: 100%;
+    overflow: visible;
+  }
+
+  /* ── Pantone / RAL / Vinyl input ── */
+  .output-text-wrap { flex: 1; min-width: 0; }
+  .output-text-wrap.output-readonly { background: transparent; border-color: var(--input-auto-border); pointer-events: none; opacity: 0.8; }
+  .output-text-wrap:not(.output-readonly):hover { border-color: var(--input-border-hover); }
+  .output-text-wrap:not(.output-readonly):focus-within { border-color: var(--input-border-focus) !important; }
+  .pantone-wrap { flex: 1; min-width: 0; }
+  .pantone-wrap:focus-within { border-color: var(--pantone-focus); }
+  .output-text-input { padding: 0 var(--padding-xs); }
+  .pantone-input { padding: 0; }
+
+  /* ── Export picker (top-right) ── */
+  .export-picker {
+    position: relative;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+  .export-picker-flyout {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    pointer-events: none;
+    opacity: 0;
+    z-index: 50;
+    min-width: 0;
+  }
+  .export-picker-flyout.open {
+    pointer-events: auto;
+    opacity: 1;
+    transition: opacity 0.1s;
+  }
+</style>
+</head>
+<body>
+
+<div id="error-container"></div>
+<div id="progress-container"></div>
+
+<!-- Empty state -->
+<div id="empty-state" class="empty-state">
+  <div class="empty-state-content">
+    <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M30.5642 29.9269C30.5388 29.6007 30.7035 29.2882 30.9868 29.1245C31.2701 28.961 31.6223 28.9749 31.8921 29.1597L49.0878 40.9581C49.3611 41.1458 49.5013 41.4752 49.4455 41.802C49.3894 42.129 49.1473 42.3942 48.8268 42.4801L42.9655 44.049L46.307 49.8363C46.5414 50.2427 46.4025 50.7631 45.9963 50.9978L42.6271 52.9417C42.2207 53.1763 41.7005 53.0373 41.4657 52.6309L38.1352 46.8629L33.6613 51.4087C33.4278 51.6456 33.0768 51.7248 32.7643 51.611C32.4516 51.4969 32.2344 51.2102 32.2084 50.8784L30.5642 29.9269ZM33.7565 48.8869L37.7085 44.8755L37.7817 44.8093C37.9605 44.6656 38.1914 44.5996 38.4218 44.629C38.6848 44.6628 38.9169 44.8171 39.0495 45.0468L42.5125 51.0441L44.4094 49.9496L40.9402 43.9406C40.8083 43.7119 40.7896 43.4345 40.8905 43.1906C40.9915 42.9469 41.2005 42.7634 41.4553 42.6948L46.6032 41.3145L32.3983 31.5676L33.7565 48.8869ZM43.779 31.5324V32.5613H41.7792V31.5324H43.779ZM43.7796 27.4216L43.779 29.4773H41.7792L41.7785 27.4216H43.7796ZM28.7785 42.1148L28.7792 44.1153L27.6957 44.1146V42.1148H28.7785ZM25.5288 42.1148V44.1146H23.3619V42.1148H25.5288ZM43.7796 23.3102L43.779 25.3659H41.7792L41.7785 23.3102H43.7796ZM21.1964 42.1148L21.1957 44.1153H19.0288L19.0295 42.1148H21.1964ZM43.779 19.1994V21.2544H41.7792V19.1994H43.779ZM14.9968 42.0388C15.2487 42.0887 15.5103 42.1148 15.7785 42.1148H16.8626L16.8619 44.1153H15.7792C15.3798 44.1153 14.9885 44.0756 14.6094 44.0006L14.8035 43.0208L14.9968 42.0388ZM42.6845 15.1398L43.665 14.945C43.74 15.3241 43.7796 15.7154 43.7796 16.1148L43.779 17.143H41.7792L41.7785 16.1148C41.7785 15.8464 41.7531 15.5844 41.7032 15.3324L42.6845 15.1398ZM11.6208 40.8932L12.4522 40.3367C12.7445 40.7732 13.1212 41.1499 13.5577 41.4422L13.0005 42.2729L12.4453 43.1043C11.7915 42.6666 11.2278 42.1029 10.7901 41.4491L11.6208 40.8932ZM41.1135 11.1257C41.7672 11.5634 42.331 12.1271 42.7687 12.7809L41.9373 13.3361L41.1066 13.8934C40.8143 13.4568 40.4376 13.0801 40.001 12.7878L40.5576 11.9564L41.1135 11.1257ZM11.7789 37.1982V38.1152C11.7789 38.3834 11.8051 38.6451 11.8549 38.8969L10.8736 39.0909L9.89377 39.285C9.81877 38.9059 9.77916 38.5145 9.77914 38.1152V37.1982H11.7789ZM37.7796 10.1148C38.1788 10.1148 38.5704 10.1544 38.9494 10.2294L38.7546 11.2099L38.5613 12.1905C38.3093 12.1407 38.0473 12.1152 37.7789 12.1152H36.8619L36.8626 10.1148H37.7796ZM11.7789 33.5315L11.7796 35.3648L9.77914 35.3655V33.5315H11.7789ZM35.0292 10.1154V12.1152L33.1958 12.1145V10.1148L35.0292 10.1154ZM11.7789 29.8647V31.6974H9.77914V29.8647H11.7789ZM31.3618 10.1148V12.1145H29.5291V10.1148H31.3618ZM11.7789 26.198V28.032H9.77914V26.198H11.7789ZM27.6964 10.1148L27.6957 12.1152L25.8624 12.1145V10.1148H27.6964ZM11.7796 22.5319L11.7789 24.3653H9.77914L9.77845 22.5319H11.7796ZM24.029 10.1154V12.1152H22.1963L22.1956 10.1148L24.029 10.1154ZM11.7789 18.8645L11.7796 20.6979H9.77845L9.77914 18.8645H11.7789ZM20.3616 10.1148L20.3623 12.1152L18.5289 12.1145V10.1148H20.3616ZM10.8736 15.1391L11.8556 15.3324C11.8057 15.5844 11.7789 15.8464 11.7789 16.1148V17.0318H9.77914V16.1148C9.77914 15.7154 9.81876 15.3242 9.89377 14.945L10.8736 15.1391ZM14.6094 10.2294C14.9885 10.1544 15.3798 10.1148 15.7792 10.1148H16.6962V12.1145H15.7792C15.5108 12.1145 15.2488 12.1413 14.9968 12.1912L14.8035 11.2093L14.6094 10.2294ZM10.7901 12.7809C11.2278 12.1271 11.7915 11.5634 12.4453 11.1257L13.0005 11.9571L13.5577 12.7878C13.1211 13.0801 12.7445 13.4567 12.4522 13.8934L11.6208 13.3368L10.7901 12.7809Z" fill="currentColor"/>
+    </svg>
+    <p>Select a frame, component set, or instance to start scanning.</p>
+    <button id="scan-btn" class="buttonPrimary" disabled>Start scanning</button>
+  </div>
+</div>
+
+<!-- Results -->
+<div id="results-ui" style="display:none; flex-direction:column; flex:1; min-height:0;">
+  <div id="actionbar" class="actionbar">
+    <!-- source chips, rescan btn, and export picker injected by JS -->
+    <div id="source-chips" style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;flex:1;min-width:0;"></div>
+    <div class="export-picker" id="export-picker">
+      <button class="buttonSecondary buttonAddOutput" id="export-btn" data-tip="Export CMYK">
+        <svg width="16" height="16"><use href="#icon-download"/></svg>
+      </button>
+      <div class="export-picker-flyout overflow" id="export-flyout">
+        <div class="overflow-label">Export Artwork</div>
+        <button class="overflowList" id="export-pdf-btn">PDF CMYK Vector</button>
+        <button class="overflowList" id="export-tiff-btn">TIFF CMYK 300 DPI</button>
+      </div>
+    </div>
+    <button id="rescan-btn" class="buttonPrimary buttonRescan" data-tip="Refresh scan">
+      <svg width="16" height="16"><use href="#icon-update"/></svg>
+    </button>
+  </div>
+  <div class="dividerLine"></div>
+  <div id="no-colors-state" class="empty-state" style="display:none;">
+    <div class="empty-state-content">
+      <svg width="32" height="32"><use href="#icon-image"/></svg>
+      <p>No colors found<br>in this selection.</p>
+    </div>
+  </div>
+  <div class="scroll-area">
+    <table class="color-table">
+      <colgroup>
+        <col /><col /><col />
+      </colgroup>
+      <tbody id="color-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<canvas id="convert-canvas" style="display:none"></canvas>
+
+<div id="tt"></div>
+<script>
+(function(){var e=window.devicePixelRatio||1,n=Math.round(1.5*e)/e;document.documentElement.style.setProperty("--thickness",n.toFixed(4)+"px")})(),function(){var e="http://www.w3.org/2000/svg",n=document.createElementNS(e,"svg");n.setAttribute("style","position:absolute;width:0;height:0;overflow:hidden;pointer-events:none"),n.setAttribute("aria-hidden","true"),n.innerHTML='<defs><symbol id="icon-var-COLOR" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2C4.69 2 2 4.69 2 8s2.69 6 6 6c.55 0 1-.45 1-1 0-.27-.1-.51-.1-.76 0-.55.45-1 1-1h1.44C12.82 11.24 14 9.74 14 8 14 4.69 11.31 2 8 2z"/><circle cx="5.5" cy="7.5" r="1" fill="currentColor" stroke="none"/><circle cx="8"   cy="5.5" r="1" fill="currentColor" stroke="none"/><circle cx="10.5" cy="7.5" r="1" fill="currentColor" stroke="none"/></symbol><symbol id="icon-var-FLOAT" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="5.5" x2="14" y2="5.5"/><line x1="2" y1="10.5" x2="14" y2="10.5"/><line x1="6"  y1="2"   x2="5"  y2="14"/><line x1="11" y1="2"   x2="10" y2="14"/></symbol><symbol id="icon-var-STRING" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="2" width="12" height="12" rx="2.5"/><line x1="5.5" y1="6.5" x2="10.5" y2="6.5"/><line x1="8"   y1="6.5" x2="8"    y2="11"/></symbol><symbol id="icon-var-BOOLEAN" viewBox="0 0 16 16" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M1.95422 7.99999C1.95446 5.47288 4.00322 3.42382 6.53039 3.42382L9.46999 3.42451C11.9972 3.42464 14.0462 5.47344 14.0462 8.00068C14.0458 10.5276 11.997 12.5753 9.46999 12.5755L6.53039 12.5762C4.00323 12.5762 1.95447 10.5271 1.95422 7.99999ZM6.53039 4.62397C4.66582 4.62397 3.15368 6.13611 3.15368 8.00068C3.15406 9.86492 4.66605 11.376 6.53039 11.376L9.46999 11.3767C11.3343 11.3766 12.8465 9.86427 12.8467 7.99999C12.8465 6.1357 11.3343 4.6234 9.46999 4.62328L6.53039 4.62397ZM4.02859 7.99999C4.02865 6.56148 5.19406 5.39598 6.63259 5.39598C8.07105 5.39607 9.23653 6.56153 9.23659 7.99999C9.23653 9.43845 8.07105 10.6039 6.63259 10.604C5.19406 10.604 4.02865 9.4385 4.02859 7.99999ZM6.63259 6.59475C5.8568 6.59475 5.22742 7.22422 5.22735 7.99999C5.22742 8.77576 5.8568 9.40384 6.63259 9.40384C7.40831 9.40376 8.03638 8.77571 8.03644 7.99999C8.03638 7.22427 7.40831 6.59483 6.63259 6.59475Z" fill="currentColor"/></symbol><symbol id="icon-component" viewBox="0 0 16 16"><path d="M8.84734 9.167L10.0109 10.3319L10.8651 11.1861L8.03044 14.0208L7.17625 13.1666L6.01132 12.003L5.15713 11.1488L7.99315 8.31281L8.84734 9.167ZM12.0072 6.01264L13.1687 7.1755L14.0215 8.02831L11.1827 10.8671L10.3299 10.0143L9.16706 8.85281L8.31356 7.99931L11.1537 5.15914L12.0072 6.01264ZM11.1744 9.16976L12.3249 8.01933L11.1627 6.85717L10.0116 8.00829L11.1744 9.16976ZM8.01939 12.3234L9.16775 11.1751L8.0042 10.0101L6.85446 11.1599L8.01939 12.3234ZM7.68862 8L4.84846 10.8402L3.99565 9.98736L2.83279 8.82588L1.97998 7.97307L4.82084 5.13221L7.68862 8ZM10.8361 4.84012L7.98901 7.68719L5.12812 4.82631L7.9752 1.97923L10.8361 4.84012ZM4.84017 9.14283L5.9906 7.9924L4.82912 6.82954L3.67731 7.98136L4.84017 9.14283ZM7.98486 5.98986L9.13875 4.83597L7.97934 3.67657L6.82546 4.83045L7.98486 5.98986Z" fill="currentColor" stroke="none"/></symbol><symbol id="icon-variable" viewBox="0 0 16 16"><path d="M3.15982 4.7726L7.62481 2.19414L7.99977 1.97801L8.37473 2.19414L12.8397 4.7726L13.2147 4.98873V11.0116L12.8397 11.2263L8.37473 13.8048L7.99977 14.0223L7.62481 13.8048L3.15982 11.2263L2.78555 11.0109L2.78486 4.98873L3.15982 4.7726ZM4.28539 10.1436L7.99977 12.2891L11.7148 10.1443V5.85466L8.00046 3.70917L4.2847 5.85466L4.28539 10.1436ZM6.21129 7.99946C6.21146 7.01162 7.01258 6.21029 8.00046 6.21029C8.98824 6.21041 9.78947 7.01169 9.78964 7.99946C9.78956 8.98731 8.9883 9.78851 8.00046 9.78864C7.01252 9.78864 6.21137 8.98739 6.21129 7.99946ZM8.00046 7.21018C7.56486 7.21018 7.21135 7.5639 7.21118 7.99946C7.21126 8.4351 7.56481 8.78874 8.00046 8.78874C8.43602 8.78862 8.78967 8.43502 8.78974 7.99946C8.78957 7.56398 8.43596 7.21031 8.00046 7.21018Z" fill="currentColor" stroke="none"/></symbol><symbol id="icon-focus" viewBox="0 0 16 16"><path d="M8 1.96045C11.3353 1.96076 14.0389 4.66512 14.0391 8.00049C14.0389 11.3358 11.3353 14.0392 8 14.0396C4.66442 14.0396 1.96011 11.336 1.95996 8.00049C1.96009 4.66493 4.66441 1.96045 8 1.96045ZM8 3.46045C5.49283 3.46045 3.46009 5.49335 3.45996 8.00049C3.46011 10.5076 5.49284 12.5396 8 12.5396C10.5069 12.5392 12.5389 10.5074 12.5391 8.00049C12.5389 5.49354 10.5069 3.46076 8 3.46045ZM7.99902 4.25049C10.0701 4.25049 11.749 5.92942 11.749 8.00049C11.749 10.0715 10.0701 11.7505 7.99902 11.7505C5.92815 11.7503 4.24904 10.0714 4.24902 8.00049C4.24902 5.92955 5.92814 4.2507 7.99902 4.25049ZM7.99902 5.75049C6.75657 5.7507 5.74902 6.75798 5.74902 8.00049C5.74904 9.24298 6.75658 10.2503 7.99902 10.2505C9.24165 10.2505 10.249 9.24312 10.249 8.00049C10.249 6.75785 9.24166 5.75049 7.99902 5.75049ZM7.99902 6.81592C8.65332 6.81592 9.18457 7.34619 9.18457 8.00049C9.18452 8.65474 8.65329 9.18506 7.99902 9.18506C7.34494 9.18484 6.8145 8.65461 6.81445 8.00049C6.81445 7.34632 7.34491 6.81613 7.99902 6.81592Z" fill="currentColor" stroke="none"/></symbol><symbol id="icon-scan" viewBox="0 0 16 16" fill="none"><path d="M13.3212 10.3791V11.7795C13.3212 12.746 12.5379 13.5293 11.5714 13.5293H10.171V12.0295H11.5714C11.7094 12.0295 11.8213 11.9176 11.8213 11.7795V10.3791H13.3212ZM14.0262 7.40085L14.0262 8.59962H1.97363V7.40085L14.0262 7.40085ZM4.1785 10.3791V11.7795C4.1785 11.9176 4.2904 12.0295 4.42848 12.0295H5.82888V13.5293H4.42848C3.46198 13.5293 2.67866 12.746 2.67866 11.7795V10.3791H4.1785ZM11.572 2.46215C12.5382 2.46246 13.3218 3.24574 13.3219 4.21197V5.61237L11.8213 5.61306V4.21266C11.8213 4.07459 11.7094 3.96269 11.5714 3.96268H10.171L10.1716 2.46215H11.572ZM2.67866 4.21266C2.67866 3.24616 3.46198 2.46285 4.42848 2.46285H5.82888V3.96268H4.42848C4.2904 3.96268 4.1785 4.07459 4.1785 4.21266V5.61306H2.67866V4.21266Z" fill="currentColor"/></symbol><symbol id="icon-search" viewBox="0 0 16 16"><path d="M9.59781 3.729C7.80046 1.93197 4.88617 1.93193 3.08884 3.729C1.29154 5.52631 1.29173 8.44054 3.08884 10.238C4.70569 11.8548 7.22558 12.0168 9.02398 10.7248L11.8503 13.5512L12.911 12.4905L10.0846 9.66414C11.3762 7.86577 11.2145 5.34569 9.59781 3.729ZM8.53715 4.78966C9.7487 6.0012 9.74854 7.96567 8.53715 9.17731C7.32553 10.3889 5.36112 10.3889 4.1495 9.17731C2.93818 7.96567 2.93798 6.00118 4.1495 4.78966C5.36104 3.57837 7.32559 3.57842 8.53715 4.78966Z" fill="currentColor" stroke="none"/></symbol><symbol id="icon-clear" viewBox="0 0 16 16"><path d="M8.00037 1.49951C11.59 1.49973 14.5004 4.41077 14.5004 8.00049C14.5001 11.59 11.5899 14.5003 8.00037 14.5005C4.41068 14.5005 1.50063 11.5901 1.50037 8.00049C1.50037 4.41064 4.41052 1.49951 8.00037 1.49951ZM8.00037 3.00049C5.23894 3.00049 3.00037 5.23906 3.00037 8.00049C3.00063 10.7617 5.23911 13.0005 8.00037 13.0005C10.7614 13.0003 13.0001 10.7616 13.0004 8.00049C13.0004 5.2392 10.7616 3.0007 8.00037 3.00049ZM10.8451 6.21631L9.06189 7.99951L10.8451 9.78271L9.78455 10.8433L8.00134 9.06006L6.21814 10.8433L5.15759 9.78271L6.9408 7.99951L5.15759 6.21631L6.21814 5.15576L8.00134 6.93896L9.78455 5.15576L10.8451 6.21631Z" fill="currentColor" stroke="none"/></symbol><symbol id="icon-arrow-down" viewBox="0 0 16 16"><path d="M12.7031 6.23145L8 10.9355L3.2959 6.23145L4.35645 5.1709L8 8.81445L11.6426 5.1709L12.7031 6.23145Z" fill="currentColor" stroke="none"/></symbol><symbol id="icon-arrow-right" viewBox="0 0 16 16"><path d="M6.57519 3.29687L11.2793 8L6.5752 12.7041L5.51465 11.6436L9.1582 8L5.51465 4.35742L6.57519 3.29687Z" fill="currentColor" stroke="none"/></symbol><symbol id="icon-update" viewBox="0 0 16 16"><path d="M11.2468 10.0142C9.88352 11.3773 7.8026 11.5832 6.2211 10.6343L6.7604 10.4872L6.36611 9.03917L3.13027 9.91891L4.0107 13.1554L5.45806 12.7618L5.18392 11.7502C7.36949 13.2363 10.3697 13.0125 12.3075 11.0749L12.8495 10.5328L11.7889 9.47213L11.2468 10.0142ZM10.5148 3.21106L10.7434 4.04868C8.56608 2.62897 5.62027 2.8744 3.70893 4.78548L3.16687 5.32755L4.22753 6.38821L4.7696 5.84614C6.21871 4.39728 8.4791 4.25468 10.0881 5.41801L9.09786 5.68731L9.49147 7.13467L12.8854 6.21143L11.9622 2.81746L10.5148 3.21106Z" fill="currentColor" stroke="none"/></symbol><symbol id="icon-copy" viewBox="0 0 16 16"><path d="M12.8929 11.4102C12.8929 12.3767 12.1089 13.1607 11.1424 13.1607H7.34036C6.3739 13.1607 5.5906 12.3773 5.59055 11.4109V10.661H5.05884C4.09252 10.6609 3.30925 9.87743 3.30902 8.91116V3.85092C3.30916 2.88457 4.09246 2.10116 5.05884 2.10111L8.86161 2.1018C9.8281 2.1018 10.6114 2.88511 10.6114 3.85161L10.6121 4.60084L11.1431 4.60153C12.1096 4.6016 12.8929 5.38489 12.8929 6.35135L12.8929 11.4102ZM5.58986 6.35135C5.58986 5.38485 6.37386 4.60084 7.34036 4.60084H9.11227L9.11158 3.85161C9.11158 3.71354 8.99968 3.60164 8.86161 3.60164L5.05884 3.60095C4.92089 3.601 4.809 3.713 4.80886 3.85092V8.91116C4.80909 9.049 4.92095 9.16108 5.05884 9.16113H5.59055L5.58986 6.35135ZM11.1424 11.6609C11.2805 11.6609 11.3931 11.5483 11.3931 11.4102L11.3931 6.35135C11.3931 6.21332 11.2811 6.10144 11.1431 6.10137L7.34036 6.10068C7.20248 6.10068 7.09069 6.21284 7.09039 6.35066V11.4109C7.09044 11.5489 7.20232 11.6609 7.34036 11.6609L11.1424 11.6609Z" fill="currentColor" stroke="none"/></symbol><symbol id="icon-info" viewBox="0 0 12 12"><path d="M6.00037 0.867065C8.8344 0.867507 11.132 3.16578 11.1322 5.99988C11.132 8.83391 8.83435 11.1313 6.00037 11.1317C3.166 11.1317 0.867805 8.83418 0.867554 5.99988C0.867729 3.16551 3.16596 0.867065 6.00037 0.867065ZM6.00037 2.36707C3.99438 2.36707 2.36773 3.99394 2.36755 5.99988C2.36781 8.00575 3.99443 9.63171 6.00037 9.63171C8.00593 9.63127 9.63195 8.00548 9.6322 5.99988C9.63203 3.99421 8.00597 2.36751 6.00037 2.36707ZM6.76208 8.65613H5.26208V5.13269H6.76208V8.65613ZM6.76208 4.42175H5.26208V3.24988H6.76208V4.42175Z" fill="currentColor" stroke="none"/></symbol><symbol id="icon-reset" viewBox="0 0 16 16"><path d="M5.15234 3.61426L4.81641 4.94238L5.47559 4.4375C7.36854 2.98393 10.0812 3.34063 11.5352 5.2334C13.0017 7.14289 12.6256 9.8821 10.6982 11.3252L8.6875 12.8311L7.78809 11.6309L9.79883 10.124C11.0573 9.18175 11.3033 7.39327 10.3457 6.14648C9.39627 4.91081 7.62458 4.67783 6.38867 5.62695L5.56836 6.25586L6.93652 6.60156L6.56934 8.05664L2.72949 7.08789L3.69824 3.24707L5.15234 3.61426Z" fill="currentColor" stroke="none"/></symbol><symbol id="icon-check" viewBox="0 0 16 16"><path d="M14.3486 4.49509L6.27734 12.5664C5.98459 12.859 5.5097 12.8588 5.2168 12.5664L1.65137 9.00095L2.71191 7.9404L5.74707 10.9756L13.2881 3.43454L14.3486 4.49509Z" fill="currentColor" stroke="none"/></symbol><symbol id="icon-warning" viewBox="0 0 14 14" fill="none"><path d="M7 1.5L12.5 11.5H1.5L7 1.5Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><line x1="7" y1="6" x2="7" y2="8.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="7" cy="10.2" r="0.6" fill="currentColor"/></symbol><symbol id="icon-external" viewBox="0 0 12 12" fill="none"><path d="M5 2H2a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M8 1h3v3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><line x1="11" y1="1" x2="6" y2="6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></symbol><symbol id="icon-plus" viewBox="0 0 16 16"><path d="M7.25065 7.24984V3.26269H8.75049V7.24984H12.7376V8.74968H8.75049V12.7382H7.25065V8.74968H3.26213V7.24984H7.25065Z" fill="currentColor" stroke="none"/></symbol><symbol id="icon-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></symbol><symbol id="icon-download" viewBox="0 0 16 16"><path d="M8.75098 9.38867L10.5703 7.56934L11.6318 8.62988L8.79395 11.4678H12.835V12.9678H3.16602V11.4678H7.20801L4.37012 8.62988L5.43066 7.56934L7.25098 9.38965V3.0332H8.75098V9.38867Z" fill="currentColor" stroke="none"/></symbol><symbol id="icon-tree" viewBox="0 0 16 16" fill="none"><path d="M0.872435 7.1586V7.15584C1.68521 7.15584 2.15172 7.01776 2.45238 6.86029C2.75556 6.70135 2.95708 6.49132 3.21956 6.19255C3.47072 5.90665 3.80607 5.50168 4.32303 5.20094C4.77205 4.9398 5.31537 4.77873 6.01691 4.73345C6.3107 4.01565 7.01567 3.50913 7.83923 3.50913H10.6566C11.7439 3.50914 12.626 4.39123 12.626 5.47853C12.626 6.56583 11.7439 7.44793 10.6566 7.44794H7.83923C7.02063 7.44794 6.31868 6.94767 6.02175 6.23674C5.56038 6.27688 5.27523 6.38257 5.0771 6.49776C4.80874 6.65396 4.63051 6.8595 4.34651 7.18277C4.13835 7.41972 3.8808 7.7073 3.51787 7.96308C3.87777 8.24832 4.13445 8.56673 4.34375 8.83039C4.63899 9.20232 4.82846 9.44475 5.10541 9.62657C5.29493 9.75085 5.55815 9.86468 5.97479 9.91314C6.23714 9.13416 6.97248 8.57282 7.83992 8.57282H10.6573C11.7446 8.57286 12.626 9.45424 12.626 10.5415C12.626 11.6288 11.7446 12.5102 10.6573 12.5102H7.83992C7.07161 12.5102 6.40758 12.0694 6.0832 11.4275C5.33157 11.3826 4.75405 11.19 4.2816 10.8799C3.76428 10.5402 3.4251 10.0859 3.16846 9.76261C2.89577 9.41911 2.68186 9.17215 2.36675 8.98852C2.06021 8.80999 1.59127 8.65572 0.777142 8.65568V7.15584C0.809181 7.15584 0.840926 7.15822 0.872435 7.1586ZM7.83992 10.0727C7.58104 10.0727 7.37105 10.2826 7.37105 10.5415C7.37106 10.8004 7.58105 11.0104 7.83992 11.0104H10.6573C10.9161 11.0104 11.1262 10.8004 11.1262 10.5415C11.1262 10.2827 10.9162 10.0727 10.6573 10.0727H7.83992ZM7.83923 5.01035C7.58035 5.01035 7.37105 5.21965 7.37105 5.47853C7.37106 5.73741 7.58036 5.94672 7.83923 5.94672H10.6566C10.9155 5.94671 11.1248 5.73741 11.1248 5.47853C11.1248 5.21965 10.9155 5.01036 10.6566 5.01035H7.83923Z" fill="currentColor" stroke="none"/></symbol><symbol id="icon-list" viewBox="0 0 16 16" fill="none"><path d="M7.2918 6.3163C6.98223 6.99775 6.2971 7.47293 5.49986 7.47294L4.90117 7.47225C3.81388 7.47222 2.93246 6.59083 2.93246 5.50354C2.93246 4.41624 3.81388 3.53485 4.90117 3.53482L5.49986 3.53413C6.34519 3.53414 7.0639 4.06838 7.3429 4.81646L12.9224 4.81646L12.9224 6.3163H7.2918ZM5.49986 5.97172C5.75874 5.97171 5.96804 5.76242 5.96804 5.50354C5.96804 5.24466 5.75874 5.03536 5.49986 5.03535L4.90117 5.03466C4.64231 5.03469 4.4323 5.24467 4.4323 5.50354C4.4323 5.76241 4.64231 5.97238 4.90117 5.97241L5.49986 5.97172ZM7.28489 11.2536C6.97211 11.9267 6.29157 12.3942 5.50055 12.3944H4.90117C3.81399 12.3943 2.93253 11.5128 2.93246 10.4257C2.93246 9.33842 3.81395 8.45706 4.90117 8.45695L5.49986 8.45626C6.3511 8.45626 7.07508 8.99746 7.3498 9.75377H12.9224V11.2536H7.28489ZM5.49986 10.8938C5.75875 10.8938 5.96874 10.6839 5.96874 10.425C5.96843 10.1665 5.75899 9.95709 5.50055 9.95679H4.90117C4.64238 9.9569 4.4323 10.1668 4.4323 10.4257C4.43236 10.6844 4.64242 10.8944 4.90117 10.8945L5.49986 10.8938Z" fill="currentColor" stroke="none"/></symbol><symbol id="icon-empty-search" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="13" cy="13" r="8"/><line x1="19" y1="19" x2="26" y2="26"/><line x1="9" y1="13" x2="17" y2="13"/></symbol><symbol id="icon-empty-graph" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="16" r="4"/><circle cx="24" cy="8" r="4"/><circle cx="24" cy="24" r="4"/><line x1="12" y1="14.5" x2="20" y2="9.5"/><line x1="12" y1="17.5" x2="20" y2="22.5"/></symbol><symbol id="icon-empty-list" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="14" r="9"/><line x1="9" y1="14" x2="19" y2="14"/></symbol><symbol id="icon-node-text" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><line x1="2" y1="3" x2="10" y2="3"/><line x1="6" y1="3" x2="6" y2="10"/></symbol><symbol id="icon-node-ellipse" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><ellipse cx="6" cy="6" rx="5" ry="5"/></symbol><symbol id="icon-node-vector" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 9 L5 3 L8 7 L10 5"/></symbol><symbol id="icon-node-frame" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.5" y="1.5" width="9" height="9" rx="1.5"/></symbol><symbol id="icon-settings" viewBox="0 0 16 16"><path d="M4.19192 4.0103L5.71662 4.04482L6.44997 2.70519L6.62329 2.39099L6.97547 2.32747C7.30735 2.26782 7.65015 2.23563 8.00091 2.23562C8.26381 2.23563 8.52199 2.25393 8.77431 2.28811L9.02497 2.32747L9.37714 2.39099L9.55047 2.70519L10.2838 4.04482L11.8085 4.0103L12.1669 4.0027L12.3989 4.27477C12.8398 4.79481 13.1901 5.3946 13.4257 6.05013L13.5473 6.38711L13.3608 6.69371L12.566 7.99951L13.3601 9.306L13.5466 9.6126L13.4251 9.94958C13.1893 10.6055 12.8384 11.2042 12.3982 11.7236L12.1669 11.9963L11.8099 11.9887L10.2838 11.9542L9.55116 13.2931L9.37852 13.608L9.02635 13.6716C8.69777 13.7306 8.35487 13.7648 8.00091 13.7648C7.64693 13.7648 7.30403 13.7301 6.97477 13.6709L6.62191 13.608L6.44928 13.2931L5.71593 11.9549L4.19123 11.988L3.83354 11.9963L3.6029 11.7229C3.16262 11.2031 2.81083 10.6047 2.57538 9.94958L2.45523 9.6126L2.64167 9.306L3.43441 7.99951L2.64098 6.69371L2.45454 6.38711L2.57607 6.05013C2.81149 5.3953 3.16178 4.79518 3.6029 4.27477L3.83423 4.00201L4.19192 4.0103ZM4.53305 5.51842C4.37244 5.74258 4.23329 5.98365 4.11804 6.23727L4.95289 7.61074L5.19043 8.0002L4.95289 8.38966L4.11804 9.76175C4.23314 10.0149 4.37247 10.2551 4.53305 10.4792L6.13923 10.4447L6.59567 10.4343L6.81457 10.8342L7.58521 12.2428C7.72301 12.2569 7.8616 12.2649 8.00091 12.2649C8.13989 12.2649 8.27822 12.2562 8.41592 12.2422L9.18725 10.8342L9.40684 10.435L9.86259 10.4447L11.4653 10.4799C11.6266 10.2554 11.767 10.0152 11.8824 9.76175L11.0489 8.38966L10.8114 8.0002L11.0489 7.61074L11.8831 6.23658C11.7676 5.98286 11.6278 5.74219 11.4667 5.51773L9.86328 5.5564L9.40684 5.56676L9.18725 5.16625L8.41523 3.75618C8.27868 3.74277 8.14028 3.73547 8.00091 3.73546C7.86087 3.73547 7.72219 3.74273 7.58521 3.75618L6.81457 5.16625L6.59498 5.56676L6.13854 5.5564L4.53305 5.51842ZM6.63503 7.85933C6.70541 7.16726 7.28962 6.62693 8.00022 6.62673L8.14109 6.63364C8.8332 6.70411 9.37369 7.28949 9.37369 8.0002C9.3735 8.75813 8.75882 9.37274 8.00091 9.37298C7.29019 9.37298 6.70482 8.8325 6.63434 8.14038L6.62744 7.99951L6.63503 7.85933ZM8.00091 7.87314C7.93071 7.87314 7.87385 7.93001 7.87385 8.0002L7.88352 8.04992C7.90295 8.09524 7.94848 8.12726 8.00091 8.12726C8.05324 8.12708 8.09898 8.09524 8.1183 8.04992L8.12797 8.0002L8.11761 7.94979C8.10478 7.91981 8.08059 7.89567 8.05063 7.88281L8.00091 7.87314Z" fill="currentColor" stroke="none"/></symbol></defs>',document.body.insertBefore(n,document.body.firstChild)}();function varTypeIconHtml(e,n){n=n||12;var t=e==="COLOR"||e==="FLOAT"||e==="STRING"||e==="BOOLEAN"?"#icon-var-"+e:"#icon-var-FLOAT",i=e==="COLOR"||e==="STRING"?n+2:n;return'<svg width="'+i+'" height="'+i+'" style="flex-shrink:0"><use href="'+t+'"/></svg>'}(function(){const t=document.getElementById("tt");let i=null,s=0,l=0,o=null;function r(){const d=window.innerWidth,a=window.innerHeight,m=t.offsetWidth,C=t.offsetHeight;let u=s+14,f=l+14;u+m+10>d&&(u=s-m-8),f+C+10>a&&(f=l-C-8),t.style.left=u+"px",t.style.top=f+"px"}function L(d){t.textContent=d.dataset.tip,t.classList.remove("tt-visible"),clearTimeout(i),i=setTimeout(()=>{r(),t.classList.add("tt-visible")},2e3)}function c(){clearTimeout(i),t.classList.remove("tt-visible"),o=null}document.addEventListener("mousemove",d=>{s=d.clientX,l=d.clientY,t.classList.contains("tt-visible")&&r()}),document.addEventListener("mouseover",d=>{const a=d.target.closest("[data-tip]");a&&a!==o?(o=a,L(a)):a||c()}),document.addEventListener("mouseout",d=>{const a=d.target.closest("[data-tip]");a&&!a.contains(d.relatedTarget)&&c()}),document.addEventListener("mousedown",c),document.addEventListener("scroll",c,!0),document.addEventListener("keydown",c,!0)})();var toastTimer=null;function showToast(e){toastTimer&&clearTimeout(toastTimer),document.getElementById("toast-container").innerHTML=`<div class="toast"><span class="toast-icon"><svg width="16" height="16"><use href="#icon-check"/></svg></span><span>${e}</span></div>`,toastTimer=setTimeout(dismissToast,5e3)}function dismissToast(){toastTimer&&(clearTimeout(toastTimer),toastTimer=null);const e=document.querySelector(".toast");if(!e)return;e.classList.add("toast-out");const n=t=>{t.animationName==="toast-out"&&(e.removeEventListener("animationend",n),document.getElementById("toast-container").innerHTML="")};e.addEventListener("animationend",n)}function showProgress(e,n){const t=document.getElementById("progress-container");if(!t)return;const i=n&&n.cls||"",s=n&&n.cancel||null,l=t.querySelector(".progress-msg");if(l){const r=l.querySelector(".progress-text");if(r){r.textContent=e;return}}const o=s?'<button class="buttonTertiary" id="progress-cancel-btn"><span>Cancel</span></button>':"";if(t.innerHTML=`<div class="progress-msg${i?" "+i:""}"><div class="toast-content"><div class="toast-spinner"></div><span class="progress-text">${e}</span></div>${o}</div>`,s){const r=document.getElementById("progress-cancel-btn");r&&r.addEventListener("click",s)}}function dismissProgress(){const e=document.getElementById("progress-container");e&&(e.innerHTML="")}var _winResizeOpts=null,_winResizeStrip=null;function initWindowResize(e){if(e=e||{},_winResizeOpts){e.minW!==void 0&&(_winResizeOpts.minW=e.minW),e.maxW!==void 0&&(_winResizeOpts.maxW=e.maxW),e.minH!==void 0&&(_winResizeOpts.minH=e.minH),e.maxH!==void 0&&(_winResizeOpts.maxH=e.maxH),e.onSave!==void 0&&(_winResizeOpts.onSave=e.onSave),e.edges!==void 0&&(_winResizeOpts.allowB=e.edges!=="right",_winResizeOpts.allowR=e.edges!=="bottom",_winResizeStrip&&(_winResizeStrip.style.display=_winResizeOpts.allowR?"":"none"));return}_winResizeOpts={minW:e.minW||240,maxW:e.maxW||1400,minH:e.minH||100,maxH:e.maxH||1200,allowB:e.edges!=="right",allowR:e.edges!=="bottom",onSave:e.onSave||null};var n=_winResizeOpts,t=12,i=!1;_winResizeStrip=document.createElement("div"),_winResizeStrip.style.cssText="position:fixed;top:0;bottom:0;right:0;width:8px;z-index:9990;cursor:ew-resize;",n.allowR||(_winResizeStrip.style.display="none"),document.body.appendChild(_winResizeStrip);function s(o,r){if(i)return;i=!0,window._manualResizing=!0;var L=window.innerHeight,c=window.innerWidth;o&&(window._manualW=c),r&&(window._manualH=L);var d=r&&o?"nwse-resize":r?"ns-resize":"ew-resize";document.body.style.cursor=d,document.body.style.userSelect="none";var a=document.createElement("div");a.style.cssText="position:fixed;inset:0;z-index:9999;cursor:"+d+";",document.body.appendChild(a);function m(u){r&&(L=Math.min(Math.max(L+u.movementY,n.minH),n.maxH),window._manualH=L),o&&(c=Math.min(Math.max(c+u.movementX,n.minW),n.maxW),window._manualW=c),parent.postMessage({pluginMessage:{type:"ui-resize",width:Math.round(c),height:Math.round(L)}},"*")}function C(){i=!1,window._manualResizing=!1,a.remove(),document.body.style.cursor="",document.body.style.userSelect="",window.removeEventListener("mousemove",m),window.removeEventListener("mouseup",C),n.onSave&&n.onSave(Math.round(c),Math.round(L))}window.addEventListener("mousemove",m),window.addEventListener("mouseup",C)}_winResizeStrip.addEventListener("mousedown",function(o){!n.allowR||o.button!==0||(o.preventDefault(),s(!0,!1))});function l(o){return n.allowB&&window.innerHeight-o.clientY<=t}document.addEventListener("mousemove",function(o){if(!i){var r=l(o);document.body.style.cursor=r?"ns-resize":""}}),document.addEventListener("mousedown",function(o){l(o)&&(o.preventDefault(),s(!1,!0))})}initWindowResize({edges:"both",minW:300,maxW:1400,minH:160,maxH:1200,onSave:function(e,n){parent.postMessage({pluginMessage:{type:"save-size",width:e,height:n}},"*")}});function initSidePanelResize(e,n){n=n||{};var t=e.querySelector(".sidePanelResize");if(t){var i=e.classList.contains("sidePanel--right"),s=n.min||120,l=n.max||600,o=!1,r=0,L=0;t.addEventListener("dblclick",function(c){if(n.defaultWidth!=null){c.preventDefault();var d=n.defaultWidth;n.onDrag?n.onDrag(d):e.style.width=d+"px",n.onSave&&n.onSave(d)}}),t.addEventListener("mousedown",function(c){c.button===0&&(o=!0,r=c.clientX,L=e.offsetWidth,t.classList.add("dragging"),e.classList.add("resizing"),c.preventDefault())}),window.addEventListener("mousemove",function(c){if(o){var d=i?r-c.clientX:c.clientX-r,a=Math.min(Math.max(L+d,s),l);n.onDrag?n.onDrag(a):e.style.width=a+"px"}}),window.addEventListener("mouseup",function(){o&&(o=!1,t.classList.remove("dragging"),e.classList.remove("resizing"),n.onSave&&n.onSave(e.offsetWidth))})}}(function(){const e=document.createElement("div");e.id="toast-overlay",document.body.insertBefore(e,document.body.firstChild);const n=["progress-container"],t=["toast-container","progress-container"];function i(){return n.some(l=>{const o=document.getElementById(l);return o&&Array.from(o.children).some(r=>!r.classList.contains("toast-out")&&!r.classList.contains("progress-out"))})}function s(){e.classList.toggle("visible",i())}t.forEach(l=>{const o=document.getElementById(l);o&&new MutationObserver(s).observe(o,{childList:!0,subtree:!0,attributes:!0,attributeFilter:["class"]})})})();function createSegmentedControl(e,n,t){const i=document.createElement("div");return i.className="segmented-control",e.forEach(s=>{const l=document.createElement("button");if(l.className=s.value===n?"selected":"",l.dataset.value=s.value,s.icon){const r=document.createElement("span");r.innerHTML=s.icon,l.appendChild(r)}const o=document.createElement("span");o.textContent=s.label,l.appendChild(o),l.addEventListener("click",()=>{s.value!==n&&(i.querySelectorAll("button").forEach(r=>r.classList.remove("selected")),l.classList.add("selected"),n=s.value,t&&t(s.value))}),i.appendChild(l)}),i}function updateSegPill(e,n){var t=e&&e.querySelector(".seg-pill"),i=e&&e.querySelector("button.selected");!t||!i||(n?(t.style.transition="none",t.style.left=i.offsetLeft+"px",t.style.width=i.offsetWidth+"px",t.getBoundingClientRect(),t.style.transition=""):(t.style.left=i.offsetLeft+"px",t.style.width=i.offsetWidth+"px"))}if(document.querySelectorAll(".segmented-control").forEach(function(e){e.classList.add("has-pill"),updateSegPill(e,!0)}),window.addEventListener("resize",function(){document.querySelectorAll(".segmented-control").forEach(function(e){updateSegPill(e,!0)})}),typeof ResizeObserver!="undefined"){var _segPillRO=new ResizeObserver(function(e){e.forEach(function(n){n.target.offsetParent&&updateSegPill(n.target,!0)})});document.querySelectorAll(".segmented-control").forEach(function(e){_segPillRO.observe(e)})}
+
+</script>
+<script>
+  // Request saved window height as soon as the UI is ready.
+  parent.postMessage({ pluginMessage: { type: 'get-saved-height' } }, '*');
+
+  let exportedCount = 0, exportTotal = 0, scanToastTimer = null;
+  let _exportFmt = null, _exportLookup = null;
+  let _exportCancelled = false;
+  let _exportUsedFSA = false;   // true if at least one file was confirmed written via FSA
+  let _dirHandle = null;        // persisted folder handle (multi-file) — prompt once per session
+  let _singleFileHandle = null; // one-shot handle from showSaveFilePicker (single file)
+  let _pendingFiles = [];       // accumulates files for ZIP when FSA is unavailable (multi-file)
+
+  // ── Minimal ZIP builder (store/no-compression) for multi-file fallback ──
+  function _buildZip(files) {
+    function u16(n){const b=new Uint8Array(2);new DataView(b.buffer).setUint16(0,n,true);return b;}
+    function u32(n){const b=new Uint8Array(4);new DataView(b.buffer).setUint32(0,n,true);return b;}
+    function cat(aa){const t=aa.reduce((s,a)=>s+a.length,0),o=new Uint8Array(t);let p=0;for(const a of aa){o.set(a,p);p+=a.length;}return o;}
+    function crc32(d){let c=0xFFFFFFFF;for(let i=0;i<d.length;i++){c^=d[i];for(let j=0;j<8;j++)c=(c&1)?(c>>>1)^0xEDB88320:c>>>1;}return(c^0xFFFFFFFF)>>>0;}
+    const enc=new TextEncoder(), lp=[], cp=[];
+    let off=0;
+    for(const f of files){
+      const nm=enc.encode(f.name), d=f.data instanceof Uint8Array?f.data:new Uint8Array(f.data);
+      const crc=crc32(d), sz=d.length;
+      const lh=cat([new Uint8Array([0x50,0x4B,0x03,0x04]),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(sz),u32(sz),u16(nm.length),u16(0),nm,d]);
+      lp.push(lh);
+      cp.push(cat([new Uint8Array([0x50,0x4B,0x01,0x02]),u16(20),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(sz),u32(sz),u16(nm.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(off),nm]));
+      off+=lh.length;
+    }
+    const cdsz=cp.reduce((s,p)=>s+p.length,0);
+    return cat([...lp,...cp,cat([new Uint8Array([0x50,0x4B,0x05,0x06]),u16(0),u16(0),u16(files.length),u16(files.length),u32(cdsz),u32(off),u16(0)])]);
+  }
+
+  function _showExportProgress(text) {
+    showProgress(text, { cancel: () => {
+      _exportCancelled = true;
+      parent.postMessage({ pluginMessage: { type: 'cancel-export' } }, '*');
+      dismissProgress();
+      setExportBusy(false);
+    }});
+  }
+
+  // Auto CMYK from 0-255 RGB (mirrors code.js logic)
+  function rgbToCmykAuto(r, g, b) {
+    const rn = r / 255, gn = g / 255, bn = b / 255;
+    if (rn === 0 && gn === 0 && bn === 0) return { c: 0, m: 0, y: 0, k: 100 };
+    const k = 1 - Math.max(rn, gn, bn);
+    const d = 1 - k;
+    return {
+      c: Math.round((1 - rn - k) / d * 100),
+      m: Math.round((1 - gn - k) / d * 100),
+      y: Math.round((1 - bn - k) / d * 100),
+      k: Math.round(k * 100),
+    };
+  }
+
+  // ── Icon constants ──────────────────────────────────────────────────────
+  const removeIcon = `<svg width="16" height="16"><use href="#icon-clear"/></svg>`;
+  const focusIcon  = `<svg width="16" height="16"><use href="#icon-focus"/></svg>`;
+  const warningIcon = `<svg width="16" height="16"><use href="#icon-warning"/></svg>`;
+
+  // Track which CMYK group is currently being edited (for undo)
+  let _focusedGroup = null;
+
+  // ── Rebuild fork arrows for a row based on live output count ─────────
+  function updateForkArrows(outputCell) {
+    const row = outputCell.closest('tr');
+    if (!row) return;
+    const statusCell = row.querySelector('.status-fork');
+    if (!statusCell) return;
+
+    const count = Array.from(outputCell.querySelectorAll('.output-row'))
+      .filter(r => !r.classList.contains('output-row-removing') && r.style.visibility !== 'hidden').length;
+
+    const arrowItem = () => `<div class="fork-item"><span class="f-left"></span><span class="f-right"></span></div>`;
+
+    if (count <= 1) {
+      statusCell.className = 'status-fork';
+      statusCell.innerHTML = Array(Math.max(count,1)).fill(0).map(() => arrowItem()).join('');
+      return;
+    }
+
+    // Build SVG path for the fork
+    const ITEM_H = 24, GAP = 8, STEP = ITEM_H + GAP;
+    const W = 16, R = 6, S = 1.5;
+    const totalH = count * ITEM_H + (count - 1) * GAP;
+    const color = 'var(--border)';
+
+    // Center Y of each item
+    const cy = i => i * STEP + ITEM_H / 2;
+    const top = cy(0), bot = cy(count - 1);
+
+    // Trunk: vertical line between first and last branch centres
+    // Rounded top corner (curves right) and bottom corner (curves right)
+    let d = '';
+    // Top-left corner: arc from going-down to going-right
+    d += `M ${R},${top} Q 0,${top} 0,${top + R}`;
+    // Trunk body
+    d += ` L 0,${bot - R}`;
+    // Bottom-left corner: arc from going-down to going-right
+    d += ` Q 0,${bot} ${R},${bot}`;
+    // Top branch horizontal
+    d += ` M ${R},${top} L ${W},${top}`;
+    // Bottom branch horizontal
+    d += ` M ${R},${bot} L ${W},${bot}`;
+    // Middle branches
+    for (let i = 1; i < count - 1; i++) {
+      d += ` M 0,${cy(i)} L ${W},${cy(i)}`;
+    }
+
+    const svg = `<svg class="fork-svg" width="${W}" height="${totalH}" viewBox="0 0 ${W} ${totalH}">
+      <path d="${d}" fill="none" stroke="${color}" stroke-width="${S}" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+
+    statusCell.className = 'status-fork is-forked';
+    statusCell.innerHTML = svg + Array(count).fill(0).map(() => arrowItem()).join('');
+  }
+
+  // Document-level capture so we intercept before any browser native undo on the input
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+      if (_focusedGroup && _focusedGroup._original !== null) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const boxes = _focusedGroup.querySelectorAll('.cmyk-box');
+        boxes.forEach((b, j) => { b.value = _focusedGroup._original[j]; });
+        // Revert swatch
+        const orig = _focusedGroup._original.map(Number);
+        const swatch = _focusedGroup.closest('td').querySelector('.cmyk-swatch');
+        if (swatch) {
+          const cr = Math.round(255 * (1 - orig[0]/100) * (1 - orig[3]/100));
+          const cg = Math.round(255 * (1 - orig[1]/100) * (1 - orig[3]/100));
+          const cb = Math.round(255 * (1 - orig[2]/100) * (1 - orig[3]/100));
+          swatch.style.background = `#${[cr,cg,cb].map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,"0")).join("")}`;
+        }
+        _focusedGroup._original = null;
+      }
+    }
+  }, true); // capture phase — fires before browser default
+
+  function showEmpty() {
+    document.getElementById("empty-state").style.display = "";
+    if (window._notifyResize) window._notifyResize();
+    document.getElementById("results-ui").style.display = "none";
+  }
+  function showResults() {
+    document.getElementById("empty-state").style.display = "none";
+    document.getElementById("results-ui").style.display = "flex";
+  }
+
+  // Scan-in-progress indicator: same look as the export "Preparing…" bar.
+  // Minimum 2s on-screen so fast scans still register visually.
+  let _scanShownAt = 0;
+  let _scanCancelled = false;
+
+  function _setScanBusy(busy) {
+    const btn = document.getElementById('scan-btn');
+    if (btn) btn.disabled = busy || (window._selectionCount === 0);
+  }
+
+  function _startScanToastTimer() {
+    // Never overwrite an active export progress bar.
+    if (document.querySelector('#progress-container .progress-msg:not(.progress-scan)')) return;
+    _clearScanToastTimer(true);
+    _scanCancelled = false;
+    _scanShownAt = Date.now();
+    _setScanBusy(true);
+    showProgress('Scanning artwork…', { cls: 'progress-scan', cancel: (e) => {
+      if (e) e.stopPropagation();
+      _scanCancelled = true;
+      parent.postMessage({ pluginMessage: { type: 'cancel-scan' } }, '*');
+      _clearScanToastTimer(false);
+    }});
+  }
+
+  function _clearScanToastTimer(immediate) {
+    if (scanToastTimer) { clearTimeout(scanToastTimer); scanToastTimer = null; }
+    _setScanBusy(false);
+    const m = document.querySelector('.progress-msg.progress-scan');
+    if (!m) return;
+    if (immediate) { m.remove(); return; }
+    if (_scanCancelled) { dismissProgress(); return; }
+    // Keep visible for at least 2s.
+    const elapsed = Date.now() - _scanShownAt;
+    const remaining = Math.max(0, 2000 - elapsed);
+    setTimeout(() => {
+      if (document.querySelector('.progress-msg.progress-scan')) dismissProgress();
+    }, remaining);
+  }
+
+  // ── Live swatch preview update ───────────────────────────────────────
+
+  function updateSwatchPreview(group) {
+    const boxes = group.querySelectorAll(".cmyk-box");
+    const vals = Array.from(boxes).map(b => Math.min(100, Math.max(0, parseInt(b.value, 10) || 0)));
+    const [c, m, y, k] = vals;
+    const swatch = group.closest('td').querySelector(".cmyk-swatch");
+    if (!swatch) return;
+    const cr = Math.round(255 * (1 - c/100) * (1 - k/100));
+    const cg = Math.round(255 * (1 - m/100) * (1 - k/100));
+    const cb = Math.round(255 * (1 - y/100) * (1 - k/100));
+    swatch.style.background = `#${[cr,cg,cb].map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,"0")).join("")}`;
+  }
+
+  // ── CMYK 4-box commit ───────────────────────────────────────────────
+
+  function clamp(v) { return Math.min(100, Math.max(0, Math.round(v) || 0)); }
+
+  function commitCmykGroup(group) {
+    const boxes = group.querySelectorAll(".cmyk-box");
+    const idx   = parseInt(group.dataset.idx, 10);
+    const scanData = window._lastScanData;
+
+    const vals = Array.from(boxes).map(b => {
+      const n = parseInt(b.value, 10);
+      return isNaN(n) ? null : clamp(n);
+    });
+
+    // Revert boxes that have invalid values
+    if (vals.some(v => v === null)) {
+      if (scanData && scanData[idx]) {
+        const cm = scanData[idx].cmyk;
+        const keys = ['c','m','y','k'];
+        boxes.forEach((b, i) => { b.value = cm[keys[i]]; });
+      }
+      return;
+    }
+
+    const [c, m, y, k] = vals;
+    boxes.forEach(b => { b.value = clamp(parseInt(b.value, 10)); });
+
+    // Update the swatch preview
+    const swatch = group.closest('td').querySelector(".cmyk-swatch");
+    if (swatch) {
+      const cr = Math.round(255 * (1 - c/100) * (1 - k/100));
+      const cg = Math.round(255 * (1 - m/100) * (1 - k/100));
+      const cb = Math.round(255 * (1 - y/100) * (1 - k/100));
+      swatch.style.background = `#${[cr,cg,cb].map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,"0")).join("")}`;
+    }
+
+    // Skip if unchanged
+    if (scanData && scanData[idx]) {
+      const prev = scanData[idx].cmyk;
+      if (prev.c === c && prev.m === m && prev.y === y && prev.k === k) return;
+    }
+
+    // Switch auto group to edited style immediately
+    if (group.classList.contains('cmyk-auto')) {
+      group.classList.remove('cmyk-auto');
+    }
+
+    const cmykValue = `${c},${m},${y},${k}`;
+    parent.postMessage({ pluginMessage: {
+      type: "update-cmyk-variable",
+      colorVarId: group.dataset.colorVarId || null,
+      cmykValue
+    }}, "*");
+  }
+
+  // ── Generic text output commit ────────────────────────────────────────
+
+  function commitOutputWrap(wrap) {
+    const input = wrap.querySelector(".output-text-input");
+    if (!input) return;
+    const value = input.value.trim();
+    if (!value) return;
+    const outputType = wrap.dataset.outputType;
+    const colorVarId = wrap.dataset.colorVarId || null;
+    parent.postMessage({ pluginMessage: { type: `update-${outputType}-variable`, colorVarId, [`${outputType}Value`]: value }}, "*");
+  }
+
+  // ── Pantone colour approximation ─────────────────────────────────────
+  // A small reference table of common Pantone codes → hex.
+  // Used to colour the swatch as the user types.
+  const PANTONE_COLORS = {
+    '100':   '#f4ed7c', '101':   '#f4ed47', '102':   '#f9e000', '103':   '#c6ad0f',
+    '104':   '#ad9000', '105':   '#8b7500', '106':   '#f7e640', '107':   '#f7db00',
+    '108':   '#f9d300', '109':   '#f9c700', '110':   '#dba800', '111':   '#b28c00',
+    '112':   '#957500', '113':   '#f9e04b', '114':   '#f9d92f', '115':   '#f9cc1f',
+    '116':   '#ffb81c', '117':   '#cf9700', '118':   '#ac7f00', '119':   '#8a6400',
+    '120':   '#ffd74c', '121':   '#ffd040', '122':   '#ffc72c', '123':   '#ffb900',
+    '124':   '#d4a000', '125':   '#b38600', '126':   '#8e6c00', '127':   '#f5e07c',
+    '128':   '#f5d748', '129':   '#f5cc00', '130':   '#f0a800', '131':   '#cc8c00',
+    '132':   '#a37200', '133':   '#7a5500', '134':   '#fad77c', '135':   '#fac84c',
+    '136':   '#f9ba37', '137':   '#f5a800', '138':   '#cc8a00', '139':   '#a37000',
+    '140':   '#7a5200', '141':   '#f5c86c', '142':   '#f5b94a', '143':   '#f5aa37',
+    '144':   '#e88a00', '145':   '#c07200', '146':   '#9e5c00', '147':   '#7a4a00',
+    '148':   '#fadcaa', '149':   '#f9cc8c', '150':   '#f7b26a', '151':   '#f57a2a',
+    '152':   '#d45f00', '153':   '#ad4c00', '154':   '#8a3c00', '155':   '#f5d4aa',
+    '156':   '#f5bc7c', '157':   '#f5a057', '158':   '#f07830', '159':   '#d45f1a',
+    '160':   '#b04e10', '161':   '#8a3c0a', '162':   '#fccba8', '163':   '#fdb07c',
+    '164':   '#fc9050', '165':   '#fa7a2a', '166':   '#e06010', '167':   '#bc5010',
+    '168':   '#8a3800', '169':   '#fcc0a8', '170':   '#fc9c7c', '171':   '#fc7850',
+    '172':   '#f55828', '173':   '#d44010', '174':   '#b03010', '175':   '#8a2808',
+    '176':   '#ffb4a0', '177':   '#ff9080', '178':   '#ff6c5c', '179':   '#f04c30',
+    '180':   '#d03820', '181':   '#a82a15', '182':   '#ffc8b4', '183':   '#ffa08c',
+    '184':   '#ff7868', '185':   '#e8303a', '186':   '#cc2030', '187':   '#ae1828',
+    '188':   '#8c1420', '189':   '#ffc0c0', '190':   '#ff9898', '191':   '#ff7070',
+    '192':   '#f04858', '193':   '#cc3040', '194':   '#a82030', '195':   '#8c1820',
+    '200':   '#e85c6c', '201':   '#cc3048', '202':   '#b02040', '203':   '#f4a0b0',
+    '204':   '#f07888', '205':   '#e85870', '206':   '#cc1848', '207':   '#b00040',
+    '208':   '#8c0030', '209':   '#780028', '210':   '#ff9eb5', '211':   '#ff7898',
+    '212':   '#f55c80', '213':   '#e83870', '214':   '#cc1860', '215':   '#a80050',
+    '216':   '#880040', '217':   '#ffb8d0', '218':   '#f878a8', '219':   '#f04890',
+    '220':   '#cc0070', '221':   '#b00060', '222':   '#8c0050', '223':   '#ffaad0',
+    '224':   '#f888c0', '225':   '#f058a8', '226':   '#e02090', '227':   '#c00080',
+    '228':   '#9e0070', '229':   '#800058', '230':   '#ffb0d8', '231':   '#ff88c8',
+    '232':   '#f860b8', '233':   '#d830a0', '234':   '#b81890', '235':   '#98007a',
+    '236':   '#f9b8e0', '237':   '#f898d8', '238':   '#f070c8', '239':   '#e850c0',
+    '240':   '#d030b0', '241':   '#b81898', '242':   '#980080', '243':   '#f4c8e8',
+    '244':   '#f0b0e0', '245':   '#e898d8', '246':   '#d060c0', '247':   '#c040b0',
+    '248':   '#a82898', '249':   '#8a1880', '250':   '#efcce8', '251':   '#e8aae0',
+    '252':   '#da80d8', '253':   '#c050c8', '254':   '#a830b8', '255':   '#8c1898',
+    '256':   '#e8cce8', '257':   '#e0b8e0', '258':   '#c080c8', '259':   '#8c2898',
+    '260':   '#781880', '261':   '#680068', '262':   '#550050', '263':   '#e8d8f0',
+    '264':   '#ccc0e8', '265':   '#a890d8', '266':   '#8060c0', '267':   '#6030a8',
+    '268':   '#502090', '269':   '#400878', '270':   '#d0c8e8', '271':   '#b8b0e0',
+    '272':   '#9898d8', '273':   '#3028a0', '274':   '#281890', '275':   '#200878',
+    '276':   '#180860', '277':   '#c0d8f5', '278':   '#a0c4f0', '279':   '#70a8e8',
+    '280':   '#1a3a80', '281':   '#182870', '282':   '#101c50', '283':   '#a8cef0',
+    '284':   '#88b8ec', '285':   '#5098e0', '286':   '#1028a8', '287':   '#0e2098',
+    '288':   '#0c1880', '289':   '#091060', '290':   '#c8e0f5', '291':   '#a8d0f0',
+    '292':   '#80b8e8', '293':   '#0844b8', '294':   '#083098', '295':   '#062078',
+    '296':   '#051050', '297':   '#90ccf5', '298':   '#60bcf5', '299':   '#00a0f0',
+    '300':   '#0070cc', '301':   '#0058b0', '302':   '#00487a', '303':   '#003058',
+    '304':   '#c0e8f5', '305':   '#90d8f5', '306':   '#00c0f0', '307':   '#0088c0',
+    '308':   '#006898', '309':   '#004870', '310':   '#70d8f0', '311':   '#30c8ec',
+    '312':   '#00aad8', '313':   '#0098c8', '314':   '#0080b0', '315':   '#006890',
+    '316':   '#003850', '317':   '#c8eff5', '318':   '#98e0f0', '319':   '#60d0e8',
+    '320':   '#0098b0', '321':   '#0088a0', '322':   '#007888', '323':   '#006070',
+    '324':   '#b8e8e8', '325':   '#88d8d8', '326':   '#40c0c8', '327':   '#008890',
+    '328':   '#007880', '329':   '#006870', '330':   '#005058', '331':   '#c0f0e8',
+    '332':   '#98e8e0', '333':   '#60d8d0', '334':   '#008c80', '335':   '#007870',
+    '336':   '#006860', '337':   '#c0e8d8', '338':   '#98e0cc', '339':   '#60c8b0',
+    '340':   '#009c80', '341':   '#008870', '342':   '#007860', '343':   '#005848',
+    '344':   '#b8e8cc', '345':   '#90dab8', '346':   '#68c8a0', '347':   '#009850',
+    '348':   '#008040', '349':   '#007038', '350':   '#005028', '351':   '#c8f0d8',
+    '352':   '#a0e8c8', '353':   '#80e0b8', '354':   '#00b860', '355':   '#009a48',
+    '356':   '#008040', '357':   '#006830', '358':   '#c0e8a8', '359':   '#b0e098',
+    '360':   '#88d070', '361':   '#50c040', '362':   '#48a030', '363':   '#408828',
+    '364':   '#387020', '365':   '#d8f0b0', '366':   '#c8e898', '367':   '#b0d878',
+    '368':   '#70c020', '369':   '#58a818', '370':   '#488c10', '371':   '#3a7010',
+    '372':   '#e8f0a0', '373':   '#dce888', '374':   '#d0e068', '375':   '#a8d820',
+    '376':   '#88b810', '377':   '#709800', '378':   '#587a00', '379':   '#eef098',
+    '380':   '#e8ec78', '381':   '#e0e850', '382':   '#c8e000', '383':   '#a8c000',
+    '384':   '#889800', '385':   '#6c7800', '386':   '#eef060', '387':   '#eaec40',
+    '388':   '#e8e800', '389':   '#d8d800', '390':   '#b8b800', '391':   '#989800',
+    '392':   '#787800', '393':   '#f0f080', '394':   '#ece860', '395':   '#e8e030',
+    '396':   '#e0d800', '397':   '#c0b800', '398':   '#a09800', '399':   '#808000',
+    // Fluorescent / Spot
+    '485 C': '#e03028', '485':   '#e03028',
+    'Rhodamine Red': '#e0006a', 'Rhodamine Red C': '#e0006a',
+    'Rubine Red': '#c80050', 'Rubine Red C': '#c80050',
+    'Reflex Blue': '#003fa8', 'Reflex Blue C': '#003fa8',
+    'Process Blue': '#0085c8', 'Process Blue C': '#0085c8',
+    'Green': '#009f6b', 'Green C': '#009f6b',
+    'Purple': '#5c068c', 'Purple C': '#5c068c',
+    'Orange': '#fa6225', 'Orange C': '#fa6225',
+    'Yellow': '#ffc600', 'Yellow C': '#ffc600',
+    'Black': '#222222', 'Black C': '#222222',
+    'White': '#ffffff', 'White C': '#ffffff',
+    'Cool Gray 1': '#e0dfd8', 'Cool Gray 2': '#d6d4cc', 'Cool Gray 3': '#c8c6be',
+    'Cool Gray 4': '#b8b6ae', 'Cool Gray 5': '#a8a6a0', 'Cool Gray 6': '#999490',
+    'Cool Gray 7': '#8c8880', 'Cool Gray 8': '#807c75', 'Cool Gray 9': '#727068',
+    'Cool Gray 10': '#646260', 'Cool Gray 11': '#545250',
+    'Warm Gray 1': '#e0dbd5', 'Warm Gray 2': '#d5cfc8', 'Warm Gray 3': '#c8c0b8',
+    'Warm Gray 4': '#b8b0a8', 'Warm Gray 5': '#a8a098', 'Warm Gray 6': '#989088',
+    'Warm Gray 7': '#888078', 'Warm Gray 8': '#787068', 'Warm Gray 9': '#686058',
+    'Warm Gray 10': '#585048', 'Warm Gray 11': '#484038',
+  };
+
+  function pantoneToHex(code) {
+    if (!code) return null;
+    const key = code.trim();
+    // Try exact match
+    if (PANTONE_COLORS[key]) return PANTONE_COLORS[key];
+    // Try case-insensitive match
+    const lower = key.toLowerCase();
+    for (const k in PANTONE_COLORS) {
+      if (k.toLowerCase() === lower) return PANTONE_COLORS[k];
+    }
+    // Try numeric prefix (e.g. "485 C" → "485")
+    const num = key.replace(/\s*[CcUu]$/, '').trim();
+    if (PANTONE_COLORS[num]) return PANTONE_COLORS[num];
+    return null;
+  }
+
+  // ── Pantone swatch live update ────────────────────────────────────────
+
+  function updatePantoneSwatch(wrap, code) {
+    const row = wrap.closest('.output-row');
+    if (!row) return;
+    const swatch = row.querySelector('.output-swatch-pantone, .pantone-swatch');
+    if (!swatch) return;
+    const hex = pantoneToHex(code);
+    if (hex) { swatch.style.background = hex; swatch.classList.remove('empty'); swatch.style.removeProperty('opacity'); }
+    else      { swatch.style.removeProperty('background'); swatch.style.removeProperty('opacity'); swatch.classList.add('empty'); }
+  }
+
+  // ── RAL Classic colour table ─────────────────────────────────────────
+  const RAL_COLORS = {
+    '1000':'#BEBD7F','1001':'#C2B078','1002':'#C6A664','1003':'#E5BE01','1004':'#CDA323',
+    '1005':'#A98307','1006':'#E4A010','1007':'#DC9D00','1011':'#8A6642','1012':'#C7B446',
+    '1013':'#EAE6CA','1014':'#E1CC4F','1015':'#E6D690','1016':'#EDFF21','1017':'#F5D033',
+    '1018':'#F8F32B','1019':'#9E9764','1020':'#999950','1021':'#F3DA0B','1023':'#FAD201',
+    '1024':'#AEA04B','1026':'#FFFF00','1027':'#9D9101','1028':'#F4A900','1032':'#D6AE01',
+    '1033':'#F3A505','1034':'#EFA94A','1035':'#6A5D4D','1036':'#705335','1037':'#F39F18',
+    '2000':'#ED760E','2001':'#C93C20','2002':'#CB2821','2003':'#FF7514','2004':'#F44611',
+    '2005':'#FF2301','2007':'#FFA420','2008':'#F75E25','2009':'#F54021','2010':'#D84B20',
+    '2011':'#EC7C26','2012':'#E55137','2013':'#C35831',
+    '3000':'#AF2B1E','3001':'#A52019','3002':'#A2231D','3003':'#9B111E','3004':'#75151E',
+    '3005':'#5E2129','3007':'#412227','3009':'#642424','3011':'#781F19','3012':'#C1876B',
+    '3013':'#A12312','3014':'#D36E70','3015':'#EA899A','3016':'#B32821','3017':'#E63244',
+    '3018':'#D53032','3020':'#CC0605','3022':'#D95030','3024':'#F80000','3026':'#FE0000',
+    '3027':'#C51D34','3028':'#CB3234','3031':'#B32428','3032':'#721422','3033':'#B44C43',
+    '4001':'#6D3F5B','4002':'#922B3E','4003':'#DE4C8A','4004':'#641C34','4005':'#6C4675',
+    '4006':'#A03472','4007':'#4A192C','4008':'#924E7D','4009':'#A18594','4010':'#CF3476',
+    '4011':'#8673A1','4012':'#6C6874',
+    '5000':'#354D73','5001':'#1F3438','5002':'#20214F','5003':'#1D1E33','5004':'#18171C',
+    '5005':'#1E2460','5007':'#3E5F8A','5008':'#26252D','5009':'#025669','5010':'#0E294B',
+    '5011':'#231A24','5012':'#3B83BD','5013':'#1E213D','5014':'#606E8C','5015':'#2271B3',
+    '5017':'#063971','5018':'#3F888F','5019':'#1B5583','5020':'#1D334A','5021':'#256D7B',
+    '5022':'#252850','5023':'#49678D','5024':'#5D9B9B','5025':'#2A6478','5026':'#102C54',
+    '6000':'#316650','6001':'#287233','6002':'#2D572C','6003':'#424632','6004':'#1F3A3D',
+    '6005':'#2F4538','6006':'#3E3B32','6007':'#343B29','6008':'#39352A','6009':'#31372B',
+    '6010':'#35682D','6011':'#587246','6012':'#343E40','6013':'#6C7156','6014':'#47402E',
+    '6015':'#3B3C36','6016':'#1E5945','6017':'#4C9141','6018':'#57A639','6019':'#BDECB6',
+    '6020':'#2E3A23','6021':'#89AC76','6022':'#25221B','6024':'#308446','6025':'#3D642D',
+    '6026':'#015D52','6027':'#84C3BE','6028':'#2C5545','6029':'#20603D','6032':'#317F43',
+    '6033':'#497E76','6034':'#7FB5B5','6035':'#1C542D','6036':'#193737','6037':'#008F39',
+    '6038':'#00BB2D',
+    '7000':'#78858B','7001':'#8A9597','7002':'#817F68','7003':'#7D7F7D','7004':'#9EA0A1',
+    '7005':'#6C7059','7006':'#756F61','7008':'#6A5F31','7009':'#4D5645','7010':'#4C514A',
+    '7011':'#434B4D','7012':'#4E5754','7013':'#464531','7015':'#434750','7016':'#293133',
+    '7021':'#23282B','7022':'#332F2C','7023':'#686C5E','7024':'#474A51','7026':'#2F353B',
+    '7030':'#8B8C7A','7031':'#474B4E','7032':'#B8B799','7033':'#7D8471','7034':'#8F8B66',
+    '7035':'#D7D7D7','7036':'#7F7679','7037':'#7D7F7D','7038':'#B5B8B1','7039':'#6C6960',
+    '7040':'#9DA1AA','7042':'#8D948D','7043':'#4E5452','7044':'#CAC4B0','7045':'#909090',
+    '7046':'#82898F','7047':'#D0D0D0','7048':'#898176',
+    '8000':'#826C34','8001':'#955F20','8002':'#6C3B2A','8003':'#734222','8004':'#8E402A',
+    '8007':'#59351F','8008':'#6F4F28','8010':'#5B3A29','8011':'#592321','8012':'#7D2C14',
+    '8014':'#47260C','8015':'#643A2F','8016':'#59270D','8017':'#461A1E','8019':'#4A3728',
+    '8022':'#090606','8023':'#A65E2E','8024':'#79553D','8025':'#755C48','8028':'#4E3B31',
+    '8029':'#763C28',
+    '9001':'#FDF4E3','9002':'#E7EBDA','9003':'#F4F4F4','9004':'#282828','9005':'#0A0A0A',
+    '9006':'#A5A5A5','9007':'#8F8F8F','9010':'#FFFFFF','9011':'#1C1C1C','9016':'#F6F6F6',
+    '9017':'#1E1E1E','9018':'#D7D7D7','9022':'#9E9E9E','9023':'#828282',
+  };
+
+  function ralToHex(code) {
+    if (!code) return null;
+    const key = code.trim().replace(/^RAL\s*/i, '');
+    return RAL_COLORS[key] || null;
+  }
+
+  function updateRalSwatch(wrap, code) {
+    const row = wrap.closest('.output-row');
+    if (!row) return;
+    const swatch = row.querySelector('.output-swatch-ral');
+    if (!swatch) return;
+    const hex = ralToHex(code);
+    if (hex) { swatch.style.background = hex; swatch.classList.remove('empty'); swatch.style.removeProperty('opacity'); }
+    else      { swatch.style.removeProperty('background'); swatch.style.removeProperty('opacity'); swatch.classList.add('empty'); }
+  }
+
+  // ── Oracal 651 Vinyl colour table ────────────────────────────────────
+  const VINYL_COLORS = {
+    '000':'#FFFFFF','010':'#FFFDE0','012':'#FFF44F','013':'#FEDD00','016':'#FFC200',
+    '020':'#FFAA00','021':'#FF8200','023':'#FF6600','024':'#FF4800','025':'#FC3000',
+    '026':'#E8000D','027':'#C00000','028':'#8B0000','029':'#FF0099','031':'#E6007E',
+    '032':'#BF006B','033':'#A0005A','035':'#CC00CC','036':'#990099','037':'#660066',
+    '040':'#6600CC','041':'#4400AA','050':'#0000FF','051':'#0033CC','052':'#0055AA',
+    '053':'#003380','054':'#001A66','055':'#006699','056':'#005580','057':'#004466',
+    '058':'#003355','060':'#007ACC','061':'#0066AA','062':'#005580','063':'#003F60',
+    '065':'#00AACC','066':'#0099AA','067':'#007A8C','070':'#00CC99','071':'#00AA80',
+    '072':'#008866','073':'#006644','074':'#004433','075':'#00CC33','076':'#00AA00',
+    '077':'#008800','078':'#006600','079':'#004400','080':'#CCFF00','081':'#AADD00',
+    '082':'#88BB00','083':'#668800','090':'#FFFF00','091':'#DDDD00','092':'#BBBB00',
+    '093':'#999900','095':'#F5E642','096':'#E8C800','097':'#C8A800','098':'#A88800',
+    '100':'#F5C842','101':'#E8A800','102':'#C88800','103':'#A87000','104':'#885800',
+    '201':'#FFFFFF','202':'#EBEBEB','204':'#D0D0D0','210':'#A8A8A8','211':'#888888',
+    '212':'#686868','213':'#484848','214':'#282828','215':'#181818','220':'#000000',
+    '030':'#FF3399','034':'#CC0066','038':'#8B004B','045':'#5500CC','046':'#330099',
+    '057':'#004C80','069':'#006680','091':'#CCEE00','730':'#C8A87A','731':'#8B6338',
+    '734':'#6B4226','735':'#4A2A18',
+  };
+
+  // ── 3M 1080 Series colour table ──────────────────────────────────────
+  // Codes: G = Gloss, M = Matte, S = Satin, BR = Brushed, GP = Gloss Pearlescent, etc.
+  const THREE_M_COLORS = {
+    // Blacks & Whites
+    'G12':'#0A0A0A','M12':'#1A1A1A','S12':'#141414','G10':'#FFFFFF','M10':'#F0F0F0','S10':'#EBEBEB',
+    'G212':'#2C2C2C','M212':'#3A3A3A',
+    // Grays
+    'G120':'#595959','M120':'#686868','S120':'#606060','G170':'#A0A0A0','M170':'#ABABAB',
+    // Reds
+    'G13':'#B00020','M13':'#BF1020','S13':'#B50820','G173':'#CC1F2D','G163':'#E01028',
+    'G53':'#D40000','M53':'#CC0808',
+    // Oranges
+    'G14':'#E85A00','M14':'#E06000','G54':'#F07000','G114':'#FF6B00',
+    // Yellows
+    'G15':'#F5C800','M15':'#F0C000','G55':'#FFD700','G115':'#FFEC00',
+    // Greens
+    'G16':'#006B2D','M16':'#007030','G56':'#009945','G76':'#00A651','G96':'#4CAF50',
+    'G176':'#228B22','G186':'#2E8B57',
+    // Blues
+    'G17':'#003087','M17':'#003590','G57':'#0038A8','G77':'#0055B3','G97':'#1E90FF',
+    'G177':'#00539C','G387':'#0072CE','G227':'#4169E1',
+    // Purples
+    'G47':'#5B2D8E','M47':'#5F3090','G287':'#7B2FBE','G267':'#6A0F8E',
+    // Pinks / Magentas
+    'G29':'#C8005A','G29R':'#E00066','G249':'#E5006A',
+    // Browns / Coppers / Golds
+    'G246':'#7B3F00','M246':'#8B4513','G216':'#C68642','G256':'#B8860B','GP281':'#CFB53B',
+    // Special finishes (approximate base colour)
+    'S247':'#8B7355','BR201':'#9E9E9E','BR211':'#8C8C8C','BR221':'#707070',
+    'GP282':'#D4AF37','GP283':'#E8C96E','GP284':'#F0D080',
+  };
+
+  // ── Avery Dennison SW900 Supreme Wrapping Film colour table ──────────
+  // Codes: 900-XXX or 900-XXX-X (O=Opaque, S=Satin, M=Matte)
+  const AVERY_COLORS = {
+    // Blacks & Whites
+    '900-190':'#0A0A0A','900-190-O':'#0A0A0A',
+    '900-191':'#1C1C1C','900-192':'#2A2A2A',
+    '900-100':'#FFFFFF','900-100-O':'#FFFFFF',
+    '900-101':'#F2F2F2','900-102':'#E8E8E8',
+    // Grays
+    '900-193':'#5A5A5A','900-194':'#7A7A7A','900-195':'#A0A0A0','900-196':'#C0C0C0',
+    // Reds
+    '900-128':'#CC0020','900-128-O':'#CC0020','900-129':'#A80018','900-127':'#E02030',
+    '900-126':'#F03040','900-125':'#FF4050',
+    // Oranges
+    '900-164':'#E85500','900-164-O':'#E85500','900-165':'#F06000','900-163':'#D04500',
+    // Yellows
+    '900-115':'#F5C400','900-116':'#FFD300','900-117':'#FFEC00',
+    // Greens
+    '900-134':'#006B35','900-134-O':'#006B35','900-133':'#007A40','900-135':'#009450',
+    '900-136':'#00A550','900-137':'#4CAF50',
+    // Blues
+    '900-246':'#003087','900-246-O':'#003087','900-247':'#00408F','900-248':'#1456A0',
+    '900-249':'#1E6EBF','900-250':'#3A88CC','900-251':'#5BA3D9',
+    // Purples
+    '900-273':'#5B2D8E','900-274':'#7230A0','900-275':'#8C3EB8',
+    // Pinks / Magentas
+    '900-183':'#CC0066','900-184':'#E0007A','900-185':'#F0008A',
+    // Browns
+    '900-223':'#7B3F00','900-224':'#8B4513','900-225':'#9A5C2A',
+    // Golds / Silvers
+    '900-293':'#C0A840','900-292':'#A89030','900-291':'#CFB53B',
+    '900-196-M':'#C0C0C0','900-296':'#B8B8B8',
+  };
+
+  function vinylToHex(code) {
+    if (!code) return null;
+    const raw = code.trim();
+    // Try Oracal 651 (numeric codes)
+    const numKey = raw.replace(/^0+/, '') || '0';
+    const oracalHit = VINYL_COLORS[numKey.padStart(3, '0')] || VINYL_COLORS[numKey];
+    if (oracalHit) return oracalHit;
+    // Try 3M 1080 (letter+number codes like G12, M231)
+    const threeM = THREE_M_COLORS[raw.toUpperCase()];
+    if (threeM) return threeM;
+    // Try Avery Dennison SW900 (900-XXX codes)
+    const avery = AVERY_COLORS[raw] || AVERY_COLORS[raw.toUpperCase()];
+    if (avery) return avery;
+    return null;
+  }
+
+  function updateVinylSwatch(wrap, code) {
+    const row = wrap.closest('.output-row');
+    if (!row) return;
+    const swatch = row.querySelector('.output-swatch-vinyl');
+    if (!swatch) return;
+    const hex = vinylToHex(code);
+    if (hex) { swatch.style.background = hex; swatch.classList.remove('empty'); swatch.style.removeProperty('opacity'); }
+    else      { swatch.style.removeProperty('background'); swatch.style.removeProperty('opacity'); swatch.classList.add('empty'); }
+  }
+
+  // ── Pantone commit (kept for compat with inline-added rows) ──────────
+
+  function commitPantoneEdit(wrap) {
+    const input = wrap.querySelector(".pantone-input") || wrap.querySelector(".output-text-input");
+    if (!input) return;
+    const value = input.value.trim();
+    if (!value) return;
+    parent.postMessage({ pluginMessage: {
+      type: "update-pantone-variable",
+      colorVarId: wrap.dataset.colorVarId || null,
+      pantoneValue: value
+    }}, "*");
+  }
+
+  // Force a re-scan to restore UI state (e.g. cancel add)
+  function runScanRefresh() {
+    _startScanToastTimer();
+    parent.postMessage({ pluginMessage: { type: "request-scan" }}, "*");
+  }
+
+  // ── Output type config ────────────────────────────────────────────────
+
+  const OUTPUT_TYPES = [
+    { key: 'pantone', label: 'Pantone', color: '#888', swatchDefault: '#888' },
+    { key: 'ral',     label: 'RAL',     color: '#888', swatchDefault: '#888' },
+    { key: 'vinyl',   label: 'Vinyl',   color: '#888', swatchDefault: '#888' },
+  ];
+
+  // ── Color conversion ───────────────────────────────────────────────
+
+  // CMYK byte values: 0 = no ink, 255 = full ink
+  // For paired variables, use the stored values directly
+  // For calculated, use standard RGB→CMYK with ink threshold cleanup
+  function rgbPixelToCmyk(r, g, b, cl) {
+    const hex = "#" + [r,g,b].map(v=>v.toString(16).padStart(2,"0")).join("").toUpperCase();
+    if (cl && cl[hex]) {
+      const m = cl[hex];
+      return [Math.round(m.c * 2.55), Math.round(m.m * 2.55), Math.round(m.y * 2.55), Math.round(m.k * 2.55)];
+    }
+    const rn = r / 255, gn = g / 255, bn = b / 255;
+    if (rn === 0 && gn === 0 && bn === 0) return [0, 0, 0, 255];
+    const k = 1 - Math.max(rn, gn, bn);
+    const c = (1 - rn - k) / (1 - k);
+    const m = (1 - gn - k) / (1 - k);
+    const y = (1 - bn - k) / (1 - k);
+    let cb = Math.round(c * 255), mb = Math.round(m * 255),
+        yb = Math.round(y * 255), kb = Math.round(k * 255);
+    // Remove trace ink < ~1.2% that causes visible screen color casts
+    if (cb <= 3) cb = 0;
+    if (mb <= 3) mb = 0;
+    if (yb <= 3) yb = 0;
+    return [cb, mb, yb, kb];
+  }
+
+  // Load PNG into canvas and return raw RGBA pixel data
+  function loadPngToCanvas(png, w, h, whiteBg) {
+    return new Promise(resolve => {
+      const blob = new Blob([new Uint8Array(png)], { type: "image/png" });
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const cv = document.getElementById("convert-canvas");
+        cv.width = w; cv.height = h;
+        const ctx = cv.getContext("2d");
+        if (whiteBg) { ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, w, h); }
+        else { ctx.clearRect(0, 0, w, h); }
+        ctx.drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        resolve(ctx.getImageData(0, 0, w, h).data);
+      };
+      img.src = url;
+    });
+  }
+
+  // ── Compress with deflate ──────────────────────────────────────────
+
+  async function deflateBuf(raw) {
+    const cs=new CompressionStream("deflate"); const w=cs.writable.getWriter(); w.write(raw); w.close();
+    const chunks=[]; const r=cs.readable.getReader();
+    while(true){const{done,value}=await r.read();if(done)break;chunks.push(value);}
+    const total=chunks.reduce((s,c)=>s+c.length,0); const out=new Uint8Array(total); let off=0;
+    for(const c of chunks){out.set(c,off);off+=c.length;} return out;
+  }
+
+  // ── Decompress FlateDecode ─────────────────────────────────────────
+  async function inflateBuf(compressed) {
+    const ds=new DecompressionStream("deflate");const wr=ds.writable.getWriter();wr.write(compressed);wr.close();
+    const chunks=[];const rd=ds.readable.getReader();
+    while(true){const{done,value}=await rd.read();if(done)break;chunks.push(value);}
+    const total=chunks.reduce((s,c)=>s+c.length,0);const out=new Uint8Array(total);let o=0;
+    for(const c of chunks){out.set(c,o);o+=c.length;}return out;
+  }
+
+  // ── RGB float [0-1] → CMYK float [0-1] with color lookup ──────────
+  function rgbFloatToCmykFloat(r,g,b,cl){
+    if(cl){
+      const ri=Math.round(r*255),gi=Math.round(g*255),bi=Math.round(b*255);
+      const hex="#"+[ri,gi,bi].map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,"0")).join("").toUpperCase();
+      if(cl[hex]){const m=cl[hex];return[m.c/100,m.m/100,m.y/100,m.k/100];}
+    }
+    if(r===0&&g===0&&b===0)return[0,0,0,1];
+    const k=1-Math.max(r,g,b);
+    const c=(1-r-k)/(1-k),m=(1-g-k)/(1-k),y=(1-b-k)/(1-k);
+    return[c<=0.012?0:c,m<=0.012?0:m,y<=0.012?0:y,k];
+  }
+
+  // ── Vector PDF RGB → CMYK converter ────────────────────────────────
+  // Takes Figma's native vector PDF and converts ICCBased RGB colors to
+  // DeviceCMYK while preserving paths, text, images, and structure.
+  async function convertPdfToCmyk(pdfBytesArr, colorLookup) {
+    const raw=new Uint8Array(pdfBytesArr), N=raw.length;
+    function b2s(b,f,t){let s='';for(let i=f||0;i<(t||b.length);i++)s+=String.fromCharCode(b[i]);return s;}
+    function s2b(s){const b=new Uint8Array(s.length);for(let i=0;i<s.length;i++)b[i]=s.charCodeAt(i)&0xFF;return b;}
+    const pdf=b2s(raw);
+
+    // ── Parse xref ──
+    const sxm=pdf.lastIndexOf('startxref');
+    if(sxm<0)throw new Error('Invalid PDF');
+    const xrefOff=parseInt(pdf.substring(sxm+9).trim());
+    const xrefArea=pdf.substring(xrefOff);
+    const offsets={};
+
+    if(xrefArea.trimStart().startsWith('xref')){
+      const xb=xrefArea.substring(xrefArea.indexOf('\n')+1);
+      const secRe=/(\d+)\s+(\d+)\s*[\r\n]+((?:\d{10}\s+\d{5}\s+[fn][\s\r\n]+)+)/g;
+      let sm;
+      while((sm=secRe.exec(xb))!==null){
+        const first=parseInt(sm[1]),cnt=parseInt(sm[2]),lines=sm[3].trim().split(/\r?\n/);
+        for(let i=0;i<Math.min(cnt,lines.length);i++){
+          const p=lines[i].trim().split(/\s+/);
+          if(p[2]==='n'&&(first+i)>0)offsets[first+i]=parseInt(p[0]);
+        }
+      }
+    }else{
+      // Fallback: scan for object markers
+      const oRe=/(\d+)\s+0\s+obj\b/g;let om;
+      while((om=oRe.exec(pdf))!==null)offsets[parseInt(om[1])]=om.index;
+    }
+
+    const tmRe=/trailer\s*<<([\s\S]*?)>>/;
+    const tMatch=tmRe.exec(xrefArea)||tmRe.exec(pdf);
+    const trailerDict=tMatch?tMatch[1]:' /Root 1 0 R /Size 1';
+
+    // ── Parse objects ──
+    const nums=Object.keys(offsets).map(Number).sort((a,b)=>offsets[a]-offsets[b]);
+    const bounds=nums.map(n=>offsets[n]).concat(xrefOff).sort((a,b)=>a-b);
+    function nextB(off){for(const b of bounds)if(b>off)return b;return N;}
+
+    const objs={};
+    for(const num of nums){
+      const off=offsets[num],end=nextB(off);
+      const chunk=pdf.substring(off,end);
+      const hm=chunk.match(/^\d+\s+\d+\s+obj[\s\r\n]*/);
+      if(!hm)continue;
+      const bS=hm[0].length,eoI=chunk.lastIndexOf('endobj');
+      const body=chunk.substring(bS,eoI>0?eoI:undefined).trim();
+
+      const stIdx=body.indexOf('stream');
+      if(stIdx>=0){
+        const dict=body.substring(0,stIdx);
+        const ch1=body.charCodeAt(stIdx+6),ch2=body.charCodeAt(stIdx+7);
+        const dO=(ch1===13&&ch2===10)?stIdx+8:(ch1===10||ch1===13)?stIdx+7:stIdx+6;
+        let len=null;
+        const lr=dict.match(/\/Length\s+(\d+)\s+0\s+R/);
+        if(lr){
+          const ln=parseInt(lr[1]);
+          if(offsets[ln]!=null){const lc=pdf.substring(offsets[ln],offsets[ln]+80);const lv=lc.match(/obj\s*[\r\n]*\s*(\d+)/);if(lv)len=parseInt(lv[1]);}
+        }
+        if(len==null){const ld=dict.match(/\/Length\s+(\d+)/);if(ld)len=parseInt(ld[1]);}
+        if(len!=null){
+          const abs=off+bS+dO;
+          objs[num]={dict,streamRaw:raw.slice(abs,abs+len),isFlate:/\/FlateDecode/.test(dict),type:'stream'};
+        }else{objs[num]={body,type:'plain'};}
+      }else{objs[num]={body,type:'plain'};}
+    }
+
+    // ── Classify objects ──
+    const iccRgb=new Set(),imgNums=new Set();
+    for(const[n,o]of Object.entries(objs))
+      if(o.type==='stream'&&/\/N\s+3\b/.test(o.dict))iccRgb.add(+n);
+    for(const[n,o]of Object.entries(objs)){
+      if(o.type==='stream'&&/\/Subtype\s*\/Image/.test(o.dict)){
+        let rgb=false;
+        for(const i of iccRgb)if(o.dict.includes(i+' 0 R'))rgb=true;
+        if(/\/ColorSpace\s*\/DeviceRGB/.test(o.dict))rgb=true;
+        if(rgb)imgNums.add(+n);
+      }
+    }
+
+    // ── Collect SMask Form XObject refs ──
+    // Mask XObjects referenced by /SMask << /G N 0 R >> must be kept intact:
+    // their Group must not be stripped (needed for correct mask compositing)
+    // and their streams must not be color-converted (DeviceGray, not CMYK).
+    const smaskNums=new Set();
+    for(const[,obj]of Object.entries(objs)){
+      const body=obj.type==='stream'?obj.dict:(obj.body||'');
+      for(const m of body.matchAll(/\/SMask\s*<<[^>]*\/G\s+(\d+)\s+0\s+R/g))
+        smaskNums.add(+m[1]);
+    }
+
+    // ── Convert SMask references to explicit W n clip paths ──
+    // Modern Illustrator silently drops Figma's /SMask transparency clips
+    // when opening PDFs (Preview honors them, Illustrator doesn't). Convert
+    // each `/Name gs` that activates an SMask into an inline clip path so
+    // Illustrator sees a native Clip Path and clips correctly.
+    //
+    // Strategy: scan every object body/dict globally for ExtGState entries
+    // (inline or indirect) that contain /SMask << /G N 0 R >>, mapping
+    // resource names → mask-XObject numbers. Then in every content stream
+    // (page contents OR Form XObject), replace `/Name gs` with the mask's
+    // path operators ending in `W n`.
+
+    // Step 1: ExtGState plain-object → mask XObject number
+    const extGSToMask=new Map();
+    for(const[nS,obj]of Object.entries(objs)){
+      const text=obj.type==='plain'?(obj.body||''):obj.dict;
+      const m=text.match(/\/SMask\s*<<[^>]*\/G\s+(\d+)\s+0\s+R/);
+      if(m&&!/\/SMask\s*<<[^>]*\/G\s+(\d+)\s+0\s+R[\s\S]*\/SMask/.test(text)){
+        if(obj.type==='plain')extGSToMask.set(+nS,+m[1]);
+      }
+    }
+
+    // Step 2: per-stream "name → mask XObject number" maps.
+    //
+    // CRITICAL: resource names like /E1 are LOCAL to each Form XObject's
+    // (or Page's) /Resources dict — the page can use /E1 for one mask and
+    // obj 22 can use /E1 for a totally different mask. Building a single
+    // global map clobbers obj 22's scope with the page's, so the swatch
+    // inside obj 22 gets clipped by the frame's mask rather than its own.
+    //
+    // Build the name→mask map fresh per processed stream using only that
+    // stream's own Resources.
+    function balancedDict(t,si){
+      if(t.substr(si,2)!=='<<')return null;
+      let d=0,i=si;
+      while(i<t.length-1){
+        if(t[i]==='<'&&t[i+1]==='<'){d++;i+=2;}
+        else if(t[i]==='>'&&t[i+1]==='>'){d--;i+=2;if(d===0)return t.substring(si,i);}
+        else i++;
+      }
+      return null;
+    }
+    function getResourcesText(dictOrBody){
+      const re=/\/Resources\b/.exec(dictOrBody);
+      if(!re)return '';
+      let i=re.index+10;
+      while(i<dictOrBody.length&&/\s/.test(dictOrBody[i]))i++;
+      if(dictOrBody.substr(i,2)==='<<')return balancedDict(dictOrBody,i)||'';
+      const mm=dictOrBody.substr(i,30).match(/^(\d+)\s+0\s+R/);
+      if(mm){const t=objs[+mm[1]];return t&&t.type==='plain'?(t.body||''):'';}
+      return '';
+    }
+    function buildScopedNameToMask(resText){
+      const map=new Map();
+      if(!resText)return map;
+      for(const m of resText.matchAll(/\/(\w+)\s*<<[^<>]*?\/SMask\s*<<[^<>]*?\/G\s+(\d+)\s+0\s+R/g))
+        map.set(m[1],+m[2]);
+      for(const m of resText.matchAll(/\/(\w+)\s+(\d+)\s+0\s+R\b/g))
+        if(extGSToMask.has(+m[2]))map.set(m[1],extGSToMask.get(+m[2]));
+      return map;
+    }
+    // For page content streams (which don't carry their own Resources), map
+    // each /Contents stream to its parent Page's Resources text up-front.
+    const streamToResources=new Map();
+    for(const[,obj]of Object.entries(objs)){
+      if(obj.type!=='plain')continue;
+      if(!/\/Type\s*\/Page\b/.test(obj.body))continue;
+      if(/\/Type\s*\/Pages\b/.test(obj.body))continue;
+      const cm=obj.body.match(/\/Contents\s+(\d+)\s+0\s+R/);
+      const cmArr=obj.body.match(/\/Contents\s*\[\s*((?:\d+\s+0\s+R\s*)+)\]/);
+      const contentNums=[];
+      if(cm)contentNums.push(+cm[1]);
+      if(cmArr)for(const mm of cmArr[1].matchAll(/(\d+)\s+0\s+R/g))contentNums.push(+mm[1]);
+      if(!contentNums.length)continue;
+      const resText=getResourcesText(obj.body);
+      for(const cn of contentNums)streamToResources.set(cn,resText);
+    }
+
+    // Helper: extract a clip path from a mask Form XObject's stream.
+    //
+    // Walks the mask body, keeps `cm` + path operators, replaces each
+    // painting op with `W n`, and emits the cumulative inverse `cm` at
+    // the end so the transform applied by the mask's own `cm` ops does
+    // NOT leak onto subsequent content drawn under the clip.
+    //
+    // Without that inverse, `/X_ Do` after the clip gets drawn translated
+    // by whatever the mask was translated by — content appears offset
+    // inside the clip region. We saw this in Frame 79 (mask cm 32,32).
+    //
+    // Fallback: if the mask has no painted shapes (e.g. `q /E_ gs /X_ Do Q`
+    // — Figma's nested-mask pattern), recurse via `/Name gs` (inner SMask)
+    // first, then `/Name Do`. Depth-limited cycle guard.
+    function pdfMulCm(B,A){
+      return[B[0]*A[0]+B[1]*A[2],B[0]*A[1]+B[1]*A[3],B[2]*A[0]+B[3]*A[2],B[2]*A[1]+B[3]*A[3],B[4]*A[0]+B[5]*A[2]+A[4],B[4]*A[1]+B[5]*A[3]+A[5]];
+    }
+    function pdfInvCm(m){
+      const det=m[0]*m[3]-m[1]*m[2];
+      if(Math.abs(det)<1e-12)return null;
+      const id=1/det;
+      return[m[3]*id,-m[1]*id,-m[2]*id,m[0]*id,(m[2]*m[5]-m[3]*m[4])*id,(m[1]*m[4]-m[0]*m[5])*id];
+    }
+    function pdfFmtN(v){const s=Number(v).toFixed(6);return s.replace(/0+$/,'').replace(/\.$/,'');}
+    async function maskToClipPath(maskNum,depth=0,visited=new Set()){
+      if(depth>4||visited.has(maskNum))return null;
+      visited.add(maskNum);
+      const mask=objs[maskNum];
+      if(!mask||mask.type!=='stream')return null;
+      let body;
+      try{body=mask.isFlate?b2s(await inflateBuf(mask.streamRaw)):b2s(mask.streamRaw);}
+      catch(e){return null;}
+      const PATH_OPS=new Set(['m','l','c','v','y','h','re']);
+      const PAINT_OPS=new Set(['f','F','f*','B','B*','b','b*','S','s']);
+      const lines=body.split(/\r?\n/);
+      const hasPaint=lines.some(l=>{const t=l.trim().split(/\s+/);return t.length&&PAINT_OPS.has(t[t.length-1]);});
+      if(hasPaint){
+        const out=[];
+        let composedCm=[1,0,0,1,0,0];
+        for(let line of lines){
+          line=line.trim();
+          if(!line)continue;
+          const tokens=line.split(/\s+/);
+          const op=tokens[tokens.length-1];
+          if(op==='cm'&&tokens.length===7){
+            const m=tokens.slice(0,6).map(parseFloat);
+            if(m.every(v=>!isNaN(v))){composedCm=pdfMulCm(m,composedCm);out.push(line);}
+          }else if(PATH_OPS.has(op)){
+            out.push(line);
+          }else if(PAINT_OPS.has(op)){
+            out.push('W n');
+          }
+        }
+        // Emit inverse cm so /X_ Do after the clip is drawn at the original
+        // CTM (clip is preserved in device coords by W n; only the user-space
+        // CTM is reverted).
+        const inv=pdfInvCm(composedCm);
+        if(inv)out.push(`${pdfFmtN(inv[0])} ${pdfFmtN(inv[1])} ${pdfFmtN(inv[2])} ${pdfFmtN(inv[3])} ${pdfFmtN(inv[4])} ${pdfFmtN(inv[5])} cm`);
+        return out.join('\n');
+      }
+      // No painted shapes — try recursion through this mask's own resources.
+      const xobjMap=new Map();
+      const extGSMap=new Map();
+      const xMatch=mask.dict.match(/\/XObject\s*<<([^<>]*)>>/);
+      if(xMatch)for(const m of xMatch[1].matchAll(/\/(\w+)\s+(\d+)\s+0\s+R/g))xobjMap.set(m[1],+m[2]);
+      const eMatch=mask.dict.match(/\/ExtGState\s*<<([\s\S]*?)>>\s*(?:\/[A-Z]|>>)/);
+      if(eMatch)for(const m of eMatch[1].matchAll(/\/(\w+)\s*<<[^<>]*?\/SMask\s*<<[^<>]*?\/G\s+(\d+)\s+0\s+R/g))extGSMap.set(m[1],+m[2]);
+      for(const m of body.matchAll(/\/(\w+)\s+gs\b/g)){
+        const target=extGSMap.get(m[1]);
+        if(target){const nested=await maskToClipPath(target,depth+1,visited);if(nested)return nested;}
+      }
+      for(const m of body.matchAll(/\/(\w+)\s+Do\b/g)){
+        const target=xobjMap.get(m[1]);
+        if(target){const nested=await maskToClipPath(target,depth+1,visited);if(nested)return nested;}
+      }
+      return null;
+    }
+
+    // Step 3: rewrite every content stream that uses a masking gs, using
+    // the name→mask map scoped to THAT stream's own Resources.
+    for(const[nS,obj]of Object.entries(objs)){
+      if(obj.type!=='stream')continue;
+      const n=+nS;
+      if(iccRgb.has(n)||imgNums.has(n)||smaskNums.has(n))continue;
+      // Pick the right Resources text for this stream:
+      //  - Form XObject → its own /Resources (inline or indirect)
+      //  - Page content stream → the parent Page's /Resources (pre-mapped)
+      let resText='';
+      if(/\/Subtype\s*\/Form/.test(obj.dict))resText=getResourcesText(obj.dict);
+      else if(streamToResources.has(n))resText=streamToResources.get(n);
+      const scopedNameToMask=buildScopedNameToMask(resText);
+      if(scopedNameToMask.size===0)continue;
+      let body;
+      try{body=obj.isFlate?b2s(await inflateBuf(obj.streamRaw)):b2s(obj.streamRaw);}
+      catch(e){continue;}
+      let modified=false;
+      for(const[name,maskNum]of scopedNameToMask){
+        const re=new RegExp('\\/'+name+'\\b\\s+gs\\b','g');
+        if(!re.test(body))continue;
+        const clip=await maskToClipPath(maskNum);
+        if(!clip)continue;
+        body=body.replace(re,clip);
+        modified=true;
+      }
+      if(!modified)continue;
+      const nb=s2b(body);
+      obj.streamRaw=obj.isFlate?await deflateBuf(nb):nb;
+      obj.dict=obj.dict.replace(/\/Length\s+\d+(\s+0\s+R)?/,'/Length '+obj.streamRaw.length);
+    }
+
+    // ── Replace /Group transparency with explicit BBox clip ──
+    // Modern Illustrator misreads Figma's /Group << /S /Transparency >> on
+    // every Form XObject and hides all content ("broken Clip Group" bug).
+    // Stripping /Group alone restores visibility but kills the implicit
+    // BBox clip that "Clip content" frames depend on. Solution: inject an
+    // explicit `q [BBox] re W n ... Q` wrapper around each Form XObject's
+    // stream, THEN strip /Group. Content stays visible and stays clipped.
+    for(const[nS,obj]of Object.entries(objs)){
+      if(obj.type!=='stream')continue;
+      const n=+nS;
+      if(iccRgb.has(n)||imgNums.has(n)||smaskNums.has(n))continue;
+      if(!/\/Subtype\s*\/Form/.test(obj.dict))continue;
+      if(!/\/Group\s*<<[^>]*\/S\s*\/Transparency/.test(obj.dict))continue;
+      const bbm=obj.dict.match(/\/BBox\s*\[\s*([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s*\]/);
+      if(!bbm)continue;
+      const x0=+bbm[1],y0=+bbm[2],x1=+bbm[3],y1=+bbm[4];
+      const w=x1-x0,h=y1-y0;
+      let body;
+      try{body=obj.isFlate?b2s(await inflateBuf(obj.streamRaw)):b2s(obj.streamRaw);}
+      catch(e){continue;}
+      const wrapped=`q\n${x0} ${y0} ${w} ${h} re W n\n${body}\nQ`;
+      const nb=s2b(wrapped);
+      obj.streamRaw=obj.isFlate?await deflateBuf(nb):nb;
+      obj.dict=obj.dict.replace(/\/Group\s*<<[^>]*>>\s*/g,'');
+      obj.dict=obj.dict.replace(/\/Length\s+\d+(\s+0\s+R)?/,'/Length '+obj.streamRaw.length);
+    }
+
+    // ── Strip only /SMask /None from ExtGState objects ──
+    // /None means "no mask" in PDF spec — safe to drop. Inline << >> SMask
+    // dicts MUST be preserved when they contain a /G N 0 R reference, since
+    // that IS Figma's clipping mask. The previous broad-strip regex was
+    // silently removing those references and killing clip behavior.
+    const sMaskRe=/\/SMask\s+\/None\b\s*/g;
+    for(const[,obj]of Object.entries(objs)){
+      if(obj.type==='plain'&&/\/SMask\s+\/None/.test(obj.body))
+        obj.body=obj.body.replace(sMaskRe,'');
+      else if(obj.type==='stream'&&/\/SMask\s+\/None/.test(obj.dict))
+        obj.dict=obj.dict.replace(sMaskRe,'');
+    }
+
+    // ── Strip ICC RGB refs from non-image objects (mask Form XObjects etc.) ──
+    // Preserved SMask Form XObjects may still reference ICC RGB profiles in their
+    // dicts, causing Illustrator's "mixed color mode" dialog. Replace with DeviceGray.
+    // (Only the dict is touched here — stream content is left intact for mask XObjects.)
+    for(const[nS,obj]of Object.entries(objs)){
+      const n=+nS;
+      if(imgNums.has(n)||iccRgb.has(n))continue;
+      const k=obj.type==='stream'?'dict':'body';
+      for(const i of iccRgb){
+        obj[k]=obj[k].replace(new RegExp('\\[\\s*/ICCBased\\s+'+i+'\\s+0\\s+R\\s*\\]','g'),'/DeviceGray');
+        obj[k]=obj[k].replace(new RegExp('/CS\\s+'+i+'\\s+0\\s+R','g'),'/CS /DeviceGray');
+      }
+    }
+
+    // ── Convert content stream colors ──
+    function fmtF(v){if(v===0)return'0';if(v===1)return'1';return v.toFixed(5).replace(/0+$/,'').replace(/\.$/,'');}
+    function cvtColors(txt){
+      // Switch named color space selections to DeviceCMYK so transparency
+      // groups that inherit the current CS get CMYK (not ICCBased RGB).
+      // Without this, /Group << /S /Transparency >> (no /CS) inherits RGB
+      // from the parent context but content uses k/K → blending mismatch.
+      txt=txt.replace(/\/C\d+\s+cs\b/g,'/DeviceCMYK cs');
+      txt=txt.replace(/\/C\d+\s+CS\b/g,'/DeviceCMYK CS');
+      // All RGB color ops → k/K (direct DeviceCMYK, no CS dependency)
+      txt=txt.replace(/([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+(scn|SCN|rg|RG)\b/g,(m,rs,gs,bs,op)=>{
+        const r=parseFloat(rs),g=parseFloat(gs),b=parseFloat(bs);
+        if(isNaN(r)||isNaN(g)||isNaN(b)||r>1.001||g>1.001||b>1.001)return m;
+        const[c,mk,y,kv]=rgbFloatToCmykFloat(r,g,b,colorLookup);
+        const isStroke=(op==='SCN'||op==='RG');
+        return`${fmtF(c)} ${fmtF(mk)} ${fmtF(y)} ${fmtF(kv)} ${isStroke?'K':'k'}`;
+      });
+      // 1-arg gray → k/K
+      txt=txt.replace(/([\d.]+)\s+([gG])\b/g,(m,gs,op)=>{
+        const v=parseFloat(gs);if(isNaN(v)||v>1.001)return m;
+        return`0 0 0 ${fmtF(1-v)} ${op==='g'?'k':'K'}`;
+      });
+      return txt;
+    }
+
+    for(const[nS,obj]of Object.entries(objs)){
+      const n=+nS;
+      if(obj.type!=='stream'||imgNums.has(n)||iccRgb.has(n)||smaskNums.has(n))continue;
+      let txt;
+      try{txt=obj.isFlate?b2s(await inflateBuf(obj.streamRaw)):b2s(obj.streamRaw);}catch(e){continue;}
+      if(!/(scn|SCN|rg|RG)\b/.test(txt)&&!/[\d.]+\s+[gG]\b/.test(txt)&&!/\/C\d+\s+[cC][sS]\b/.test(txt))continue;
+      const cvt=cvtColors(txt);
+      const nb=s2b(cvt);
+      obj.streamRaw=obj.isFlate?await deflateBuf(nb):nb;
+      obj.dict=obj.dict.replace(/\/Length\s+\d+(\s+0\s+R)?/,'/Length '+obj.streamRaw.length);
+    }
+
+    // ── Convert RGB image data → CMYK ──
+    // Only image XObject dicts are modified (targeted, not blanket)
+    for(const n of imgNums){
+      const obj=objs[n];if(!obj||obj.type!=='stream'||!obj.isFlate)continue;
+      let imgD;try{imgD=await inflateBuf(obj.streamRaw);}catch(e){continue;}
+      const wm=obj.dict.match(/\/Width\s+(\d+)/),hm=obj.dict.match(/\/Height\s+(\d+)/);
+      if(!wm||!hm)continue;
+      const w=parseInt(wm[1]),h=parseInt(hm[1]);
+      if(imgD.length!==w*h*3)continue;
+      const cmyk=new Uint8Array(w*h*4);
+      for(let i=0,j=0;i<imgD.length;i+=3,j+=4){
+        const c=rgbPixelToCmyk(imgD[i],imgD[i+1],imgD[i+2],colorLookup);
+        cmyk[j]=c[0];cmyk[j+1]=c[1];cmyk[j+2]=c[2];cmyk[j+3]=c[3];
+      }
+      obj.streamRaw=await deflateBuf(cmyk);
+      // Only change ColorSpace on this specific image object
+      for(const i of iccRgb){
+        obj.dict=obj.dict.replace(new RegExp('\\[\\s*/ICCBased\\s+'+i+'\\s+0\\s+R\\s*\\]'),'/DeviceCMYK');
+        obj.dict=obj.dict.replace(new RegExp(i+'\\s+0\\s+R'),'/DeviceCMYK');
+      }
+      obj.dict=obj.dict.replace(/\/DeviceRGB/,'/DeviceCMYK');
+      obj.dict=obj.dict.replace(/\/Length\s+\d+(\s+0\s+R)?/,'/Length '+obj.streamRaw.length);
+    }
+
+    // ── Rebuild PDF ──
+    const parts=[],newOff={};
+    // Set version to PDF 1.4 — the highest version fully supported by
+    // Illustrator CS6. 1.4 introduced transparency, so all Figma features
+    // are representable. Using a higher version caused CS6 to choke on
+    // cross-reference streams and advanced transparency operators.
+    const hEnd=pdf.indexOf('\n',pdf.indexOf('\n')+1)+1;
+    const hdrStr=pdf.substring(0,hEnd).replace(/%PDF-[\d.]+/,'%PDF-1.4');
+    parts.push(s2b(hdrStr));
+    const maxObj=Math.max(...nums);
+
+    for(const num of nums){
+      const obj=objs[num];if(!obj)continue;
+      newOff[num]=parts.reduce((s,p)=>s+p.length,0);
+      if(obj.type==='stream'){
+        parts.push(s2b(num+' 0 obj\n'+obj.dict+'\nstream\n'));
+        parts.push(obj.streamRaw);
+        parts.push(s2b('\nendstream\nendobj\n'));
+      }else{
+        parts.push(s2b(num+' 0 obj\n'+obj.body+'\nendobj\n'));
+      }
+    }
+
+    const xrS=parts.reduce((s,p)=>s+p.length,0);
+    let xr='xref\n0 '+(maxObj+1)+'\n0000000000 65535 f \n';
+    for(let i=1;i<=maxObj;i++)
+      xr+=newOff[i]!=null?newOff[i].toString().padStart(10,'0')+' 00000 n \n':'0000000000 00000 f \n';
+    const nTr=trailerDict.replace(/\/Size\s+\d+/,'/Size '+(maxObj+1)).replace(/\/Prev\s+\d+/,'');
+    xr+='trailer\n<<'+nTr+'>>\nstartxref\n'+xrS+'\n%%EOF';
+    parts.push(s2b(xr));
+
+    const total=parts.reduce((s,p)=>s+p.length,0);
+    const result=new Uint8Array(total);let pos=0;
+    for(const p of parts){result.set(p,pos);pos+=p.length;}
+    return result;
+  }
+
+  // ── PDF: Build CMYK PDF from scratch (300 DPI raster) ─────────────
+  // Generates a valid PDF with a DeviceCMYK image, FlateDecode compressed.
+  // Illustrator, Acrobat, and print RIPs see it as native CMYK.
+
+  async function buildCmykPdf(cmykData, pxWidth, pxHeight, pageWidth, pageHeight) {
+    const compressed = await deflateBuf(cmykData);
+    const objects = [];
+    function addObj(content, streamBytes) {
+      objects.push({ content, streamBytes: streamBytes || null });
+      return objects.length;
+    }
+
+    addObj("<< /Type /Catalog /Pages 2 0 R >>");
+    addObj("<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
+    addObj(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Contents 4 0 R /Resources << /XObject << /Img 5 0 R >> >> >>`);
+    const drawCmd = `q ${pageWidth} 0 0 ${pageHeight} 0 0 cm /Img Do Q`;
+    const drawBytes = new TextEncoder().encode(drawCmd);
+    addObj(`<< /Length ${drawBytes.length} >>`, drawBytes);
+    addObj(
+      `<< /Type /XObject /Subtype /Image /Width ${pxWidth} /Height ${pxHeight} /ColorSpace /DeviceCMYK /BitsPerComponent 8 /Filter /FlateDecode /Length ${compressed.length} >>`,
+      compressed
+    );
+
+    const enc = new TextEncoder();
+    const parts = [];
+    const offsets = [];
+
+    parts.push(enc.encode("%PDF-1.4\n%\xE2\xE3\xCF\xD3\n"));
+
+    for (let i = 0; i < objects.length; i++) {
+      const obj = objects[i];
+      const id = i + 1;
+      offsets.push(parts.reduce((s, p) => s + p.length, 0));
+      parts.push(enc.encode(`${id} 0 obj\n${obj.content}\n`));
+      if (obj.streamBytes) {
+        parts.push(enc.encode("stream\n"));
+        parts.push(obj.streamBytes);
+        parts.push(enc.encode("\nendstream\n"));
+      }
+      parts.push(enc.encode("endobj\n"));
+    }
+
+    const xrefOffset = parts.reduce((s, p) => s + p.length, 0);
+    let xref = `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+    for (const off of offsets) {
+      xref += off.toString().padStart(10, "0") + " 00000 n \n";
+    }
+    xref += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+    parts.push(enc.encode(xref));
+
+    const total = parts.reduce((s, p) => s + p.length, 0);
+    const result = new Uint8Array(total);
+    let off = 0;
+    for (const p of parts) { result.set(p, off); off += p.length; }
+    return result;
+  }
+
+  // ── Convert PNG to 4-channel CMYK (PDF — white bg for transparency) ──
+
+  async function convertImageToCmyk4(png, w, h, cl) {
+    const rgba = await loadPngToCanvas(png, w, h, true);
+    const out = new Uint8Array(w * h * 4);
+    for (let i = 0, j = 0; i < rgba.length; i += 4, j += 4) {
+      const c = rgbPixelToCmyk(rgba[i], rgba[i+1], rgba[i+2], cl);
+      out[j] = c[0]; out[j+1] = c[1]; out[j+2] = c[2]; out[j+3] = c[3];
+    }
+    return out;
+  }
+
+  // ── TIFF: CMYK+Alpha 300 DPI ──────────────────────────────────────
+
+  function buildCmykaTiff(data,w,h) {
+    const pxSz=w*h*5, nT=15, iO=8, iSz=2+(nT*12)+4, eO=iO+iSz;
+    // Extra data: BitsPerSample (5 shorts = 10 bytes) + XRes (8) + YRes (8)
+    const bO=eO, xO=bO+10, yO=xO+8, sO=yO+8;
+    const buf=new ArrayBuffer(sO+pxSz), v=new DataView(buf), b=new Uint8Array(buf);
+    let p=0;
+    const w16=x=>{v.setUint16(p,x,true);p+=2;}, w32=x=>{v.setUint32(p,x,true);p+=4;};
+    function t(tag,type,cnt,val){w16(tag);w16(type);w32(cnt);if(type===3&&cnt===1){w16(val);w16(0);}else{w32(val);}}
+    w16(0x4949); w16(42); w32(iO); w16(nT);
+    t(256,4,1,w);           // ImageWidth
+    t(257,4,1,h);           // ImageLength
+    t(258,3,5,bO);          // BitsPerSample → offset (5 shorts: 8,8,8,8,8)
+    t(259,3,1,1);           // Compression: None
+    t(262,3,1,5);           // PhotometricInterpretation: CMYK
+    t(273,4,1,sO);          // StripOffsets
+    t(277,3,1,5);           // SamplesPerPixel: 5 (CMYK+A)
+    t(278,4,1,h);           // RowsPerStrip
+    t(279,4,1,pxSz);        // StripByteCounts
+    t(282,5,1,xO);          // XResolution → offset (RATIONAL 300/1)
+    t(283,5,1,yO);          // YResolution → offset (RATIONAL 300/1)
+    t(284,3,1,1);           // PlanarConfiguration: chunky
+    t(296,3,1,2);           // ResolutionUnit: inch
+    t(332,3,1,1);           // InkSet: CMYK
+    t(338,3,1,2);           // ExtraSamples: 2 = unassociated alpha (INLINE)
+    w32(0); // next IFD
+    // BitsPerSample
+    p=bO; w16(8);w16(8);w16(8);w16(8);w16(8);
+    // XResolution 300/1, YResolution 300/1
+    p=xO; w32(300);w32(1);
+    p=yO; w32(300);w32(1);
+    // Pixel data
+    b.set(data, sO);
+    return new Uint8Array(buf);
+  }
+
+  // 5-channel CMYK+Alpha (for TIFF — preserves transparency)
+  // Un-premultiplies canvas alpha before CMYK conversion
+  async function convertImageToCmyka(png, w, h, cl) {
+    const rgba = await loadPngToCanvas(png, w, h, false);
+    const out = new Uint8Array(w * h * 5);
+    for (let i = 0, j = 0; i < rgba.length; i += 4, j += 5) {
+      const a = rgba[i + 3];
+      if (a === 0) { out[j] = out[j+1] = out[j+2] = out[j+3] = out[j+4] = 0; }
+      else {
+        let r = rgba[i], g = rgba[i+1], b = rgba[i+2];
+        if (a > 0 && a < 255) {
+          r = Math.min(255, Math.round(r * 255 / a));
+          g = Math.min(255, Math.round(g * 255 / a));
+          b = Math.min(255, Math.round(b * 255 / a));
+        }
+        const c = rgbPixelToCmyk(r, g, b, cl);
+        out[j] = c[0]; out[j+1] = c[1]; out[j+2] = c[2]; out[j+3] = c[3]; out[j+4] = a;
+      }
+    }
+    return out;
+  }
+
+  function downloadFile(bytes,name,mime){
+    const blob=new Blob([bytes],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement("a");
+    a.href=url;a.download=name;a.click();URL.revokeObjectURL(url);
+  }
+
+  // ── Export ──────────────────────────────────────────────────────────
+
+  function setExportBusy(busy) {
+    document.getElementById("export-btn").disabled = busy;
+    document.getElementById("export-pdf-btn").disabled = busy;
+    document.getElementById("export-tiff-btn").disabled = busy;
+  }
+
+  function startExport(fmt) {
+    document.getElementById("export-flyout").classList.remove("open");
+    _singleFileHandle = null;
+    _exportCancelled = false; // reset here, not in export-batch-start
+
+    // Show "Preparing…" immediately. Ask code.js how many frames will be exported
+    // so we can show the right picker (directory vs single-file save-as).
+    setExportBusy(true);
+    _showExportProgress(`Preparing ${fmt.toUpperCase()} export…`);
+
+    parent.postMessage({ pluginMessage: { type: "export-request", format: fmt } }, "*");
+  }
+
+  // Called when code.js replies with the real exportable frame count.
+  async function _onExportReady(count, fmt) {
+    if (_exportCancelled) return;
+
+    const isMulti = count > 1;
+    const hasFSA  = typeof window.showSaveFilePicker === 'function'
+                 && typeof window.showDirectoryPicker === 'function';
+
+    if (hasFSA) {
+      if (isMulti) {
+        if (_dirHandle) {
+          try {
+            const perm = await _dirHandle.queryPermission({ mode: 'readwrite' });
+            if (perm !== 'granted') {
+              const req = await _dirHandle.requestPermission({ mode: 'readwrite' });
+              if (req !== 'granted') _dirHandle = null;
+            }
+          } catch (_) { _dirHandle = null; }
+        }
+        if (!_dirHandle) {
+          try {
+            _dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+          } catch (err) {
+            if (err.name === 'AbortError') {
+              dismissProgress(); setExportBusy(false); return;
+            }
+            _dirHandle = null; // sandbox blocked — fall through to downloadFile
+          }
+        }
+      } else {
+        const ext  = fmt === 'pdf' ? 'pdf' : 'tiff';
+        const mime = fmt === 'pdf' ? 'application/pdf' : 'image/tiff';
+        try {
+          _singleFileHandle = await window.showSaveFilePicker({
+            suggestedName: `export_CMYK.${ext}`,
+            types: [{ description: ext.toUpperCase() + ' file', accept: { [mime]: ['.' + ext] } }],
+          });
+        } catch (err) {
+          if (err.name === 'AbortError') {
+            dismissProgress(); setExportBusy(false); return;
+          }
+          _singleFileHandle = null; // sandbox blocked — fall through to downloadFile
+        }
+      }
+    }
+
+    parent.postMessage({ pluginMessage: { type: "export-frames" } }, "*");
+  }
+  document.getElementById("export-pdf-btn").onclick = (e) => { e.stopPropagation(); startExport("pdf"); };
+  document.getElementById("export-tiff-btn").onclick = (e) => { e.stopPropagation(); startExport("tiff"); };
+
+  // Export picker toggle
+  document.getElementById("export-btn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    const flyout = document.getElementById("export-flyout");
+    const isOpen = flyout.classList.contains("open");
+    document.querySelectorAll('.export-picker-flyout.open').forEach(f => f.classList.remove("open"));
+    if (!isOpen) {
+      flyout.classList.add("open");
+      setTimeout(() => {
+        document.addEventListener("click", function closeExport(ev) {
+          if (!document.getElementById("export-picker").contains(ev.target)) {
+            flyout.classList.remove("open");
+            document.removeEventListener("click", closeExport);
+          }
+        });
+      }, 0);
+    }
+  });
+
+  function doScan() {
+    _startScanToastTimer();
+    parent.postMessage({ pluginMessage: { type: "request-scan" } }, "*");
+  }
+  document.getElementById("scan-btn").onclick = doScan;
+  document.getElementById("rescan-btn").onclick = doScan;
+
+  // ── Row add (instant) ───────────────────────────────────────────────
+  function addRowAnimated(row) { /* instant — no animation */ }
+
+  // ── Row removal (instant) ────────────────────────────────────────────
+  function removeRowAnimated(row, onDone) {
+    row.remove();
+    if (onDone) onDone();
+  }
+
+  // ── Update button visibility based on available types ──
+  function updateButtonVisibility(outputCell) {
+    // Get types already present in this output cell
+    const existingTypes = new Set(
+      Array.from(outputCell.querySelectorAll('.output-text-wrap[data-output-type]'))
+        .map(w => w.dataset.outputType)
+    );
+    const availableTypes = OUTPUT_TYPES.filter(t => !existingTypes.has(t.key));
+
+    // Find existing add-row (last row containing .output-picker)
+    let addRow = null;
+    const rows = outputCell.querySelectorAll('.output-row');
+    for (let i = rows.length - 1; i >= 0; i--) {
+      if (rows[i].querySelector('.output-picker')) { addRow = rows[i]; break; }
+    }
+
+    // Never show add button for read-only (external library) cells
+    if (outputCell.dataset.readonly === '1') {
+      if (addRow) { addRow.style.visibility = 'hidden'; addRow.style.pointerEvents = 'none'; }
+      updateForkArrows(outputCell);
+      return;
+    }
+
+    if (availableTypes.length > 0) {
+      if (!addRow) {
+        // Add-row was destroyed by replace-in-place — recreate it
+        const ref = outputCell.querySelector('.output-text-wrap[data-color-var-id]');
+        const colorVarId = ref ? ref.dataset.colorVarId : '';
+        const idx = ref ? ref.dataset.idx : '';
+        const pickerBtns = OUTPUT_TYPES.map(t =>
+          `<button class="buttonPrimary" data-output-type="${t.key}" data-color-var-id="${colorVarId}" data-idx="${idx}">${t.label}</button>`
+        ).join('');
+        addRow = document.createElement('div');
+        addRow.className = 'output-row output-add-row';
+        addRow.innerHTML = `<div class="output-picker" data-color-var-id="${colorVarId}" data-idx="${idx}"><button class="buttonSecondary buttonAddOutput" data-tip="Add output"><svg width="16" height="16"><use href="#icon-plus"/></svg></button><div class="output-picker-flyout">${pickerBtns}</div></div>`;
+        outputCell.appendChild(addRow);
+        attachAddRowListeners(addRow, outputCell);
+      }
+      addRow.style.visibility = '';
+      addRow.style.pointerEvents = '';
+    } else if (addRow) {
+      addRow.style.visibility = 'hidden';
+      addRow.style.pointerEvents = 'none';
+    }
+
+    updateForkArrows(outputCell);
+  }
+
+  // ── Shared picker-item selection logic ──
+  function handlePickerSelect(item) {
+    const t = OUTPUT_TYPES.find(t => t.key === item.dataset.outputType);
+    if (!t) return;
+    const colorVarId = item.dataset.colorVarId || '';
+    const idx = item.dataset.idx || '';
+    const picker = item.closest('.output-picker');
+    const outputCell = picker.closest('.output-cell');
+    const addRow = picker.closest('.output-row');
+
+    picker.querySelector('.output-picker-flyout').classList.remove('open');
+    picker.classList.remove('picker-open');
+
+    const existingAfter = new Set([
+      ...Array.from(outputCell.querySelectorAll('.output-text-wrap[data-output-type]')).map(w => w.dataset.outputType),
+      t.key
+    ]);
+    const pickerItems = picker.querySelectorAll('.output-picker-flyout .buttonPrimary');
+    const moreAvailable = Array.from(pickerItems).some(i => !existingAfter.has(i.dataset.outputType));
+
+    const inputRowHtml = `<div class="swatch color-swatch output-swatch output-swatch-${t.key} empty"></div><div class="inputWrap output-text-wrap" data-output-type="${t.key}" data-color-var-id="${colorVarId}" data-idx="${idx}"><span class="inputLabel output-lbl lbl-${t.key}">${t.label}</span><input class="inputField output-text-input" type="text" placeholder="" /></div><button class="buttonQuaternary buttonUnpair buttonUnpair-output" data-output-type="${t.key}" data-color-var-id="${colorVarId}" data-tip="Remove">${removeIcon}</button>`;
+
+    let newRow;
+    if (moreAvailable) {
+      newRow = document.createElement('div');
+      newRow.className = 'output-row';
+      newRow.innerHTML = inputRowHtml;
+      outputCell.insertBefore(newRow, addRow);
+    } else {
+      addRow.className = 'output-row';
+      addRow.innerHTML = inputRowHtml;
+      newRow = addRow;
+    }
+
+    addRowAnimated(newRow);
+    updateButtonVisibility(outputCell);
+
+    const wrap = newRow.querySelector('.output-text-wrap');
+    const input = newRow.querySelector('.output-text-input');
+    const cancelBtn = newRow.querySelector('.buttonUnpair-output');
+
+    setTimeout(() => input.focus(), 50);
+    if (t.key === 'pantone') input.addEventListener("input", () => updatePantoneSwatch(wrap, input.value));
+    else if (t.key === 'ral')  input.addEventListener("input", () => updateRalSwatch(wrap, input.value));
+    else if (t.key === 'vinyl') input.addEventListener("input", () => updateVinylSwatch(wrap, input.value));
+
+    input.addEventListener("keydown", (ke) => {
+      if (ke.key === "Escape") { ke.preventDefault(); removeRowAnimated(newRow, () => updateButtonVisibility(outputCell)); return; }
+      if (ke.key === "Enter")  { ke.preventDefault(); input.blur(); }
+    });
+    input.addEventListener("blur", () => {
+      setTimeout(() => {
+        if (newRow.contains(document.activeElement)) return;
+        if (!input.value.trim()) return;
+        commitOutputWrap(wrap);
+      }, 150);
+    });
+    cancelBtn.addEventListener("click", () => {
+      removeRowAnimated(newRow, () => updateButtonVisibility(outputCell));
+    });
+  }
+
+  // ── Wire event listeners onto a dynamically recreated add-row ──
+  function attachAddRowListeners(addRow, outputCell) {
+    const btn = addRow.querySelector('.buttonAddOutput');
+    const flyout = addRow.querySelector('.output-picker-flyout');
+    const picker = addRow.querySelector('.output-picker');
+    if (!btn || !flyout || !picker) return;
+
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = flyout.classList.contains('open');
+      document.querySelectorAll('.output-picker-flyout.open').forEach(f => f.classList.remove('open'));
+      document.querySelectorAll('.output-picker.picker-open').forEach(p => p.classList.remove('picker-open'));
+      if (!isOpen) {
+        const existingTypes = new Set(
+          Array.from(outputCell.querySelectorAll('.output-text-wrap[data-output-type]')).map(w => w.dataset.outputType)
+        );
+        flyout.querySelectorAll('.buttonPrimary').forEach(i => {
+          i.style.display = existingTypes.has(i.dataset.outputType) ? 'none' : '';
+        });
+        flyout.classList.add('open');
+        picker.classList.add('picker-open');
+        setTimeout(() => {
+          document.addEventListener('click', function closeFlyout(ev) {
+            if (!picker.contains(ev.target)) {
+              flyout.classList.remove('open');
+              picker.classList.remove('picker-open');
+              document.removeEventListener('click', closeFlyout);
+            }
+          });
+        }, 0);
+      }
+    });
+
+    flyout.querySelectorAll('.buttonPrimary').forEach(item => {
+      item.addEventListener("click", (e) => { e.stopPropagation(); handlePickerSelect(item); });
+    });
+  }
+
+  // ── Messages ───────────────────────────────────────────────────────
+
+  window.onmessage = async (event) => {
+    const msg = event.data.pluginMessage;
+    if (!msg) return;
+
+    if (msg.type === "external-vars-resolved") {
+      Object.entries(msg.libraries).forEach(([varId, libName]) => {
+        const btn = document.querySelector(`.btn-lib-info[data-color-var-id="${varId}"]`);
+        if (btn) {
+          btn.dataset.libName = libName;
+          btn.dataset.tip = `Read-only because it comes from an external library. Edit it in ${libName}.`;
+        }
+      });
+      return;
+    }
+
+    if (msg.type === "restore-height") {
+      window._manualH = msg.height;
+      return;
+    }
+
+    if (msg.type === "export-ready") {
+      _onExportReady(msg.count, msg.format);
+      return;
+    }
+
+    if (msg.type === "selection-count") {
+      const btn = document.getElementById("scan-btn");
+      btn.disabled = msg.count === 0;
+      window._selectionCount = msg.count;
+      return;
+    }
+    if (msg.type === "selection-empty") { _clearScanToastTimer(); showEmpty(); return; }
+
+    if (msg.type === "debug") {
+      document.getElementById("error-container").innerHTML=`<div class="error-msg" style="font-size:10px;word-break:break-all">DEBUG: ${JSON.stringify(msg.payload)}</div>`;
+      return;
+    }
+
+    if (msg.type === "error") {
+      _clearScanToastTimer();
+      setExportBusy(false);
+      dismissProgress();
+      document.getElementById("error-container").innerHTML=`<div class="error-msg">${msg.message}</div>`;
+      return;
+    }
+
+    if (msg.type === "scan-results") {
+      // If user cancelled the scan, discard results and dismiss bar immediately.
+      if (_scanCancelled) { _clearScanToastTimer(true); return; }
+      // Dismiss the scanning toast AFTER the browser paints the rebuilt UI —
+      // the heavy DOM work below can block for a while on large result sets.
+      // Wrap in arrow fn so rAF's timestamp argument doesn't get passed as
+      // `immediate`, which would skip the slide-down animation.
+      requestAnimationFrame(() => requestAnimationFrame(() => _clearScanToastTimer()));
+      window._readOnly = !!msg.hasExternalVars;
+      window._externalLibraryUrl = (msg.externalLibrary && msg.externalLibrary.url) || null;
+      showResults();
+
+      // Always update source chips regardless of result count
+      const chipsEl = document.getElementById('source-chips');
+
+      if (msg.sourceNodes && msg.sourceNodes.length > 0) {
+        window._sourceNodeCount = msg.sourceNodes.length;
+        chipsEl.innerHTML = msg.sourceNodes.map(n =>
+          `<button class="buttonTertiary source-focus-btn" data-node-id="${n.id}" data-tip="Focus in canvas"><span>${n.name}</span>${focusIcon}</button>`
+        ).join('');
+        chipsEl.querySelectorAll('.source-focus-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            parent.postMessage({ pluginMessage: { type: 'focus-node', nodeId: btn.dataset.nodeId } }, '*');
+          });
+        });
+      } else {
+        window._sourceNodeCount = 0;
+        chipsEl.innerHTML = '';
+      }
+
+      // Don't rebuild table while user is actively editing a field
+      const ae = document.activeElement;
+      if (ae && (
+        ae.classList.contains("cmyk-box") ||
+        ae.classList.contains("output-text-input") ||
+        ae.classList.contains("pantone-input")
+      )) return;
+
+      if (msg.data.length === 0) {
+        document.getElementById("color-body").innerHTML = '';
+        document.getElementById("no-colors-state").style.display = 'flex';
+        document.querySelector('.scroll-area').style.display = 'none';
+        setTimeout(() => { if (window._notifyResize) window._notifyResize(); }, 50);
+        return;
+      }
+
+      document.getElementById("no-colors-state").style.display = 'none';
+      document.querySelector('.scroll-area').style.display = '';
+
+      // Store scan data for reference
+      window._lastScanData = msg.data;
+
+      // Snapshot existing output order + pending (empty) inputs before rebuild
+      const orderByKey = {};   // preserves current DOM order per row
+      const pendingByKey = {}; // tracks empty/uncommitted inputs per row
+      document.querySelectorAll('.output-text-wrap').forEach(wrap => {
+        const input = wrap.querySelector('.output-text-input');
+        const varId = wrap.dataset.colorVarId;
+        const rowIdx = wrap.dataset.idx;
+        const key = varId ? varId : ('idx:' + rowIdx);
+        const type = wrap.dataset.outputType;
+        if (!orderByKey[key]) orderByKey[key] = [];
+        if (!orderByKey[key].includes(type)) orderByKey[key].push(type);
+        if (input && input.value.trim() === '') {
+          if (!pendingByKey[key]) pendingByKey[key] = [];
+          if (!pendingByKey[key].includes(type)) pendingByKey[key].push(type);
+        }
+      });
+
+      let html = "";
+      msg.data.forEach((r, idx) => {
+        if (r.source === "raw") return;
+        if (r.source === "raw_unused") {
+          const nodeIdList = (r.nodeIds || []).join(',');
+          const focusBtn = r.nodeIds && r.nodeIds.length
+            ? `<button class="buttonQuaternary buttonUnpair buttonUnpair-raw" data-node-ids="${nodeIdList}" data-tip="Select in canvas">${focusIcon}</button>`
+            : '';
+          html += `<tr class="row-raw">
+            <td colspan="3"><div class="td-variable" style="padding-right:16px;">
+              <div class="swatch color-swatch" style="background:${r.hex}"></div>
+              <div class="var-info">
+                <div class="var-name-row">
+                  <span class="var-name">${r.hex}</span>
+                  <span class="raw-warning-icon">${warningIcon}</span>
+                  <span class="raw-warning-label">Not a variable</span>
+                </div>
+              </div>
+              <div class="raw-warning-cell">
+                ${focusBtn}
+              </div>
+            </div></td>
+          </tr>`;
+          return;
+        }
+
+        const cmyk = r.cmyk;
+        const name = r.source === "variable" ? r.name : r.hex;
+        const isSystem = r.hasCmykVariable;
+
+        // Arrow column — left empty; updateForkArrows fills it after render
+        const arrowCol = `<div class="status-cell"><div class="status-fork"></div></div>`;
+
+        // CMYK swatch
+        const cr = Math.round(255 * (1 - cmyk.c/100) * (1 - cmyk.k/100));
+        const cg = Math.round(255 * (1 - cmyk.m/100) * (1 - cmyk.k/100));
+        const cb = Math.round(255 * (1 - cmyk.y/100) * (1 - cmyk.k/100));
+        const cmykHex = `#${[cr,cg,cb].map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,"0")).join("")}`;
+
+        // Pre-compute auto CMYK from RGB for instant reset
+        const autoC = r.rgb ? rgbToCmykAuto(r.rgb.r, r.rgb.g, r.rgb.b) : cmyk;
+
+        // CMYK boxes row
+        const readOnly = !!r.isExternal;
+        const groupClass = readOnly ? 'cmyk-group cmyk-auto cmyk-readonly' : (isSystem ? 'cmyk-group' : 'cmyk-group cmyk-auto');
+        const infoIcon = `<svg width="12" height="12"><use href="#icon-info"/></svg>`;
+        const extIcon = `<svg width="10" height="10"><use href="#icon-external"/></svg>`;
+        const cmykUnpairBtn = readOnly
+          ? `<span class="cmyk-spacer"></span>`
+          : (isSystem
+            ? `<button class="buttonQuaternary buttonUnpair buttonUnpair-cmyk" data-tip="Reset CMYK to auto" data-color-var-id="${r.colorVarId || ''}"><svg width="16" height="16"><use href="#icon-reset"/></svg></button>`
+            : `<span class="cmyk-spacer"></span>`);
+        const makeBox = (lbl, val) =>
+          `<div class="inputWrap cmyk-box-wrap"><span class="inputLabel cmyk-lbl">${lbl}</span><input class="inputField cmyk-box" type="text" inputmode="numeric" maxlength="3" autocomplete="off" value="${val}"${readOnly ? ' readonly' : ''} /></div>`;
+        const cmykRow = `<div class="output-row"><div class="swatch color-swatch cmyk-swatch" style="background:${cmykHex}"></div><div class="${groupClass}" data-color-var-id="${r.colorVarId || ''}" data-idx="${idx}" data-hex="${r.hex || ''}" data-auto-c="${autoC.c}" data-auto-m="${autoC.m}" data-auto-y="${autoC.y}" data-auto-k="${autoC.k}">${makeBox('C',cmyk.c)}${makeBox('M',cmyk.m)}${makeBox('Y',cmyk.y)}${makeBox('K',cmyk.k)}</div>${cmykUnpairBtn}</div>`;
+
+        // Extra output rows (Pantone, RAL, Vinyl)
+        // Render in the exact order they appeared in the DOM before rebuild,
+        // appending any brand-new saved types at the end in OUTPUT_TYPES order.
+        const pendingKey = r.colorVarId ? r.colorVarId : ('idx:' + idx);
+        const pendingTypes = readOnly ? [] : (pendingByKey[pendingKey] || []);
+        const existingOrder = orderByKey[pendingKey] || [];
+
+        // All types that need a row: saved in data + pending empty
+        const needsRow = new Set([
+          ...OUTPUT_TYPES.filter(t => !!r[t.key]).map(t => t.key),
+          ...pendingTypes
+        ]);
+
+        // Final order: existing DOM order (stable) + new types not yet seen
+        const orderedKeys = [
+          ...existingOrder.filter(k => needsRow.has(k)),
+          ...OUTPUT_TYPES.filter(t => needsRow.has(t.key) && !existingOrder.includes(t.key)).map(t => t.key)
+        ];
+
+        let extraRows = '';
+        const renderedTypes = new Set();
+        orderedKeys.forEach(typeKey => {
+          const t = OUTPUT_TYPES.find(x => x.key === typeKey);
+          if (!t) return;
+          renderedTypes.add(typeKey);
+          const val = r[typeKey] || '';
+          const hasSaved = !!r[typeKey];
+          const resolvedHex = hasSaved
+            ? (typeKey === 'pantone' ? pantoneToHex(val)
+             : typeKey === 'ral'    ? ralToHex(val)
+             : typeKey === 'vinyl'  ? vinylToHex(val)
+             : null)
+            : null;
+          const swatchCls = `swatch color-swatch output-swatch output-swatch-${typeKey}${resolvedHex ? '' : ' empty'}`;
+          const swatchStyle = resolvedHex ? ` style="background:${resolvedHex}"` : '';
+          const removeBtn = readOnly ? `<span class="cmyk-spacer"></span>` : `<button class="buttonQuaternary buttonUnpair buttonUnpair-output" data-output-type="${typeKey}" data-color-var-id="${r.colorVarId || ''}" data-tip="Remove ${t.label}">${removeIcon}</button>`;
+          extraRows += `<div class="output-row"><div class="${swatchCls}"${swatchStyle}></div><div class="inputWrap output-text-wrap${readOnly ? ' output-readonly' : ''}" data-output-type="${typeKey}" data-color-var-id="${r.colorVarId || ''}" data-idx="${idx}"><span class="inputLabel output-lbl lbl-${typeKey}">${t.label}</span><input class="inputField output-text-input" type="text" value="${val}"${readOnly ? ' readonly' : ''} /></div>${removeBtn}</div>`;
+        });
+
+        // Determine which types are still available to add (hidden in read-only)
+        const availableTypes = OUTPUT_TYPES.filter(t => !renderedTypes.has(t.key));
+        const pickerBtns = availableTypes.map(t =>
+          `<button class="buttonPrimary" data-output-type="${t.key}" data-color-var-id="${r.colorVarId || ''}" data-idx="${idx}">${t.label}</button>`
+        ).join('');
+        const addBtn = !readOnly && availableTypes.length > 0
+          ? `<div class="output-picker" data-color-var-id="${r.colorVarId || ''}" data-idx="${idx}"><button class="buttonSecondary buttonAddOutput" data-tip="Add output"><svg width="16" height="16"><use href="#icon-plus"/></svg></button><div class="output-picker-flyout">${pickerBtns}</div></div>`
+          : '';
+
+        const cmykCell = `<div class="output-cell"${readOnly ? ' data-readonly="1"' : ''}>${cmykRow}${extraRows}${addBtn ? `<div class="output-row output-add-row">${addBtn}</div>` : ''}</div>`;
+
+        const infoBtn = readOnly
+          ? `<button class="buttonQuaternary buttonUnpair btn-lib-info" data-color-var-id="${r.colorVarId || ''}" data-lib-name="" data-tip="Read-only because it comes from an external library.">${infoIcon}</button>`
+          : '';
+
+        html += `<tr>
+          <td><div class="td-variable">
+            <div class="swatch color-swatch" style="background:${r.hex}"></div>
+            <div class="var-info">
+              <div class="var-name-row"><span class="var-name" data-tip="${name.replace(/\//g, ' /\n')}">${name}</span>${infoBtn}</div>
+              <div class="var-hex-sub">${r.hex}</div>
+            </div>
+          </div></td>
+          <td class="td-status">${arrowCol}</td>
+          <td class="td-cmyk">${cmykCell}</td>
+        </tr>`;
+      });
+
+      document.getElementById("color-body").innerHTML = html;
+
+
+      // ── Raw focus buttons ──
+      document.querySelectorAll('.buttonUnpair-raw').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const ids = btn.dataset.nodeIds.split(',').filter(Boolean);
+          parent.postMessage({ pluginMessage: { type: 'focus-nodes', nodeIds: ids } }, '*');
+        });
+      });
+
+      // Update button visibility for all output cells
+      document.querySelectorAll('.output-cell').forEach(cell => {
+        updateButtonVisibility(cell);
+      });
+
+      // ── CMYK 4-box handlers ──
+      document.querySelectorAll(".cmyk-group").forEach(group => {
+        const boxes = group.querySelectorAll(".cmyk-box");
+        group._original = null;
+
+        boxes.forEach((box, i) => {
+          box.addEventListener("focus", () => {
+            _focusedGroup = group;
+            if (group._original === null) {
+              group._original = Array.from(boxes).map(b => b.value);
+            }
+            box.select();
+          });
+          box.addEventListener("blur", () => {
+            setTimeout(() => {
+              if (!group.contains(document.activeElement)) {
+                if (_focusedGroup === group) _focusedGroup = null;
+                group._original = null;
+                // Don't commit if focus moved to a reset/unpair button — that action takes priority.
+                const ae = document.activeElement;
+                if (ae && (ae.classList.contains('buttonUnpair-cmyk') || ae.classList.contains('buttonUnpair-output') || ae.classList.contains('buttonUnpair'))) return;
+                commitCmykGroup(group);
+              }
+            }, 0);
+          });
+          box.addEventListener("keydown", (e) => {
+            if (e.key === "Tab" || e.key === "Enter") {
+              e.preventDefault();
+              updateSwatchPreview(group);
+              if (i < boxes.length - 1) { boxes[i+1].focus(); boxes[i+1].select(); }
+              else box.blur();
+              return;
+            }
+            if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+              e.preventDefault();
+              const dir = e.key === "ArrowUp" ? 1 : -1;
+              box.value = String(Math.min(100, Math.max(0, (parseInt(box.value) || 0) + dir)));
+              updateSwatchPreview(group);
+              return;
+            }
+            const allowed = ['Backspace','Delete','ArrowLeft','ArrowRight','Home','End','Tab','Enter'];
+            if (!allowed.includes(e.key) && !/^\d$/.test(e.key) && !e.metaKey && !e.ctrlKey) {
+              e.preventDefault();
+            }
+          });
+          box.addEventListener("input", () => {
+            const v = parseInt(box.value, 10);
+            if (!isNaN(v) && v > 100) box.value = '100';
+            updateSwatchPreview(group);
+            if (group.classList.contains('cmyk-auto')) {
+              group.classList.remove('cmyk-auto');
+            }
+            // Show reset button immediately if only a spacer is present
+            const sibling = group.nextElementSibling;
+            if (sibling && sibling.classList.contains('cmyk-spacer')) {
+              const colorVarId = group.dataset.colorVarId || '';
+              const btn = document.createElement('button');
+              btn.className = 'buttonQuaternary buttonUnpair buttonUnpair-cmyk';
+              btn.dataset.colorVarId = colorVarId;
+              btn.dataset.tip = 'Reset CMYK to auto';
+              btn.innerHTML = `<svg width="16" height="16"><use href="#icon-reset"/></svg>`;
+              sibling.replaceWith(btn);
+              btn.addEventListener('click', () => {
+                const ac = parseInt(group.dataset.autoC, 10);
+                const am = parseInt(group.dataset.autoM, 10);
+                const ay = parseInt(group.dataset.autoY, 10);
+                const ak = parseInt(group.dataset.autoK, 10);
+                if (![ac, am, ay, ak].some(isNaN)) {
+                  const boxes = group.querySelectorAll('.cmyk-box');
+                  [ac, am, ay, ak].forEach((val, i) => { boxes[i].value = val; });
+                  group.classList.add('cmyk-auto');
+                  const swatch = group.closest('.output-row')?.querySelector('.cmyk-swatch');
+                  if (swatch) {
+                    const cr = Math.round(255 * (1 - ac/100) * (1 - ak/100));
+                    const cg = Math.round(255 * (1 - am/100) * (1 - ak/100));
+                    const cb = Math.round(255 * (1 - ay/100) * (1 - ak/100));
+                    swatch.style.background = `#${[cr,cg,cb].map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,"0")).join("")}`;
+                  }
+                  btn.replaceWith(Object.assign(document.createElement('span'), { className: 'cmyk-spacer' }));
+                }
+                parent.postMessage({ pluginMessage: { type: 'delete-cmyk-variable', colorVarId } }, '*');
+              });
+            }
+          });
+        });
+      });
+
+      // ── CMYK unpair buttons ──
+      document.querySelectorAll(".buttonUnpair-cmyk").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const colorVarId = btn.dataset.colorVarId;
+          if (!colorVarId) return;
+
+          // Instantly reset boxes to auto values without waiting for rescan
+          const group = btn.closest('.output-row')?.querySelector('.cmyk-group');
+          if (group) {
+            const ac = parseInt(group.dataset.autoC, 10);
+            const am = parseInt(group.dataset.autoM, 10);
+            const ay = parseInt(group.dataset.autoY, 10);
+            const ak = parseInt(group.dataset.autoK, 10);
+            if (![ac, am, ay, ak].some(isNaN)) {
+              const boxes = group.querySelectorAll('.cmyk-box');
+              [ac, am, ay, ak].forEach((v, i) => { boxes[i].value = v; });
+              group.classList.add('cmyk-auto');
+              const swatch = group.closest('.output-row')?.querySelector('.cmyk-swatch');
+              if (swatch) {
+                const cr = Math.round(255 * (1 - ac/100) * (1 - ak/100));
+                const cg = Math.round(255 * (1 - am/100) * (1 - ak/100));
+                const cb = Math.round(255 * (1 - ay/100) * (1 - ak/100));
+                swatch.style.background = `#${[cr,cg,cb].map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,"0")).join("")}`;
+              }
+            }
+          }
+
+          parent.postMessage({ pluginMessage: { type: "delete-cmyk-variable", colorVarId }}, "*");
+        });
+      });
+
+      // ── Output text wrap handlers (Pantone, RAL, Vinyl) ──
+      document.querySelectorAll(".output-text-wrap").forEach(wrap => {
+        const input = wrap.querySelector(".output-text-input");
+        if (!input) return;
+        // Update swatch live based on output type
+        if (wrap.dataset.outputType === 'pantone') {
+          updatePantoneSwatch(wrap, input.value);
+          input.addEventListener("input", () => updatePantoneSwatch(wrap, input.value));
+        } else if (wrap.dataset.outputType === 'ral') {
+          updateRalSwatch(wrap, input.value);
+          input.addEventListener("input", () => updateRalSwatch(wrap, input.value));
+        } else if (wrap.dataset.outputType === 'vinyl') {
+          updateVinylSwatch(wrap, input.value);
+          input.addEventListener("input", () => updateVinylSwatch(wrap, input.value));
+        }
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); input.blur(); }
+        });
+        input.addEventListener("blur", () => {
+          const v = input.value.trim();
+          if (!v) return;
+          const ae = document.activeElement;
+          if (ae && (ae.classList.contains('buttonUnpair-output') || ae.classList.contains('buttonUnpair'))) return;
+          commitOutputWrap(wrap);
+        });
+      });
+
+      // ── Generic unpair buttons (Pantone, RAL, Vinyl) ──
+      document.querySelectorAll(".buttonUnpair-output").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const outputType = btn.dataset.outputType;
+          const colorVarId = btn.dataset.colorVarId;
+          if (!colorVarId || !outputType) return;
+          const outputCell = btn.closest('.output-cell');
+          const row = btn.closest('.output-row');
+          if (row) {
+            removeRowAnimated(row, () => {
+              updateButtonVisibility(outputCell);
+            });
+          }
+          parent.postMessage({ pluginMessage: { type: `delete-${outputType}-variable`, colorVarId }}, "*");
+        });
+      });
+
+      // ── Add output (+) buttons ──
+      document.querySelectorAll(".buttonAddOutput").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const picker = btn.closest('.output-picker');
+          const outputCell = picker.closest('.output-cell');
+          const flyout = picker.querySelector('.output-picker-flyout');
+          const isOpen = flyout.classList.contains('open');
+
+          // Close all open flyouts and reset icons
+          document.querySelectorAll('.output-picker-flyout.open').forEach(f => f.classList.remove('open'));
+          document.querySelectorAll('.output-picker.picker-open').forEach(p => p.classList.remove('picker-open'));
+
+          if (!isOpen) {
+            // Hide items whose type is already in the output cell
+            const existingTypes = new Set(
+              Array.from(outputCell.querySelectorAll('.output-text-wrap[data-output-type]'))
+                .map(w => w.dataset.outputType)
+            );
+            flyout.querySelectorAll('.buttonPrimary').forEach(i => {
+              i.style.display = existingTypes.has(i.dataset.outputType) ? 'none' : '';
+            });
+            flyout.classList.add('open');
+            picker.classList.add('picker-open');
+
+            // Deferred one-shot close listener — attached after this click finishes
+            setTimeout(() => {
+              document.addEventListener('click', function closeFlyout(ev) {
+                if (!picker.contains(ev.target)) {
+                  flyout.classList.remove('open');
+                  picker.classList.remove('picker-open');
+                  document.removeEventListener('click', closeFlyout);
+                }
+              });
+            }, 0);
+          }
+        });
+      });
+
+      // Handle picker item clicks — exclude system buttons (cancel, export).
+      document.querySelectorAll('.buttonPrimary[data-output-type]').forEach(item => {
+        item.addEventListener("click", (e) => { e.stopPropagation(); handlePickerSelect(item); });
+      });
+
+      // Resize window to fit new table content
+      setTimeout(() => { if (window._notifyResize) window._notifyResize(); }, 50);
+    }
+
+    if (msg.type === "export-batch-start") {
+      exportedCount = 0; exportTotal = msg.total; _exportFmt = msg.format;
+      _exportLookup = null; _exportUsedFSA = false; _pendingFiles = [];
+      // Don't reset _exportCancelled — user may have clicked Cancel during
+      // the Preparing phase. If so, tell code.js to stop immediately.
+      if (_exportCancelled) {
+        parent.postMessage({ pluginMessage: { type: 'cancel-export' } }, '*');
+        return;
+      }
+      showProgress(`Exporting 0 / ${msg.total} ${msg.format.toUpperCase()} files…`);
+    }
+
+    if (msg.type === "export-data") {
+      if (_exportCancelled) return;
+      try {
+        const safe = msg.frameName.replace(/[^a-zA-Z0-9_-]/g,"_");
+
+        // Cache lookup once per batch — all frames share the same variable set.
+        if (!_exportLookup) {
+          _exportLookup = Object.assign({}, msg.colorLookup || {});
+          document.querySelectorAll('.cmyk-group[data-hex]').forEach(group => {
+            const hex = (group.dataset.hex || '').toUpperCase();
+            if (!hex) return;
+            const boxes = group.querySelectorAll('.cmyk-box');
+            if (boxes.length !== 4) return;
+            const [c, m, y, k] = Array.from(boxes).map(b => {
+              const v = parseInt(b.value, 10);
+              return isNaN(v) ? 0 : Math.max(0, Math.min(100, v));
+            });
+            _exportLookup[hex] = { c, m, y, k };
+          });
+        }
+
+        let fileBytes, fileName, fileMime;
+        if (msg.format === "pdf") {
+          fileBytes = await convertPdfToCmyk(msg.pdfBytes, _exportLookup);
+          fileName = `${safe}_CMYK.pdf`; fileMime = "application/pdf";
+        } else {
+          const cmyka = await convertImageToCmyka(msg.pngBytes, msg.width, msg.height, _exportLookup);
+          fileBytes = buildCmykaTiff(cmyka, msg.width, msg.height);
+          fileName = `${safe}_CMYK.tiff`; fileMime = "image/tiff";
+        }
+
+        if (_exportCancelled) return;
+
+        if (_singleFileHandle) {
+          const wr = await _singleFileHandle.createWritable();
+          await wr.write(fileBytes); await wr.close();
+          _singleFileHandle = null;
+          _exportUsedFSA = true;
+        } else if (_dirHandle) {
+          try {
+            const fh = await _dirHandle.getFileHandle(fileName, { create: true });
+            const wr = await fh.createWritable();
+            await wr.write(fileBytes); await wr.close();
+            _exportUsedFSA = true;
+          } catch (_) {
+            _dirHandle = null;
+            _pendingFiles.push({ name: fileName, data: fileBytes });
+          }
+        } else if (msg.total === 1) {
+          downloadFile(fileBytes, fileName, fileMime);
+        } else {
+          _pendingFiles.push({ name: fileName, data: fileBytes });
+        }
+
+        exportedCount++;
+        if (exportedCount < msg.total) {
+          showProgress(`Exporting ${exportedCount} / ${msg.total} ${msg.format.toUpperCase()} files…`);
+          parent.postMessage({ pluginMessage: { type: 'export-frame-ack', nextIndex: msg.index + 1 } }, '*');
+        } else {
+          const _count = exportedCount, _fmt = msg.format.toUpperCase();
+          dismissProgress();
+          setExportBusy(false);
+
+          if (_pendingFiles.length > 0) {
+            const zipBytes = _buildZip(_pendingFiles);
+            _pendingFiles = [];
+            downloadFile(zipBytes, `CMYK_Export_${_fmt}.zip`, 'application/zip');
+          }
+        }
+      } catch (err) {
+        if (_exportCancelled) return;
+        exportedCount++;
+        parent.postMessage({ pluginMessage: { type: 'export-frame-ack', nextIndex: msg.index + 1 } }, '*');
+        document.getElementById("error-container").innerHTML += `<div class="error-msg">Failed: ${msg.frameName} — ${(err && err.message) || String(err)}</div>`;
+        if (exportedCount >= msg.total) {
+          dismissProgress();
+          setExportBusy(false);
+        }
+      }
+    }
+
+    if (msg.type === "export-item-error") {
+      if (_exportCancelled) return;
+      exportedCount++;
+      parent.postMessage({ pluginMessage: { type: 'export-frame-ack', nextIndex: msg.index + 1 } }, '*');
+      document.getElementById("error-container").innerHTML += `<div class="error-msg">Failed: ${msg.frameName} — ${msg.message}</div>`;
+      if (exportedCount >= msg.total) {
+        dismissProgress();
+        setExportBusy(false);
+      }
+    }
+  };
+
+  // ── Auto-resize plugin window to content ─────────────────────────────
+  (function () {
+    const MIN_H = 100;
+
+    // Shared content-height measurement — also used as drag minimum.
+    window._contentHeight = function () {
+      let h = 0;
+      const emptyState = document.getElementById('empty-state');
+      const resultsUi  = document.getElementById('results-ui');
+      const errorCont  = document.getElementById('error-container');
+      const progCont   = document.getElementById('progress-container');
+      if (errorCont && errorCont.offsetHeight) h += errorCont.offsetHeight;
+      if (progCont  && progCont.offsetHeight)  h += progCont.offsetHeight;
+      if (emptyState && emptyState.style.display !== 'none') {
+        h += emptyState.offsetHeight;
+      } else if (resultsUi && resultsUi.style.display !== 'none') {
+        const bar   = document.getElementById('actionbar');
+        const table = document.querySelector('.color-table');
+        if (bar)   h += bar.offsetHeight;
+        if (table) h += table.scrollHeight;
+        h += 48;
+      }
+      return Math.max(h, MIN_H);
+    };
+
+    function sendHeight() {
+      // Skip mid-drag, and skip entirely once user has manually set a height.
+      if (window._manualResizing || window._manualH) return;
+      parent.postMessage({ pluginMessage: { type: 'ui-resize', width: window.innerWidth, height: window._contentHeight() } }, '*');
+    }
+    window._notifyResize = sendHeight;
+    const ro = new ResizeObserver(sendHeight);
+    ['empty-state', 'actionbar'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) ro.observe(el);
+    });
+    const tbl = document.querySelector('.color-table');
+    if (tbl) ro.observe(tbl);
+    sendHeight();
+  })();
+
+  // Override default constraints for this plugin.
+  initWindowResize({ minW: 320, minH: 200 });
+</script>
+
+</body>
+</html>
