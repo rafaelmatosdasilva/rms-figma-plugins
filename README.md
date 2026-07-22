@@ -35,6 +35,8 @@ connect and how changes propagate through your files.
 
 ![Impact Atlas](docs/impact-atlas.png)
 
+![Impact Atlas preview](docs/impact-atlas-preview.png)
+
 ---
 
 ## Tokens to Ink
@@ -76,6 +78,8 @@ test how your typography behaves beyond fixed assumptions.
 - Suggests targeted fixes for each detected issue.
 
 ![Font Scaling Lab](docs/font-scaling-lab.png)
+
+![Font Scaling Lab preview](docs/font-scaling-lab-preview.png)
 
 ---
 
