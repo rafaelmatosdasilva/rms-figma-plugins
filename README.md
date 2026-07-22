@@ -14,6 +14,11 @@ anywhere, and no third-party code — each plugin is two files, built from the
 source here, with `networkAccess` locked to `none` and checked on every build.
 Every release lists a checksum you can verify before importing.
 
+**[Download a plugin →](../../releases)** &nbsp;·&nbsp; unzip, then **Plugins →
+Development → Import plugin from manifest…** in the Figma desktop app.
+[Full steps below](#install). Click **Watch → Custom → Releases** to hear about
+new versions.
+
 ---
 
 ## Impact Atlas
