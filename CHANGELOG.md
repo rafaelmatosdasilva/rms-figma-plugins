@@ -19,6 +19,9 @@ Numbers don't line up between plugins — each only moves when that plugin chang
 ## Impact Atlas
 
 ### Unreleased — will be v5 (Community publish)
+- The "Scanned …" bar and its rescan button now show after a local scan too.
+  They previously only appeared once a canvas scan had run, so opening the
+  plugin in a fresh file left you with no visible way to re-run it.
 - Empty state uses the design system's object icons, and its icon colour now
   matches the DS in light mode (was too dark).
 - Nodes that recede when another is selected use the real disabled tokens

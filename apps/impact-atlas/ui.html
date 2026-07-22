@@ -1572,6 +1572,12 @@ function onInitData(msg) {
     onCanvasScanReady(cs);
     showScanBar(msg.cachedScan.ts, msg.cachedScan.depth);
   } else {
+    // No cached canvas scan — the local analysis that just finished IS the scan,
+    // so surface it. Without this the bar (and rescan) only ever appeared after a
+    // canvas scan, which read as a broken build to anyone opening a fresh file.
+    _lastScanTimestamp = Date.now();
+    _lastScanDepth     = 1;
+    showScanBar(_lastScanTimestamp, 1);
     renderBrowser();
   }
 }
