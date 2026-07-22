@@ -43,7 +43,8 @@ Published to Figma Community.
 
 ## Tokens to Ink
 
-### Unreleased
+### v4.2 — 22 July 2026
+Repo only — not republished to the Community.
 - Section dividers are 2px taller, matching a spacing change in the design system.
 
 ### v4.1 — 22 July 2026
@@ -57,7 +58,8 @@ Published to Figma Community.
 
 ## Font Scaling Lab
 
-### Unreleased
+### v5.2 — 22 July 2026
+Repo only — not republished to the Community.
 - Section dividers are 2px taller, matching a spacing change in the design system.
 
 ### v5.1 — 22 July 2026
