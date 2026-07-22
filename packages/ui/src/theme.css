@@ -58,7 +58,7 @@
     --padding-xl:  24px;
 
     /* Node component tokens — mode-aware via neutral ramp */
-    --node-background:                var(--neutral-1000); /* node/background/idle N1000 */
+    --node-background-idle:           var(--neutral-1000); /* node/background/idle N1000 */
     --node-background-selected:       var(--neutral-1000); /* node/background/selected N1000 */
     /* node/border/default removed — DS Idle state has no stroke; the resting .node border
        is transparent. Only hover/selected/unselected/disabled carry a border color. */
@@ -256,7 +256,7 @@
       --scrollbar-thumb-hover: rgba(255,255,255,0.4);
       --overlay-bg: rgba(44,44,44,0.6);
       /* Node tokens — different primitives per mode */
-      --node-background:                var(--neutral-800);  /* Dark = N800 */
+      --node-background-idle:           var(--neutral-800);  /* Dark = N800 */
       --node-background-selected:       var(--neutral-700);  /* Dark = N700 */
       --node-border-hover:      var(--neutral-300);  /* Dark = N300 */
       --node-label-selected:    var(--neutral-100);  /* Dark = N100 */
@@ -354,7 +354,7 @@
     display: flex;
     align-items: center;
     gap: var(--gap-s);
-    background: var(--node-background);
+    background: var(--node-background-idle);
     /* Idle state (DS node 544:51070) has NO stroke — border-color stays transparent at
        rest and is only colored by the interactive/selection states below. The width is
        reserved (var(--thickness)) so hover/select never shifts layout. */
