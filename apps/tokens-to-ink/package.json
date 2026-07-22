@@ -1,6 +1,6 @@
 {
   "name": "@rms/tokens-to-ink",
-  "version": "4",
+  "version": "4.1",
   "private": true,
   "type": "module",
   "scripts": {
