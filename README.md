@@ -95,6 +95,31 @@ Run it any time from **Plugins → Development**.
 
 You only need to re-import the manifest if you move the folder.
 
+### Get notified of new versions
+
+The plugins can't check for updates themselves — they have no network access,
+by design. So updates are announced through GitHub releases instead:
+
+1. Click **Watch** at the top of this repo
+2. Choose **Custom → Releases**
+
+You'll get an email whenever a plugin is released, and
+[CHANGELOG.md](CHANGELOG.md) lists what changed. There's also an Atom feed at
+`../../releases.atom` if you'd rather not use GitHub notifications.
+
+Each plugin has its own version, so the numbers won't line up with each other:
+
+- **Whole numbers** (`v4`) match the version published on the Figma Community.
+- **Decimals** (`v4.1`) are releases that only exist here — usually shared
+  styling fixes that weren't worth republishing to the Community. The next
+  Community publish resets it to a whole number.
+
+To check which build you're running, open **Plugins → Development → Open
+console** in Figma — each plugin logs its name and version on startup.
+
+> Installing from the Figma Community instead? Those update automatically —
+> sideloading is only needed when your organisation gates Community plugins.
+
 ## Building from source
 
 Only needed if you change the code. Requires Node 24 and pnpm:

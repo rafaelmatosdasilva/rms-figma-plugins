@@ -1,10 +1,10 @@
 {
   "name": "@rms/font-scaling-lab",
-  "version": "0.1.0",
+  "version": "5",
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node ../../scripts/inject-theme.mjs apps/font-scaling-lab/ui.src.html apps/font-scaling-lab/ui.html && esbuild src/code.js --bundle --platform=browser --format=iife --minify --outfile=code.js",
+    "build": "node ../../scripts/build-plugin.mjs apps/font-scaling-lab",
     "build:watch": "node ../../scripts/watch.mjs apps/font-scaling-lab"
   },
   "dependencies": {

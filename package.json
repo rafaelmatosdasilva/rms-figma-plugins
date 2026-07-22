@@ -8,7 +8,8 @@
     "build:watch": "pnpm -r build:watch",
     "build:tokens": "pnpm --filter @rms/tokens-to-ink build",
     "build:font-scaling-lab": "pnpm --filter @rms/font-scaling-lab build",
-    "build:impact-atlas": "pnpm --filter @rms/impact-atlas build"
+    "build:impact-atlas": "pnpm --filter @rms/impact-atlas build",
+    "release": "node scripts/release.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.21.0"
