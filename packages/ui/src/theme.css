@@ -59,6 +59,7 @@
 
     /* Node component tokens — mode-aware via neutral ramp */
     --node-background-idle:           var(--neutral-1000); /* node/background/idle N1000 */
+    --node-background:                var(--neutral-900);  /* node/background/default L=N900 #f7f7f7, D→override */
     --node-background-selected:       var(--neutral-1000); /* node/background/selected N1000 */
     /* node/border/default removed — DS Idle state has no stroke; the resting .node border
        is transparent. Only hover/selected/unselected/disabled carry a border color. */
@@ -68,10 +69,10 @@
     --node-label-selected:    var(--neutral-200);  /* node/label/selected L=N200, D→override */
     --node-label-disabled:    var(--neutral-400);  /* node/label/disabled N400 both modes */
     --node-icon-selected:   var(--neutral-400);  /* node/icon/selected/color L=N4, D→override */
-    --node-icon-unselected: var(--neutral-600);  /* node/icon/unselected/color L=N6, D→override */
+    --node-icon-idle:       var(--neutral-600);  /* node/icon/idle L=N600 #adadad, D→override */
     --node-icon-disabled:   var(--neutral-600);  /* node/icon/disabled/color N600 both modes */
     --node-border-unselected: var(--neutral-800); /* node/border/unselected/color L=N8, D→override */
-    --node-label-unselected:  var(--neutral-300); /* node/label/unselected/color L=N3, D→N3 same */
+    --node-label-idle:        var(--neutral-300); /* node/label/idle L=N300 #404040, D=N300 #b8b8b8 — same step both modes */
 
     /* Base — mode-aware via neutral ramp */
     --bg: var(--neutral-900);           /* panel/background/color N900 */
@@ -257,6 +258,7 @@
       --overlay-bg: rgba(44,44,44,0.6);
       /* Node tokens — different primitives per mode */
       --node-background-idle:           var(--neutral-800);  /* Dark = N800 */
+      --node-background:                var(--neutral-800);  /* node/background/default Dark = N800 #2c2c2c */
       --node-background-selected:       var(--neutral-700);  /* Dark = N700 */
       --node-border-hover:      var(--neutral-300);  /* Dark = N300 */
       --node-label-selected:    var(--neutral-100);  /* Dark = N100 */
@@ -289,7 +291,7 @@
       /* Node additional states */
       --node-border-unselected: var(--neutral-600); /* D=N6 */
       --node-icon-selected:   var(--neutral-300);   /* D=N3 */
-      --node-icon-unselected: var(--neutral-400);   /* D=N4 */
+      --node-icon-idle:       var(--neutral-400);   /* Dark = N400 #808080 */
       /* listItem */
       --listItem-description: var(--neutral-300); /* Dark = N300 */
 
@@ -368,7 +370,7 @@
     font-family: inherit;
     font-size: var(--m-size);
     font-weight: var(--m-weight);
-    color: var(--node-label-unselected);
+    color: var(--node-label-idle);
     transition: border-color 0.1s, background 0.1s, color 0.1s;
     user-select: text;
   }
@@ -377,7 +379,7 @@
     background: var(--node-background-selected);
     color: var(--node-label-selected);
   }
-  .node:hover { border-color: var(--node-border-hover); }
+  .node:hover { border-color: var(--node-border-hover); background: var(--node-background); }
   .node.node-selected:hover { border-color: var(--node-border-selected-hover); }
   /* Disabled appearance — always token-driven, never opacity. Opacity would
      wash the tokens out to arbitrary values and break parity with the DS.
@@ -404,11 +406,11 @@
   .node.node-unselected {
     background: transparent;
     border-color: var(--node-border-unselected);
-    color: var(--node-label-unselected);
+    color: var(--node-label-idle);
   }
-  .node svg { color: var(--node-icon-unselected); flex-shrink: 0; }
+  .node svg { color: var(--node-icon-idle); flex-shrink: 0; }
   .node.node-selected svg { color: var(--node-icon-selected); }
-  .node.node-unselected svg { color: var(--node-icon-unselected); }
+  .node.node-unselected svg { color: var(--node-icon-idle); }
   /* State colour applies to the node's OWN type icon only. Action buttons
      inside a node (focus / goto / drill) are their own component and keep
      their buttonTertiary token — a descendant `svg` selector here would
