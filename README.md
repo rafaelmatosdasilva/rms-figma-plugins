@@ -15,7 +15,7 @@ They run entirely inside your Figma file. No network access, nothing sent anywhe
 
 ## Impact Atlas
 
-**Trace token impact across your design system**
+**Trace token dependencies across your design system**
 
 [Open in Figma Community →](https://www.figma.com/community/plugin/1643205375147564994/impact-atlas)
 
