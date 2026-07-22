@@ -55,6 +55,8 @@ print-ready values, using the same variables you already use.
 
 ![Tokens to Ink](docs/tokens-to-ink.png)
 
+![Tokens to Ink preview](docs/tokens-to-ink-preview.png)
+
 ---
 
 ## Font Scaling Lab
