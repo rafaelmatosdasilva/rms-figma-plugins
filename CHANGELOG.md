@@ -58,6 +58,11 @@ Published to Figma Community.
 
 ## Font Scaling Lab
 
+### v6 — 22 July 2026
+Published to Figma Community. Brings the Community version in line with the
+repo — no new code beyond what v5.1 and v5.2 already carried.
+- Section dividers are 2px taller, matching a spacing change in the design system.
+
 ### v5.2 — 22 July 2026
 Repo only — not republished to the Community.
 - Section dividers are 2px taller, matching a spacing change in the design system.
