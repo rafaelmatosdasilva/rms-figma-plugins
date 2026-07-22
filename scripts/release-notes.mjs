@@ -8,6 +8,7 @@
  * Prints the body to stdout; exits non-zero if there's no matching entry.
  */
 import { readFileSync, readdirSync, existsSync } from 'fs';
+import { createHash } from 'crypto';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -64,8 +65,16 @@ const out = [
   '',
   ...bullets,
   '',
-  `Download \`${plugin}-v${version}.zip\` below, unzip, then **Plugins → Development → Import plugin from manifest…**`,
+  `Download \`${plugin}-v${version}.zip\` below, unzip, then **Plugins → Development → Import plugin from manifest…** in the Figma desktop app.`,
 ];
+
+// A checksum someone can actually check: `shasum -a 256 <file>`. Sideloading
+// means running code from a zip, and the zip is worth being able to verify.
+const zip = join(root, 'dist', `${plugin}-v${version}.zip`);
+if (existsSync(zip)) {
+  const sha = createHash('sha256').update(readFileSync(zip)).digest('hex');
+  out.push('', '<details><summary>Verify the download</summary>', '', '```', `shasum -a 256 ${plugin}-v${version}.zip`, `${sha}`, '```', '</details>');
+}
 
 // The 3-bullet cap is a judgement call about what a reader cares about, which a
 // script can't make. Flag it instead so the draft gets trimmed before publishing.

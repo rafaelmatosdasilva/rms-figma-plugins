@@ -9,7 +9,10 @@ Each one is published on the Figma Community — install from there if you just 
 to use it. This repo holds the source, and lets you sideload the plugins directly
 (useful if your org gates Community plugins behind an approval process).
 
-They run entirely inside your Figma file. No network access, nothing sent anywhere.
+They run entirely inside your Figma file. No network access, nothing sent
+anywhere, and no third-party code — each plugin is two files, built from the
+source here, with `networkAccess` locked to `none` and checked on every build.
+Every release lists a checksum you can verify before importing.
 
 ---
 
@@ -85,12 +88,15 @@ test how your typography behaves beyond fixed assumptions.
    manifest…**
 3. Pick the `manifest.json` inside the unzipped folder.
 
-That's it. Nothing to install, nothing to build.
-
-Run it any time from **Plugins → Development**.
+That's it. Nothing to install, nothing to build. Run it any time from
+**Plugins → Development**.
 
 Prefer the whole repo? Clone it, or use the green **Code** button → **Download
 ZIP**, and point step 3 at `apps/<plugin>/manifest.json`.
+
+**Needs the desktop app.** Figma in a browser has no **Plugins → Development**
+menu, so sideloading isn't possible there. Once imported, the plugin runs on
+design files — not FigJam or Slides.
 
 ## Get updates
 
