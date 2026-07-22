@@ -103,16 +103,21 @@ by design. So updates are announced through GitHub releases instead:
 1. Click **Watch** at the top of this repo
 2. Choose **Custom → Releases**
 
-You'll get an email whenever a plugin is released, and
-[CHANGELOG.md](CHANGELOG.md) lists what changed. There's also an Atom feed at
-`../../releases.atom` if you'd rather not use GitHub notifications.
+You'll get an email for each significant release, and
+[CHANGELOG.md](CHANGELOG.md) always lists what changed. There's also an Atom feed
+at `../../releases.atom` if you'd rather not use GitHub notifications.
 
 Each plugin has its own version, so the numbers won't line up with each other:
 
 - **Whole numbers** (`v4`) match the version published on the Figma Community.
-- **Decimals** (`v4.1`) are releases that only exist here — usually shared
-  styling fixes that weren't worth republishing to the Community. The next
-  Community publish resets it to a whole number.
+  These are the ones you get notified about.
+- **Decimals** (`v4.1`) are small fixes that only exist here — usually shared
+  styling corrections. They're tagged but not announced, to keep the
+  notifications worth reading. The next Community publish resets the number to a
+  whole one and its notes cover everything since.
+
+So if you want every change, `git pull` periodically. If you only want the ones
+that matter, watching releases is enough.
 
 To check which build you're running, open **Plugins → Development → Open
 console** in Figma — each plugin logs its name and version on startup.

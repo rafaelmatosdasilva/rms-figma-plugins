@@ -108,6 +108,9 @@ process.stdout.write(
   `  Review, then:  git push origin main --follow-tags\n` +
   (isCommunityRelease
     ? `  Then publish v${version} in Figma and cut the GitHub Release from ${tag}.\n\n`
-    : `  Repo-only release — do NOT publish to Community. Cut the GitHub Release from ${tag}.\n` +
+    : `  Repo-only release — do NOT publish to Community, and do NOT cut a GitHub\n` +
+      `  Release. The tag is enough; decimals are invisible fixes and notifying\n` +
+      `  people about them trains them to ignore the notifications. The next\n` +
+      `  Community release picks them up in its notes.\n` +
       `  (Community stays on v${String(version).split('.')[0]}; the next publish there resets this to a whole number.)\n\n`),
 );
