@@ -9,7 +9,9 @@
     "build:tokens": "pnpm --filter @rms/tokens-to-ink build",
     "build:font-scaling-lab": "pnpm --filter @rms/font-scaling-lab build",
     "build:impact-atlas": "pnpm --filter @rms/impact-atlas build",
-    "release": "node scripts/release.mjs"
+    "release": "node scripts/release.mjs",
+    "check": "node scripts/check-manifests.mjs",
+    "package": "node scripts/package-plugin.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.21.0"

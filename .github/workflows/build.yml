@@ -22,3 +22,6 @@ jobs:
       # code.js / ui.html in sync with src.
       - name: Check committed build output is up to date
         run: git diff --exit-code
+
+      - name: Validate plugin manifests
+        run: node scripts/check-manifests.mjs

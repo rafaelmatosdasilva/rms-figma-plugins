@@ -79,19 +79,24 @@ test how your typography behaves beyond fixed assumptions.
 
 ## Install
 
-1. Download this repo — green **Code** button → **Download ZIP** (or `git clone`).
+1. Go to [Releases](../../releases) and download the zip for the plugin you want,
+   e.g. `impact-atlas-v5.zip`. Unzip it.
 2. In the Figma **desktop** app: **Plugins → Development → Import plugin from
    manifest…**
-3. Pick the plugin's `manifest.json` — e.g. `apps/impact-atlas/manifest.json`.
+3. Pick the `manifest.json` inside the unzipped folder.
 
 That's it. Nothing to install, nothing to build.
 
 Run it any time from **Plugins → Development**.
 
+Prefer the whole repo? Clone it, or use the green **Code** button → **Download
+ZIP**, and point step 3 at `apps/<plugin>/manifest.json`.
+
 ## Get updates
 
-Run `git pull`, or re-download the ZIP and replace the folder. Reopen the plugin
-and you're on the new version. Re-import the manifest only if you move the folder.
+Download the new zip from [Releases](../../releases) and replace the folder, or
+`git pull` if you cloned. Reopen the plugin and you're on the new version.
+Re-import the manifest only if the folder moved.
 
 To hear about new versions, click **Watch → Custom → Releases** at the top of this
 repo. [CHANGELOG.md](CHANGELOG.md) lists what changed.
