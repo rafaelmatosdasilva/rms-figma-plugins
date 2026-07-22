@@ -18,7 +18,8 @@ Numbers don't line up between plugins — each only moves when that plugin chang
 
 ## Impact Atlas
 
-### Unreleased — will be v5 (Community publish)
+### v5 — 22 July 2026
+Published to Figma Community.
 - Scan-depth radio rings are slightly heavier, matching the connector line.
 - Scan-depth radio dots now line up with their labels.
 - A chain with only alias tokens and no components keeps its column width, so
