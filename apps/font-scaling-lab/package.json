@@ -1,6 +1,6 @@
 {
   "name": "@rms/font-scaling-lab",
-  "version": "5.1",
+  "version": "5.2",
   "private": true,
   "type": "module",
   "scripts": {
