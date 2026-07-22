@@ -33,9 +33,7 @@ connect and how changes propagate through your files.
 - Copy a plain-text summary of any token or component's tier, aliases, and bound
   components for audits or documentation.
 
-![Impact Atlas](docs/impact-atlas.png)
-
-![Impact Atlas preview](docs/impact-atlas-preview.png)
+![Impact Atlas](docs/impact-atlas-preview.png)
 
 ---
 
@@ -55,9 +53,7 @@ print-ready values, using the same variables you already use.
 - Reuse stored print values wherever those variables are applied in designs.
 - Export selected artwork using mapped values for production-ready output.
 
-![Tokens to Ink](docs/tokens-to-ink.png)
-
-![Tokens to Ink preview](docs/tokens-to-ink-preview.png)
+![Tokens to Ink](docs/tokens-to-ink-preview.png)
 
 ---
 
@@ -77,9 +73,7 @@ test how your typography behaves beyond fixed assumptions.
 - Detects truncation, clipping, and constraint failures caused by fixed dimensions.
 - Suggests targeted fixes for each detected issue.
 
-![Font Scaling Lab](docs/font-scaling-lab.png)
-
-![Font Scaling Lab preview](docs/font-scaling-lab-preview.png)
+![Font Scaling Lab](docs/font-scaling-lab-preview.png)
 
 ---
 
