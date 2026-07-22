@@ -1,18 +1,14 @@
 # Changelog
 
-Each plugin is versioned independently.
+Each plugin is versioned independently and matches the version published to the
+Figma Community, which Figma assigns. Numbers don't line up between plugins —
+each only moves when that plugin is published.
 
-- **Whole numbers** (`v4`, `v5`) match the version published to the Figma
-  Community. Figma assigns these.
-- **Decimals** (`v4.1`) are repo-only releases: shared design-system fixes that
-  reached this plugin but had nothing worth republishing to the Community. The
-  next Community publish resets it to a whole number — `4.2` → `5`.
+Shared design-system work sometimes lands here between Community releases. It's
+listed under the current version rather than given one of its own.
 
-So `v4.1` means "Community v4, plus repo-side fixes since". If you install from
-the Community you're on the whole number; if you sideload from here you may be
-slightly ahead.
-
-Numbers don't line up between plugins — each only moves when that plugin changes.
+(Some earlier entries use decimals like `v5.1` for repo-only releases. That
+scheme was retired on 22 July 2026.)
 
 ---
 
@@ -43,16 +39,11 @@ Published to Figma Community.
 
 ## Tokens to Ink
 
-### v4.2 — 22 July 2026
-Repo only — not republished to the Community.
-- Section dividers are 2px taller, matching a spacing change in the design system.
-
-### v4.1 — 22 July 2026
-Repo only — not republished to the Community.
-- Picks up the shared design-system fixes (node and empty-state colours).
-
 ### v4 — 17 July 2026
-Published to Figma Community.
+Published to Figma Community. Later shared design-system work landed here without
+a new Community release, since none of it changed how the plugin works:
+- Node and empty-state colours corrected against the design system.
+- Section dividers are 2px taller, matching a spacing change in the design system.
 
 ---
 

@@ -64,15 +64,12 @@ if (!plugins.includes(plugin)) {
   process.stderr.write(`Unknown plugin "${plugin}". Known: ${plugins.join(', ')}\n`);
   process.exit(1);
 }
-if (!/^\d+(\.\d+)?$/.test(version || '')) {
+if (!/^\d+$/.test(version || '')) {
   process.stderr.write(
-    'Version must be either:\n' +
-    '  5     the integer Figma shows when publishing to Community\n' +
-    '  4.1   a repo-only release — shared DS fixes with nothing worth republishing\n',
+    'Version must be the integer Figma shows when publishing to Community, e.g. 5.\n',
   );
   process.exit(1);
 }
-const isCommunityRelease = !version.includes('.');
 
 const pkg = readPkg(plugin);
 const prev = pkg.version;
@@ -106,11 +103,6 @@ sh('git', ['tag', '-a', tag, '-m', `${plugin} v${version}`], { stdio: 'inherit' 
 process.stdout.write(
   `\nTagged ${tag}. Not pushed.\n` +
   `  Review, then:  git push origin main --follow-tags\n` +
-  (isCommunityRelease
-    ? `  Then publish v${version} in Figma and cut the GitHub Release from ${tag}.\n\n`
-    : `  Repo-only release — do NOT publish to Community, and do NOT cut a GitHub\n` +
-      `  Release. The tag is enough; decimals are invisible fixes and notifying\n` +
-      `  people about them trains them to ignore the notifications. The next\n` +
-      `  Community release picks them up in its notes.\n` +
-      `  (Community stays on v${String(version).split('.')[0]}; the next publish there resets this to a whole number.)\n\n`),
+  `  Then publish v${version} in Figma and cut the GitHub Release from ${tag}.\n` +
+  `  Release notes: max 3 bullets, biggest change first.\n\n`,
 );

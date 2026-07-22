@@ -96,9 +96,9 @@ and you're on the new version. Re-import the manifest only if you move the folde
 To hear about new versions, click **Watch → Custom → Releases** at the top of this
 repo. [CHANGELOG.md](CHANGELOG.md) lists what changed.
 
-Versions are per plugin, so they won't match each other. `v4` is what's on the
-Figma Community; `v4.1` means small fixes made here since. Each plugin logs its
-version on startup, under **Plugins → Development → Open console**.
+Versions are per plugin, so they won't match each other — each matches that
+plugin's version on the Figma Community. Each plugin logs its version on startup,
+under **Plugins → Development → Open console**.
 
 > Installed from the Community instead? That updates itself. Sideloading is only
 > for when your organisation gates Community plugins.
