@@ -19,6 +19,11 @@ Numbers don't line up between plugins — each only moves when that plugin chang
 ## Impact Atlas
 
 ### Unreleased — will be v5 (Community publish)
+- Scan-depth radio rings are slightly heavier, matching the connector line.
+- Scan-depth radio dots now line up with their labels.
+- A chain with only alias tokens and no components keeps its column width, so
+  nodes no longer stretch to fill the panel.
+- Section dividers are 2px taller, matching a spacing change in the design system.
 - The "Scanned …" bar and its rescan button now show after a local scan too.
   They previously only appeared once a canvas scan had run, so opening the
   plugin in a fresh file left you with no visible way to re-run it.
@@ -37,6 +42,9 @@ Published to Figma Community.
 
 ## Tokens to Ink
 
+### Unreleased
+- Section dividers are 2px taller, matching a spacing change in the design system.
+
 ### v4.1 — 22 July 2026
 Repo only — not republished to the Community.
 - Picks up the shared design-system fixes (node and empty-state colours).
@@ -47,6 +55,9 @@ Published to Figma Community.
 ---
 
 ## Font Scaling Lab
+
+### Unreleased
+- Section dividers are 2px taller, matching a spacing change in the design system.
 
 ### v5.1 — 22 July 2026
 Repo only — not republished to the Community.

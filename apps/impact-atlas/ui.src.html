@@ -149,7 +149,7 @@
 #var-list .var-item.node-selected,
 #comp-list .comp-item.node-selected {
   position: sticky;
-  top: 42px; /* sit below own section divider (DS 42px height) */
+  top: 44px; /* sit below own section divider (DS 44px height) */
   bottom: 0;
   z-index: 4;
   background: var(--surface);
@@ -157,16 +157,18 @@
 }
 
 /* When the selected item's own divider scrolls away (divider-away = position:static),
-   flow selected item up to fill the gap */
+   flow selected item up to fill the gap — but keep a gap/xl breathing space so it
+   never sits flush against the mode toggle above the scroll area */
 #var-list .dividerSection.divider-away ~ .var-item.node-selected,
 #comp-list .dividerSection.divider-away ~ .comp-item.node-selected {
-  top: 0;
+  top: var(--gap-xl);
 }
 
-/* When own divider is gone, next divider sits directly below selected item (40px) not 70px */
+/* When own divider is gone, next divider sits directly below selected item
+   (16 gap + 34 item + 6) not 70px */
 #var-list .dividerSection.divider-away ~ .var-item.node-selected ~ .dividerSection,
 #comp-list .dividerSection.divider-away ~ .comp-item.node-selected ~ .dividerSection {
-  top: 40px;
+  top: 56px;
   transition: top 0.18s ease;
 }
 
@@ -255,14 +257,14 @@ body.browser-empty .right-panel {
 }
 
 /* list scroll-area context: full-bleed sticky headers at the DS dividerSection
-   geometry (42px = padding/xl top + 16px content + padding/xxs bottom, from theme.css).
+   geometry (44px = padding/xl top + 16px content + padding/xs bottom, from theme.css).
    Compact 28px/20px variants retired 2026-07-11 — the DS frame uses full-height
    dividers in every list and tree context. Only layout concerns live here:
    full-bleed margins, list gutters, stacking. Locked by RENDERED_ASSERTIONS (Gate [16]). */
 .scroll-area .dividerSection {
   position: sticky;
   top: 0;
-  height: 42px; /* DS dividerSection h — fixed (equals base hug: 24+16+2) so Gate [16] can assert it in hidden views */
+  height: 44px; /* DS dividerSection h — fixed (equals base hug: 24+16+4) so Gate [16] can assert it in hidden views */
   margin-left: -12px;
   margin-right: -8px;
   padding-left: var(--padding-m);
@@ -277,10 +279,10 @@ body.browser-empty .right-panel {
 #list-alias-hdr,
 #list-comp-hdr { margin-top: 0; margin-bottom: 0; }
 
-/* Dividers that come AFTER the selected item stick below: 28 (divider) + 34 (item) + 8 (gap) */
+/* Dividers that come AFTER the selected item stick below: 44 (divider) + 34 (item) + 8 (gap) */
 #var-list.has-list-selection .var-item.node-selected ~ .dividerSection,
 #comp-list.has-list-selection .comp-item.node-selected ~ .dividerSection {
-  top: 84px; /* 42 (own divider) + 34 (item) + 8 (gap) */
+  top: 86px; /* 44 (own divider) + 34 (item) + 8 (gap) */
   z-index: 7;
   transition: top 0.18s ease;
 }
@@ -329,7 +331,7 @@ body.browser-empty .right-panel {
 }
 
 /* Full-width header row — one dividerSection per column, seamless background.
-   Dividers render at the DS base geometry (42px) — same height as every other
+   Dividers render at the DS base geometry (44px) — same height as every other
    dividerSection in the plugin (compact variants retired 2026-07-11). */
 #graph-col-headers {
   display: flex;
@@ -337,13 +339,18 @@ body.browser-empty .right-panel {
   position: sticky;
   top: 0;
   z-index: 7;
-  background: var(--bg-detail); /* sticky header over the detail surface (semantic/background) */
+  /* No background here — each dividerSection paints its own (see #right-detail
+     .dividerSection). The two are flex:1 so together they still read as one
+     seamless strip, but an empty column can now opt out of the fill. */
 }
+/* A column with no label has nothing to occlude, and its opaque strip visibly
+   clips the edge lines that run underneath it. Let them through. */
+#graph-col-headers .dividerSection.col-empty { background: transparent; }
 #right-detail .dividerSection { background: var(--bg-detail); } /* same surface for sticky bg */
 #graph-col-headers .dividerSection {
   flex: 1;
   position: static; /* wrapper is the sticky element */
-  height: 42px; /* DS dividerSection h — same fixed height as the list contexts */
+  height: 44px; /* DS dividerSection h — same fixed height as the list contexts */
   margin: 0;
   padding-left: var(--padding-l);
   padding-right: var(--padding-l);
@@ -908,6 +915,13 @@ body.browser-empty .right-panel {
 }
 
 .depth-options {
+  /* Single source for the label's line box — the circle column and the connector
+     both derive their vertical geometry from it. */
+  --depth-label-lh: calc(var(--m-size) * 1.3);
+  /* Ring + connector share one stroke weight so they read as a single track.
+     Deliberately 2px, not general/thickness (1.5px) — at 16px the thinner ring
+     disappears next to the connector. Local to this control by design. */
+  --depth-stroke: 2px;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -926,10 +940,10 @@ body.browser-empty .right-panel {
   content: '';
   position: absolute;
   left: 7px;
-  top: 16px;
+  top: calc(var(--depth-label-lh) / 2 + 8px); /* circle centre + radius = its bottom edge */
   bottom: -4px;
   width: 0;
-  border-left: 2px dashed var(--accent);
+  border-left: var(--depth-stroke) dashed var(--accent);
   transform: scaleY(0);
   transform-origin: top center;
   transition: transform    0.32s cubic-bezier(0.4, 0, 0.2, 1),
@@ -984,7 +998,11 @@ body.browser-empty .right-panel {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: var(--gap-xs);
+  /* Match the label's first line box and centre the 16px circle inside it, so the
+     dot sits on the label's optical centre. A fixed top padding can't do this —
+     it drifts as soon as the type scale changes. */
+  height: var(--depth-label-lh);
+  justify-content: center;
   flex-shrink: 0;
 }
 .depth-radio-input { display: none; }
@@ -992,7 +1010,7 @@ body.browser-empty .right-panel {
 .depth-circle {
   width: 16px; height: 16px;
   border-radius: 50%;
-  border: var(--thickness) solid var(--radioButton-border-unselected);
+  border: var(--depth-stroke) solid var(--radioButton-border-unselected);
   background: var(--radioButton-background);
   flex-shrink: 0;
   cursor: pointer;
@@ -1069,7 +1087,7 @@ body.browser-empty .right-panel {
   display: block;
   font-size: var(--m-size);
   color: var(--radioButton-text);
-  line-height: 1.3;
+  line-height: var(--depth-label-lh);
 }
 .depth-option.done .depth-label { color: var(--radioButton-text-selected); }
 /* "Would be un-done" options revert to unselected text styling */
@@ -1964,7 +1982,7 @@ function resetRightPanel() {
   if (c2) c2.textContent = '';
   if (c3) c3.textContent = '';
   var g3hdr = document.getElementById('gcol-3-lbl-wrap');
-  if (g3hdr) g3hdr.style.display = 'none';
+  setColHdrVisible(g3hdr, false); // stays in the flex row so column widths hold
   _graphDescVars = [];
   _graphCompList = [];
   _allDescVars   = [];
@@ -2040,6 +2058,16 @@ function onChainResult(chain, styles, components, impact) {
 
 // ─── Graph rendering ──────────────────────────────────────────────────────────
 
+// Show/hide a graph column's header label. Both columns stay in the flex row
+// either way so the two columns keep their alignment — but a hidden label also
+// drops the divider's background, since an empty opaque strip would clip the
+// edge lines drawn underneath it.
+function setColHdrVisible(el, visible) {
+  if (!el) return;
+  el.style.visibility = visible ? '' : 'hidden';
+  el.classList.toggle('col-empty', !visible);
+}
+
 function renderGraph(chain) {
   if (!chain) return;
 
@@ -2082,9 +2110,9 @@ function renderGraph(chain) {
 
   // Both columns always visible — divider labels hidden via visibility (not display)
   // to preserve column alignment in the flex header row
-  if (gcol2lbl)  gcol2lbl.style.visibility  = hasDescs ? '' : 'hidden';
+  setColHdrVisible(gcol2lbl, hasDescs);
   if (gcol2wrap) gcol2wrap.style.display     = '';
-  if (gcol3lbl)  gcol3lbl.style.visibility   = hasComps ? '' : 'hidden';
+  setColHdrVisible(gcol3lbl, hasComps);
   if (gcol3wrap) gcol3wrap.style.display     = '';
   if (colHeaders) colHeaders.style.display = (hasDescs || hasComps) ? '' : 'none';
   if (bodyElG) bodyElG.classList.add('has-content');
@@ -2186,8 +2214,12 @@ function renderComponents(components) {
   if (components.length === 0) {
     col3.innerHTML = '';
     if (cnt3)      cnt3.textContent = '';
-    if (gcol3hdr)  gcol3hdr.style.display  = 'none';
-    if (gcol3wrap) gcol3wrap.style.display  = 'none';
+    // Keep col-3 in the layout even with nothing in it — collapsing it would let
+    // col-2 stretch to the full width, so alias-token nodes would render wider
+    // than the identical nodes in a chain that also has components.
+    if (gcol3hdr)  gcol3hdr.style.display  = '';
+    setColHdrVisible(gcol3hdr, false);
+    if (gcol3wrap) gcol3wrap.style.display  = '';
     if (colHdrs)   colHdrs.style.display    = hasAlias ? '' : 'none';
     var ge = document.getElementById('graph-empty');
     if (ge) ge.classList.toggle('hidden', hasAlias);
@@ -2195,12 +2227,13 @@ function renderComponents(components) {
     scheduleDrawEdges();
     return;
   }
-  // Components exist — ensure col-3 is visible
+  // Components exist — ensure col-3 is visible. renderGraph may have hidden the
+  // label when the component list was still null, so restore it here too.
   if (gcol3hdr)  gcol3hdr.style.display  = '';
+  setColHdrVisible(gcol3hdr, true);
   if (gcol3wrap) gcol3wrap.style.display  = '';
   if (colHdrs)   colHdrs.style.display    = '';
   if (cnt3) cnt3.textContent = components.length;
-  if (gcol3hdr) gcol3hdr.style.display = '';
   if (bodyElC) bodyElC.classList.add('has-content');
 
   // Sort by bound count desc
@@ -3294,9 +3327,9 @@ function renderComponentDetail(comp) {
   var colHeaders = document.getElementById('graph-col-headers');
   if (colHeaders) colHeaders.style.display = '';
   var g3hdr = document.getElementById('gcol-3-lbl-wrap');
-  if (g3hdr) { g3hdr.style.display = ''; g3hdr.style.visibility = 'hidden'; }
+  if (g3hdr) { g3hdr.style.display = ''; setColHdrVisible(g3hdr, false); }
   var g2hdr = document.getElementById('gcol-2-lbl-wrap');
-  if (g2hdr) g2hdr.style.visibility = '';
+  setColHdrVisible(g2hdr, true);
 
   // Always show both columns — consistent two-column layout
   var gcol2wrap = document.getElementById('gcol-2-wrap');
@@ -3783,8 +3816,9 @@ function setupDividerTracking(listId) {
 
 function updateDividerTracking() {
   if (!_trackedSelDiv || !_trackedNextDiv || !_trackedList) return;
-  // Next divider pins at top:70px when scrollTop >= its natural top − 70
-  var pinned = _trackedList.scrollTop >= _trackedNextTop - 70;
+  // Swap 14px before the next divider reaches its pinned top (86px, was 84 when
+  // the DS divider was 42px tall) so the collapse starts just ahead of contact
+  var pinned = _trackedList.scrollTop >= _trackedNextTop - 72;
   _trackedSelDiv.classList.toggle('divider-away', pinned);
 }
 

@@ -1059,7 +1059,7 @@
 
   .dividerSection {
     display: flex; align-items: center; gap: var(--gap-s);  /* gap/s = 4px */
-    padding: var(--padding-xl) 0 var(--padding-xxs); /* 24px top, 2px bottom; horizontal from parent container */
+    padding: var(--padding-xl) 0 var(--padding-xs); /* 24px top, 4px bottom (DS 135:46577, was xxs); horizontal from parent container */
     font-size: var(--s-size); font-weight: var(--s-weight); line-height: var(--s-lh);
     color: var(--dividerSection-title); /* dividerSection/title/color */
     flex-shrink: 0;
