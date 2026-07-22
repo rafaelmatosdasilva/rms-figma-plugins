@@ -170,11 +170,7 @@
   transition: top 0.18s ease;
 }
 
-.node.node-external {
-  cursor: default;
-  opacity: 0.5;
-  border-style: dashed;
-}
+/* .node-external appearance — defined in theme.css (disabled tokens, no opacity) */
 .node-external-badge {
   font-size: var(--fs-xs, 9px);
   color: var(--text-muted);
@@ -408,18 +404,9 @@ body.browser-empty .right-panel {
   margin-bottom: var(--gap-m);
 }
 
-/* In the graph, when any node is selected, auto-disable the others.
-   This applies .node-disabled styles via descendant selector — no JS toggling. */
-#graph-body.has-selection .node:not(.node-selected) {
-  opacity: 0.28;
-  border-style: dashed;
-  border-color: var(--text-muted);
-  background: transparent;
-  box-shadow: none;
-}
-#graph-body.has-selection .node:not(.node-selected):hover {
-  opacity: 0.55;
-}
+/* In the graph, when any node is selected, the others recede.
+   Appearance (disabled tokens + hover) lives in theme.css against
+   .has-selection — token-driven, no opacity, no per-plugin override. */
 
 .graph-node.more {
   justify-content: center;
@@ -1172,7 +1159,7 @@ body.browser-empty .right-panel {
       <!-- Placeholder: no var selected -->
       <div id="right-placeholder" class="empty-state">
         <div class="empty-state-content">
-          <svg width="48" height="48"><use href="#icon-variable" id="right-placeholder-icon"/></svg>
+          <svg width="48" height="48"><use href="#icon-empty-token" id="right-placeholder-icon"/></svg>
           <p id="right-placeholder-text">Select an item<br>to see what it affects.</p>
         </div>
       </div>
@@ -1569,7 +1556,7 @@ function onInitData(msg) {
   syncBrowserModeButtons('tokens');
   updatePlaceholderText('tokens');
   var phIcon = document.getElementById('right-placeholder-icon');
-  if (phIcon) phIcon.setAttribute('href', '#icon-variable');
+  if (phIcon) phIcon.setAttribute('href', '#icon-empty-token');
 
   if (msg.cachedScan) {
     // Restore cached canvas scan in the same paint as init — no double-render
@@ -3073,7 +3060,7 @@ function switchBrowserMode(mode) {
   var phIcon = document.getElementById('right-placeholder-icon');
   if (phIcon) {
     phIcon.setAttribute('href',
-      mode === 'components' ? '#icon-component' : '#icon-variable');
+      mode === 'components' ? '#icon-empty-component' : '#icon-empty-token');
   }
   syncBrowserModeButtons(mode);
 

@@ -123,6 +123,17 @@
       '<circle cx="14" cy="14" r="9"/>' +
       '<line x1="9" y1="14" x2="19" y2="14"/>' +
     '</symbol>' +
+    /* Empty-state object icons. Exported vectors, drawn rotated -45° in the DS,
+       so the rotation is baked in. Both use the DS frame (56x56) as the viewBox
+       rather than each glyph's own bounding box — that preserves their relative
+       sizes (the token glyph is intentionally larger than the component one) and
+       clips at the frame exactly as the design does. */
+    '<symbol id="icon-empty-token" viewBox="0 0 56 56" fill="currentColor" stroke="none">' +
+      '<path transform="rotate(-45 28 28) translate(5.9302 5.9297)" d="M16.7139 0.149414L37.668 5.76367L38.2256 5.91406L38.375 6.4707L43.9912 27.4258L44.1396 27.9834L27.9834 44.1406L27.4268 43.9902L6.4707 38.376L5.91309 38.2256L5.76367 37.6689L0.149414 16.7139L0 16.1562L16.1562 0L16.7139 0.149414ZM2.23047 16.7539L7.54688 36.5928L27.3867 41.9092L41.9092 27.3857L36.5928 7.5459L16.7539 2.23047L2.23047 16.7539ZM16.9854 16.9854C19.7935 14.1775 24.3462 14.1775 27.1543 16.9854C29.962 19.7935 29.9621 24.3462 27.1543 27.1543C24.3461 29.9623 19.7925 29.9624 16.9844 27.1543C14.1766 24.3461 14.1775 19.7934 16.9854 16.9854ZM25.7402 18.3994C23.7132 16.3726 20.4265 16.3726 18.3994 18.3994C16.3726 20.4264 16.3717 23.7131 18.3984 25.7402C20.4255 27.7673 23.7131 27.7672 25.7402 25.7402C27.767 23.7132 27.7669 20.4265 25.7402 18.3994Z"/>' +
+    '</symbol>' +
+    '<symbol id="icon-empty-component" viewBox="0 0 56 56" fill="currentColor" stroke="none">' +
+      '<path transform="rotate(-45 28 28) translate(12.3755 12.15235)" d="M31.249 31.6953H16.5352V16.833H31.249V31.6953ZM14.6924 31.6875H0V16.8027H14.6924V31.6875ZM18.5254 29.6855H29.2598V18.8428H18.5254V29.6855ZM1.98633 29.6748H12.7051V18.8154H1.98633V29.6748ZM14.7285 14.8711H0.0107422V0.0126953H14.7285V14.8711ZM31.2354 14.8252H16.4844V0H31.2354V14.8252ZM2.00098 12.8613H12.7383V2.02148H2.00098V12.8613ZM18.4785 12.8203H29.2412V2.00488H18.4785V12.8203Z"/>' +
+    '</symbol>' +
     /* ── Node type icons ─────────────────────────────────────────── */
     '<symbol id="icon-node-text" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4">' +
       '<line x1="2" y1="3" x2="10" y2="3"/><line x1="6" y1="3" x2="6" y2="10"/>' +

@@ -66,10 +66,10 @@
     --node-border-selected:   var(--neutral-100);  /* node/border/selected N100 */
     --node-border-disabled:   var(--neutral-700);  /* node/border/disabled L=N700, D=N600 */
     --node-label-selected:    var(--neutral-200);  /* node/label/selected L=N200, D→override */
-    --node-label-disabled:    var(--neutral-400);  /* node/label/disabled L=N400, D→override */
+    --node-label-disabled:    var(--neutral-400);  /* node/label/disabled N400 both modes */
     --node-icon-selected:   var(--neutral-400);  /* node/icon/selected/color L=N4, D→override */
     --node-icon-unselected: var(--neutral-600);  /* node/icon/unselected/color L=N6, D→override */
-    --node-icon-disabled:   var(--neutral-500);  /* node/icon/disabled/color L=N5, D→override */
+    --node-icon-disabled:   var(--neutral-600);  /* node/icon/disabled/color N600 both modes */
     --node-border-unselected: var(--neutral-800); /* node/border/unselected/color L=N8, D→override */
     --node-label-unselected:  var(--neutral-300); /* node/label/unselected/color L=N3, D→N3 same */
 
@@ -192,7 +192,7 @@
     --statusbar-icon: var(--neutral-600); /* statusbar/icon/color L=N6, D→override */
     /* Empty state */
     --emptyState-title:          var(--neutral-100);       /* emptyState/title/color N1 both */
-    --emptyState-icon-neutral:           var(--neutral-400);       /* emptyState/icon/neutral/color L=N4, D→override */
+    --emptyState-icon-neutral:           var(--neutral-600);       /* emptyState/icon/neutral/color L=N6, D→override */
 
     /* Radio button (mode-aware) */
     --radioButton-background:             var(--neutral-1000); /* radioButton/background/default N1000 both */
@@ -260,7 +260,6 @@
       --node-background-selected:       var(--neutral-700);  /* Dark = N700 */
       --node-border-hover:      var(--neutral-300);  /* Dark = N300 */
       --node-label-selected:    var(--neutral-100);  /* Dark = N100 */
-      --node-label-disabled:    var(--neutral-600);  /* Dark = N600 */
       --node-border-disabled:   var(--neutral-600);  /* Dark = N600 */
       --segmentedControl-label-selected: var(--neutral-100); /* Dark = N100 */
       --segmentedControl-icon:           var(--neutral-300); /* Dark = N300 */
@@ -291,7 +290,6 @@
       --node-border-unselected: var(--neutral-600); /* D=N6 */
       --node-icon-selected:   var(--neutral-300);   /* D=N3 */
       --node-icon-unselected: var(--neutral-400);   /* D=N4 */
-      --node-icon-disabled:   var(--neutral-600);   /* D=N6 */
       /* listItem */
       --listItem-description: var(--neutral-300); /* Dark = N300 */
 
@@ -381,13 +379,27 @@
   }
   .node:hover { border-color: var(--node-border-hover); }
   .node.node-selected:hover { border-color: var(--node-border-selected-hover); }
-  .node.node-disabled {
+  /* Disabled appearance — always token-driven, never opacity. Opacity would
+     wash the tokens out to arbitrary values and break parity with the DS.
+     Shared by: the true disabled state, external (library) nodes, and any
+     container that recedes its non-selected nodes (.has-selection). */
+  .node.node-disabled,
+  .node.node-external,
+  .has-selection .node:not(.node-selected) {
     border-style: dashed;
     border-color: var(--node-border-disabled);
     background: transparent;
     color: var(--node-label-disabled);
+    box-shadow: none;
+  }
+  /* Only genuinely disabled nodes lose interactivity; receded ones stay usable */
+  .node.node-disabled {
     cursor: default;
     pointer-events: none;
+  }
+  .node.node-external { cursor: default; }
+  .has-selection .node:not(.node-selected):hover {
+    border-color: var(--node-border-hover);
   }
   .node.node-unselected {
     background: transparent;
@@ -397,7 +409,16 @@
   .node svg { color: var(--node-icon-unselected); flex-shrink: 0; }
   .node.node-selected svg { color: var(--node-icon-selected); }
   .node.node-unselected svg { color: var(--node-icon-unselected); }
-  .node.node-disabled svg { color: var(--node-icon-disabled); }
+  /* State colour applies to the node's OWN type icon only. Action buttons
+     inside a node (focus / goto / drill) are their own component and keep
+     their buttonTertiary token — a descendant `svg` selector here would
+     override them and make them look faded. */
+  .node.node-disabled .node-type-icon svg,
+  .node.node-disabled .var-type-icon svg,
+  .node.node-external .node-type-icon svg,
+  .node.node-external .var-type-icon svg,
+  .has-selection .node:not(.node-selected) .node-type-icon svg,
+  .has-selection .node:not(.node-selected) .var-type-icon svg { color: var(--node-icon-disabled); }
   .node.no-icon .node-type-icon,
   .node.no-icon .var-type-icon { display: none; }
 
