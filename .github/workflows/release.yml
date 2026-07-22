@@ -1,0 +1,56 @@
+# Drafts a GitHub Release whenever a <plugin>-v<n> tag is pushed.
+#
+# Deliberately a DRAFT: nothing reaches anyone until it's reviewed and published
+# by hand. The notes come from CHANGELOG.md so the two can't drift, and the
+# sideload zip is built here rather than uploaded from a laptop.
+name: release
+
+on:
+  push:
+    tags:
+      - '*-v*'
+
+permissions:
+  contents: write
+
+jobs:
+  draft:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # CHANGELOG history, and so the tag resolves
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm check
+
+      # Fail rather than ship a stale bundle: the tag must point at code that
+      # rebuilds byte-identically.
+      - name: Check committed build output is up to date
+        run: git diff --exit-code
+
+      - name: Build the sideload zip
+        run: node scripts/package-plugin.mjs "${TAG%-v*}"
+        env:
+          TAG: ${{ github.ref_name }}
+
+      - name: Draft the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          node scripts/release-notes.mjs "$TAG" > notes.md
+          PLUGIN="${TAG%-v*}"
+          TITLE="$(node -p "require('./apps/$PLUGIN/manifest.json').name") ${TAG##*-}"
+          gh release create "$TAG" \
+            --draft \
+            --title "$TITLE" \
+            --notes-file notes.md \
+            dist/*.zip
