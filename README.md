@@ -90,40 +90,18 @@ Run it any time from **Plugins → Development**.
 
 ## Get updates
 
-- **Cloned it?** Run `git pull`, then reopen the plugin in Figma.
-- **Downloaded the ZIP?** Download it again and replace the folder.
+Run `git pull`, or re-download the ZIP and replace the folder. Reopen the plugin
+and you're on the new version. Re-import the manifest only if you move the folder.
 
-You only need to re-import the manifest if you move the folder.
+To hear about new versions, click **Watch → Custom → Releases** at the top of this
+repo. [CHANGELOG.md](CHANGELOG.md) lists what changed.
 
-### Get notified of new versions
+Versions are per plugin, so they won't match each other. `v4` is what's on the
+Figma Community; `v4.1` means small fixes made here since. Each plugin logs its
+version on startup, under **Plugins → Development → Open console**.
 
-The plugins can't check for updates themselves — they have no network access,
-by design. So updates are announced through GitHub releases instead:
-
-1. Click **Watch** at the top of this repo
-2. Choose **Custom → Releases**
-
-You'll get an email for each significant release, and
-[CHANGELOG.md](CHANGELOG.md) always lists what changed. There's also an Atom feed
-at `../../releases.atom` if you'd rather not use GitHub notifications.
-
-Each plugin has its own version, so the numbers won't line up with each other:
-
-- **Whole numbers** (`v4`) match the version published on the Figma Community.
-  These are the ones you get notified about.
-- **Decimals** (`v4.1`) are small fixes that only exist here — usually shared
-  styling corrections. They're tagged but not announced, to keep the
-  notifications worth reading. The next Community publish resets the number to a
-  whole one and its notes cover everything since.
-
-So if you want every change, `git pull` periodically. If you only want the ones
-that matter, watching releases is enough.
-
-To check which build you're running, open **Plugins → Development → Open
-console** in Figma — each plugin logs its name and version on startup.
-
-> Installing from the Figma Community instead? Those update automatically —
-> sideloading is only needed when your organisation gates Community plugins.
+> Installed from the Community instead? That updates itself. Sideloading is only
+> for when your organisation gates Community plugins.
 
 ## Building from source
 
