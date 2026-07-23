@@ -6,8 +6,9 @@
  * is no API to read it back), so you pass the number shown in Figma's publish
  * dialog. Everything downstream is derived from it.
  *
- *   node scripts/release.mjs <plugin> <version>
- *   node scripts/release.mjs impact-atlas 5
+ *   node scripts/release.mjs <plugin> [version]
+ *   node scripts/release.mjs impact-atlas 6   explicit
+ *   node scripts/release.mjs impact-atlas     infers current+1
  *
  * With no arguments it reports which plugins have unpublished changes.
  *
@@ -53,10 +54,11 @@ function status() {
         : `  ${p.padEnd(18)} v${String(v).padEnd(4)} up to date with ${tag}\n`,
     );
   }
-  process.stdout.write('\nRelease:  node scripts/release.mjs <plugin> <version>\n\n');
+  process.stdout.write('\nRelease:  node scripts/release.mjs <plugin> [version]   (version inferred as current+1 if omitted)\n\n');
 }
 
-const [, , plugin, version] = process.argv;
+const [, , plugin] = process.argv;
+let version = process.argv[3];
 
 if (!plugin) { status(); process.exit(0); }
 
@@ -64,7 +66,19 @@ if (!plugins.includes(plugin)) {
   process.stderr.write(`Unknown plugin "${plugin}". Known: ${plugins.join(', ')}\n`);
   process.exit(1);
 }
-if (!/^\d+$/.test(version || '')) {
+// Figma increments the version by exactly 1 on each publish, so the next number
+// is derivable. Omitting it infers current+1; the inference is printed loudly
+// because the repo version is only meaningful if it matches what Figma assigned.
+let inferred = false;
+if (!version) {
+  const cur = readPkg(plugin).version;
+  if (!/^\d+$/.test(String(cur))) {
+    process.stderr.write(`Cannot infer the next version from "${cur}". Pass it explicitly.\n`);
+    process.exit(1);
+  }
+  version = String(Number(cur) + 1);
+  inferred = true;
+} else if (!/^\d+$/.test(version)) {
   process.stderr.write(
     'Version must be the integer Figma shows when publishing to Community, e.g. 5.\n',
   );
@@ -101,6 +115,11 @@ sh('git', ['commit', '-m', `${plugin} v${version}`], { stdio: 'inherit' });
 sh('git', ['tag', '-a', tag, '-m', `${plugin} v${version}`], { stdio: 'inherit' });
 
 process.stdout.write(
+  (inferred
+    ? `\n⚠️  Version inferred as v${version} (previous was v${prev}).\n` +
+      `   Confirm this matches Figma's publish dialog before pushing — the repo\n` +
+      `   version is only useful if it equals the Community one.\n`
+    : '') +
   `\nTagged ${tag}. Not pushed.\n` +
   `  Review, then:  git push origin main --follow-tags\n` +
   `  Then publish v${version} in Figma and cut the GitHub Release from ${tag}.\n` +
