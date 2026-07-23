@@ -38,6 +38,14 @@ jobs:
         id: t
         run: echo "tag=${{ inputs.tag || github.ref_name }}" >> "$GITHUB_OUTPUT"
 
+      # The tag supplies the plugin source; the release tooling always comes from
+      # main. Older tags predate these scripts, and a release must not depend on
+      # which tooling happened to exist when the tag was cut.
+      - name: Take release tooling from main
+        run: |
+          git fetch origin main --depth=1
+          git checkout origin/main -- scripts/ package.json
+
       - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -46,20 +54,13 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      # Older tags predate scripts added later, so only validate when the tag
-      # actually carries the script — a missing check must not fail the release.
-      - name: Validate plugin manifests
-        run: |
-          if node -e "process.exit(require('./package.json').scripts.check?0:1)"; then
-            pnpm check
-          else
-            echo "No check script at this tag — skipping manifest validation."
-          fi
+      - run: pnpm check
 
       # Fail rather than ship a stale bundle: the tag must point at code that
-      # rebuilds byte-identically.
+      # rebuilds byte-identically. Scoped to the plugin dirs — scripts/ and
+      # package.json were deliberately restored from main just above.
       - name: Check committed build output is up to date
-        run: git diff --exit-code
+        run: git diff --exit-code -- apps packages
 
       - name: Build the sideload zip
         run: node scripts/package-plugin.mjs "${TAG%-v*}"
