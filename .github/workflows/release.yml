@@ -46,7 +46,15 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - run: pnpm check
+      # Older tags predate scripts added later, so only validate when the tag
+      # actually carries the script — a missing check must not fail the release.
+      - name: Validate plugin manifests
+        run: |
+          if node -e "process.exit(require('./package.json').scripts.check?0:1)"; then
+            pnpm check
+          else
+            echo "No check script at this tag — skipping manifest validation."
+          fi
 
       # Fail rather than ship a stale bundle: the tag must point at code that
       # rebuilds byte-identically.
