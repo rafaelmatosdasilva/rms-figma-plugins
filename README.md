@@ -3,21 +3,20 @@
 [![build](https://github.com/rafaelmatosdasilva/rms-ds-figma-plugins/actions/workflows/build.yml/badge.svg)](https://github.com/rafaelmatosdasilva/rms-ds-figma-plugins/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Figma plugins for design-system work.
+Figma plugins for design system work.
 
-Each one is published on the Figma Community — install from there if you just want
-to use it. This repo holds the source, and lets you sideload the plugins directly
-(useful if your org gates Community plugins behind an approval process).
+These plugins are available on the Figma Community, and this repository contains
+the source code. It's especially useful if your organization restricts Community
+plugins, as you can sideload them instead.
 
-They run entirely inside your Figma file. No network access, nothing sent
-anywhere, and no third-party code — each plugin is two files, built from the
-source here, with `networkAccess` locked to `none` and checked on every build.
-Every release lists a checksum you can verify before importing.
+They run entirely inside your Figma file with no network access, no data sent
+anywhere, and no third party code.
 
-**[Download a plugin →](../../releases)** &nbsp;·&nbsp; unzip, then **Plugins →
-Development → Import plugin from manifest…** in the Figma desktop app.
-[Full steps below](#install). Click **Watch → Custom → Releases** to hear about
-new versions.
+To sideload a plugin, download it, unzip it, then in the Figma desktop app go to
+**Plugins → Development → Import plugin from manifest…**. Full instructions are
+[below](#install).
+
+Click **Watch → Custom → Releases** on GitHub to be notified about new versions.
 
 ---
 
@@ -108,16 +107,11 @@ design files — not FigJam or Slides.
 Download the new zip from [Releases](../../releases) and replace the folder, or
 `git pull` if you cloned. Reopen the plugin and you're on the new version.
 Re-import the manifest only if the folder moved.
-
-To hear about new versions, click **Watch → Custom → Releases** at the top of this
-repo. [CHANGELOG.md](CHANGELOG.md) lists what changed.
+[CHANGELOG.md](CHANGELOG.md) lists what changed.
 
 Versions are per plugin, so they won't match each other — each matches that
 plugin's version on the Figma Community. Each plugin logs its version on startup,
 under **Plugins → Development → Open console**.
-
-> Installed from the Community instead? That updates itself. Sideloading is only
-> for when your organisation gates Community plugins.
 
 ## Building from source
 
