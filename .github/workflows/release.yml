@@ -54,7 +54,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - run: pnpm check
+      - name: Validate the manifest of the plugin being released
+        run: node scripts/check-manifests.mjs "${TAG%-v*}"
+        env:
+          TAG: ${{ steps.t.outputs.tag }}
 
       # Fail rather than ship a stale bundle: the tag must point at code that
       # rebuilds byte-identically. Scoped to the plugin dirs — scripts/ and

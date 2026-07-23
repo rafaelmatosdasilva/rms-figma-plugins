@@ -17,9 +17,17 @@ import { fileURLToPath } from 'url';
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const appsDir = join(root, 'apps');
 
-const plugins = readdirSync(appsDir).filter((n) =>
-  existsSync(join(appsDir, n, 'manifest.json')),
-);
+// Optional plugin arg: a release validates only the plugin it ships, since a
+// tag's other plugins may carry versions from a retired scheme.
+const only = process.argv[2];
+const plugins = readdirSync(appsDir)
+  .filter((n) => existsSync(join(appsDir, n, 'manifest.json')))
+  .filter((n) => !only || n === only);
+
+if (only && !plugins.length) {
+  process.stderr.write(`Unknown plugin "${only}".\n`);
+  process.exit(1);
+}
 
 const problems = [];
 const fail = (plugin, msg) => problems.push(`${plugin}: ${msg}`);
