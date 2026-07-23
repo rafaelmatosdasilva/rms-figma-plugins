@@ -9,6 +9,18 @@ on:
   push:
     tags:
       - '*-v*'
+  # Manual trigger, so the workflow can be proven before a real release depends
+  # on it. Pass an existing tag and set dry_run to build the zip and render the
+  # notes without creating anything.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to draft a release for, e.g. impact-atlas-v5'
+        required: true
+      dry_run:
+        description: 'Build and render notes only — create no release'
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -20,6 +32,11 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0 # CHANGELOG history, and so the tag resolves
+          ref: ${{ inputs.tag || github.ref_name }}
+
+      - name: Resolve the tag
+        id: t
+        run: echo "tag=${{ inputs.tag || github.ref_name }}" >> "$GITHUB_OUTPUT"
 
       - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -39,16 +56,24 @@ jobs:
       - name: Build the sideload zip
         run: node scripts/package-plugin.mjs "${TAG%-v*}"
         env:
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ steps.t.outputs.tag }}
 
       - name: Draft the release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ steps.t.outputs.tag }}
+          DRY_RUN: ${{ inputs.dry_run }}
         run: |
           node scripts/release-notes.mjs "$TAG" > notes.md
           PLUGIN="${TAG%-v*}"
           TITLE="$(node -p "require('./apps/$PLUGIN/manifest.json').name") ${TAG##*-}"
+          echo "### $TITLE" >> "$GITHUB_STEP_SUMMARY"
+          cat notes.md >> "$GITHUB_STEP_SUMMARY"
+          ls -la dist/
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "Dry run — no release created."
+            exit 0
+          fi
           gh release create "$TAG" \
             --draft \
             --title "$TITLE" \
