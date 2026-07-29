@@ -733,7 +733,9 @@ async function detectIssues(clone, refNode, scaleValue, isStale) {
     }
     var f = { h: false, v: false };
     try { f = axisFixed(node); } catch (_) {}
-    var axisKey = f.h ? 'fixedH' : (f.v ? 'fixedV' : 'clipped');
+    // Neither axis is fixed → the generic overflow advice. ('clipped' was a typo:
+    // no such key in FIX_BANK, so this branch threw on .map of undefined.)
+    var axisKey = f.h ? 'fixedH' : (f.v ? 'fixedV' : 'overflow');
     return FIX_BANK[axisKey].map(function (fix, i) {
       return i === 0
         ? { title: fix.title, description: fix.description, recommended: true, nodeId: origId }

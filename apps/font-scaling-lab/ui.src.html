@@ -344,8 +344,7 @@
   .issue-type-icon { color: var(--text-muted); flex-shrink: 0; display: block; }
   .issue-legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; margin-top: 3px; }
   .t-clipped .issue-legend-dot { background: var(--clipped-color); }
-  .clipped-info { flex-shrink: 0; display: flex; align-items: center; cursor: default; }
-  .clipped-info svg { color: var(--text-secondary) !important; }
+  /* .tooltipButton (DS trigger) carries the appearance; nothing local needed. */
   .issue-group-count { font-size: var(--s-size); font-weight: var(--m-weight); color: var(--text-muted); flex-shrink: 0; }
   .issue-chevron { flex-shrink: 0; color: var(--text-muted); transition: transform 0.18s ease; }
   .issue-group.collapsed .issue-chevron { transform: rotate(-90deg); }
@@ -441,89 +440,7 @@
 </head>
 <body>
 <!-- Shared icon definitions -->
-<svg style="display:none" aria-hidden="true">
-  <defs>
-    <!-- Icon/Fit -->
-    <symbol id="icon-zoom" viewBox="0 0 16 16" fill="currentColor">
-      <path stroke="none" d="M13.0081 8.90358V13.0054H8.90631L8.907 11.8059H11.8086L11.8093 8.90358H13.0081ZM13.0081 2.994L13.0074 7.09646H11.8086L11.8093 4.19414H8.90631V2.994H13.0081ZM4.19065 8.90289V11.8045L7.09435 11.8052V13.0054H2.9912L2.99189 8.90289H4.19065ZM7.0909 2.99469V4.19345H4.19065V7.0937L2.9912 7.09439L2.99189 2.99469H7.0909Z"/>
-    </symbol>
-    <symbol id="icon-type-text" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
-      <line x1="2" y1="2.5" x2="10" y2="2.5"/>
-      <line x1="6" y1="2.5" x2="6"  y2="10"/>
-      <line x1="4.6" y1="10" x2="7.4" y2="10"/>
-    </symbol>
-    <symbol id="icon-type-frame" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round">
-      <line x1="0.5" y1="4"   x2="11.5" y2="4"/>
-      <line x1="0.5" y1="8"   x2="11.5" y2="8"/>
-      <line x1="4"   y1="0.5" x2="4"    y2="11.5"/>
-      <line x1="8"   y1="0.5" x2="8"    y2="11.5"/>
-    </symbol>
-    <symbol id="icon-type-group" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="1.6 1.4">
-      <rect x="2.4" y="2.4" width="7.2" height="7.2" rx="0.5"/>
-    </symbol>
-    <symbol id="icon-type-component" viewBox="0 0 12 12" fill="currentColor">
-      <path d="M6 0.5 L7.5 2 L6 3.5 L4.5 2 Z"/>
-      <path d="M9.5 4.5 L11 6 L9.5 7.5 L8 6 Z"/>
-      <path d="M6 8.5 L7.5 10 L6 11.5 L4.5 10 Z"/>
-      <path d="M2.5 4.5 L4 6 L2.5 7.5 L1 6 Z"/>
-    </symbol>
-    <symbol id="icon-type-instance" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round">
-      <path d="M6 1.8 L10.2 6 L6 10.2 L1.8 6 Z"/>
-    </symbol>
-    <symbol id="icon-type-component-set" viewBox="0 0 12 12">
-      <path d="M8 3 L11 6 L8 9 L5 6 Z" fill="currentColor" opacity="0.45"/>
-      <path d="M4 3 L7 6 L4 9 L1 6 Z" fill="currentColor"/>
-    </symbol>
-    <!-- icon-focus now in ui-shared.js base -->
-    <symbol id="icon-star" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round">
-      <polygon points="7,1.6 8.7,5.3 12.7,5.8 9.7,8.5 10.5,12.4 7,10.4 3.5,12.4 4.3,8.5 1.3,5.8 5.3,5.3"/>
-    </symbol>
-    <!-- Layout sizing icons (12×12) -->
-    <symbol id="icon-hug-h" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="3.5" y="2.5" width="5" height="7" rx="0.5"/>
-      <path d="M0.8 6 L2.3 4.7 M0.8 6 L2.3 7.3"/>
-      <path d="M11.2 6 L9.7 4.7 M11.2 6 L9.7 7.3"/>
-    </symbol>
-    <symbol id="icon-hug-v" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="2.5" y="3.5" width="7" height="5" rx="0.5"/>
-      <path d="M6 0.8 L4.7 2.3 M6 0.8 L7.3 2.3"/>
-      <path d="M6 11.2 L4.7 9.7 M6 11.2 L7.3 9.7"/>
-    </symbol>
-    <symbol id="icon-fill-h" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="3.5" y="2.5" width="5" height="7" rx="0.5"/>
-      <path d="M2.5 6 L1 4.7 M2.5 6 L1 7.3"/>
-      <path d="M9.5 6 L11 4.7 M9.5 6 L11 7.3"/>
-    </symbol>
-    <symbol id="icon-fill-v" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="2.5" y="3.5" width="7" height="5" rx="0.5"/>
-      <path d="M6 2.5 L4.7 1 M6 2.5 L7.3 1"/>
-      <path d="M6 9.5 L4.7 11 M6 9.5 L7.3 11"/>
-    </symbol>
-    <symbol id="icon-hug-both" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="3.5" y="3.5" width="5" height="5" rx="0.5"/>
-      <path d="M0.8 0.8 L2.5 2.5 M0.8 0.8 L0.8 2.3 M0.8 0.8 L2.3 0.8"/>
-      <path d="M11.2 0.8 L9.5 2.5 M11.2 0.8 L11.2 2.3 M11.2 0.8 L9.7 0.8"/>
-      <path d="M0.8 11.2 L2.5 9.5 M0.8 11.2 L0.8 9.7 M0.8 11.2 L2.3 11.2"/>
-      <path d="M11.2 11.2 L9.5 9.5 M11.2 11.2 L11.2 9.7 M11.2 11.2 L9.7 11.2"/>
-    </symbol>
-    <symbol id="icon-text-truncate" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round">
-      <line x1="1.5" y1="4" x2="7.5" y2="4"/>
-      <line x1="1.5" y1="7" x2="6" y2="7"/>
-      <circle cx="9" cy="7" r="0.5" fill="currentColor"/>
-      <circle cx="10.5" cy="7" r="0.5" fill="currentColor"/>
-    </symbol>
-    <symbol id="icon-line-cap" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round">
-      <line x1="1.5" y1="3" x2="10.5" y2="3"/>
-      <line x1="1.5" y1="6" x2="10.5" y2="6"/>
-      <line x1="1.5" y1="9" x2="7"    y2="9"/>
-      <line x1="8.5" y1="8" x2="11"   y2="10.5" stroke-width="1.4"/>
-      <line x1="11"  y1="8" x2="8.5"  y2="10.5" stroke-width="1.4"/>
-    </symbol>
-    <symbol id="icon-info" viewBox="0 0 12 12">
-      <path d="M6.00037 0.867065C8.8344 0.867507 11.132 3.16578 11.1322 5.99988C11.132 8.83391 8.83435 11.1313 6.00037 11.1317C3.166 11.1317 0.867805 8.83418 0.867554 5.99988C0.867729 3.16551 3.16596 0.867065 6.00037 0.867065ZM6.00037 2.36707C3.99438 2.36707 2.36773 3.99394 2.36755 5.99988C2.36781 8.00575 3.99443 9.63171 6.00037 9.63171C8.00593 9.63127 9.63195 8.00548 9.6322 5.99988C9.63203 3.99421 8.00597 2.36751 6.00037 2.36707ZM6.76208 8.65613H5.26208V5.13269H6.76208V8.65613ZM6.76208 4.42175H5.26208V3.24988H6.76208V4.42175Z" fill="currentColor" stroke="none"/>
-    </symbol>
-  </defs>
-</svg>
+<!-- Icon sprite lives in packages/ui/src/ui-shared.js — no per-plugin symbols. -->
 
 <div id="error-container"></div>
 <div id="progress-container"></div>
@@ -601,7 +518,7 @@
           <div class="sidePanelHeader details-header">
             <div class="details-header-text">
               <div class="details-title-row">
-                <svg class="details-type-icon" id="details-type-icon" width="14" height="14"><use href="#icon-type-frame"/></svg>
+                <svg class="details-type-icon" id="details-type-icon" width="16" height="16"><use href="#icon-object-frame"/></svg>
                 <span class="details-title" id="details-title"></span>
               </div>
             </div>
@@ -869,12 +786,11 @@
       };
       // Per-type icon + render size (tuned individually).
       const TYPE_ICONS = {
-        TEXT:           { href: '#icon-type-text',          size: 12 },
-        FRAME:          { href: '#icon-type-frame',         size: 10 },
-        GROUP:          { href: '#icon-type-group',         size: 12 },
-        COMPONENT:      { href: '#icon-type-component',     size: 12 },
-        INSTANCE:       { href: '#icon-type-instance',      size: 12 },
-        COMPONENT_SET:  { href: '#icon-type-component-set', size: 17 },
+        TEXT:           { href: '#icon-object-text',          size: 16 },
+        FRAME:          { href: '#icon-object-frame',         size: 16 },
+        COMPONENT:      { href: '#icon-object-component',     size: 16 },
+        INSTANCE:       { href: '#icon-object-variant',     size: 16 },
+        COMPONENT_SET:  { href: '#icon-object-component', size: 16 },
       };
 
       var html = '';
@@ -884,9 +800,9 @@
         // Section divider when severity changes (issues are already sorted)
         if (iss.severity !== lastSeverity) {
           const sec = SECTION_LABELS[iss.severity] || { label: 'Issues', total: 0, tip: '' };
-          html += '<div class="dividerSection">'
+          html += '<div class="dividerSection"><div class="dividerSection-content">'
                 +   escHtml(sec.label) + ' <span class="count">· ' + sec.total + '</span>'
-                + '</div>';
+                + '</div></div>';
           lastSeverity = iss.severity;
         }
         const primary = iss.chars || iss.name || iss.parentName || 'Unnamed layer';
@@ -901,7 +817,7 @@
           ? 'Layer is partially outside the frame. The clipped portion is hidden on canvas.'
           : '';
         const clippedInfo = _oob
-          ? '<span class="clipped-info" data-tip="' + _oobTip + '" onclick="event.stopPropagation()">'
+          ? '<span class="tooltipButton" data-tip="' + _oobTip + '" onclick="event.stopPropagation()">'
           + '<svg width="12" height="12"><use href="#icon-info"/></svg>'
           + '</span>'
           : '';
@@ -958,7 +874,7 @@
       if (issues[i].nodeId) lbl.dataset.nid = issues[i].nodeId;
       const badgeText = issues[i].chars || issues[i].name || issues[i].parentName || '';
       lbl.innerHTML = (badgeText ? '<span class="overlay-label-text">' + escHtml(badgeText) + '</span>' : '')
-        + '<svg width="16" height="16" style="display:block;flex-shrink:0"><use href="#icon-zoom"/></svg>';
+        + '<svg width="16" height="16" style="display:block;flex-shrink:0"><use href="#icon-fit"/></svg>';
       labelLayer.appendChild(lbl);
     }
   }
@@ -1299,25 +1215,24 @@
   // Map a fix title to a fitting icon from the sprite
   function fixIconHref(title) {
     var t = (title || '').toLowerCase();
-    if (t.indexOf('line cap') !== -1) return '#icon-line-cap';
-    if (t.indexOf('truncation') !== -1) return '#icon-text-truncate';
-    if (t.indexOf('width & height') !== -1 || t === 'set text resize to hug') return '#icon-hug-both';
-    if (t.indexOf('width to hug') !== -1)  return '#icon-hug-h';
-    if (t.indexOf('height to hug') !== -1) return '#icon-hug-v';
-    if (t.indexOf('width to fill') !== -1) return '#icon-fill-h';
-    if (t.indexOf('height to fill') !== -1)return '#icon-fill-v';
-    if (t.indexOf('hug height') !== -1)    return '#icon-hug-v';
-    if (t.indexOf('hug width') !== -1)     return '#icon-hug-h';
-    return '#icon-hug-both';
+    if (t.indexOf('line cap') !== -1) return '#icon-suggestion-removeline';
+    if (t.indexOf('truncation') !== -1) return '#icon-suggestion-removeline';
+    if (t.indexOf('width & height') !== -1 || t === 'set text resize to hug') return '#icon-suggestion-resize';
+    if (t.indexOf('width to hug') !== -1)  return '#icon-suggestion-hug-width';
+    if (t.indexOf('height to hug') !== -1) return '#icon-suggestion-hug-height';
+    if (t.indexOf('width to fill') !== -1) return '#icon-suggestion-fill-width';
+    if (t.indexOf('height to fill') !== -1)return '#icon-suggestion-fill-height';
+    if (t.indexOf('hug height') !== -1)    return '#icon-suggestion-hug-height';
+    if (t.indexOf('hug width') !== -1)     return '#icon-suggestion-hug-width';
+    return '#icon-suggestion-resize';
   }
   // Shared mapping — used by both the issue list and the details header
   const DETAILS_TYPE_ICONS = {
-    TEXT:           '#icon-type-text',
-    FRAME:          '#icon-type-frame',
-    GROUP:          '#icon-type-group',
-    COMPONENT:      '#icon-type-component',
-    INSTANCE:       '#icon-type-instance',
-    COMPONENT_SET:  '#icon-type-component-set',
+    TEXT:           '#icon-object-text',
+    FRAME:          '#icon-object-frame',
+    COMPONENT:      '#icon-object-component',
+    INSTANCE:       '#icon-object-variant',
+    COMPONENT_SET:  '#icon-object-component',
   };
   function renderDetails(iss) {
     const body  = document.getElementById('details-body');
@@ -1330,7 +1245,7 @@
     // Sync the type icon to match the list row
     const typeIconEl = document.getElementById('details-type-icon');
     if (typeIconEl) {
-      const href = DETAILS_TYPE_ICONS[iss.kind] || '#icon-type-frame';
+      const href = DETAILS_TYPE_ICONS[iss.kind] || '#icon-object-frame';
       const useEl = typeIconEl.querySelector('use');
       if (useEl) useEl.setAttribute('href', href);
     }

@@ -9,5 +9,8 @@
   },
   "dependencies": {
     "@rms/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@rms/test-utils": "workspace:*"
   }
 }
