@@ -151,7 +151,7 @@
   position: sticky;
   top: 44px; /* sit below own section divider (DS 44px height) */
   bottom: 0;
-  z-index: 4;
+  z-index: 8; /* above the sticky dividers (z-index 7) so the selection ring is never clipped by them */
   background: var(--surface);
   transition: top 0.18s ease;
 }
@@ -205,7 +205,7 @@
 }
 
 .var-type-icon {
-  width: 14px; height: 14px;
+  width: 16px; height: 16px;
   flex-shrink: 0;
   color: var(--text-muted);
   display: flex; align-items: center; justify-content: center;
@@ -430,7 +430,7 @@ body.browser-empty .right-panel {
 }
 
 .node-type-icon {
-  width: 14px; height: 14px;
+  width: 16px; height: 16px;
   flex-shrink: 0;
   color: var(--text-muted);
   display: flex; align-items: center; justify-content: center;
@@ -442,6 +442,9 @@ body.browser-empty .right-panel {
 }
 
 .node-name {
+  flex: 1;        /* take the row's free width... */
+  min-width: 0;   /* ...and be allowed to shrink below content width, so a long
+                     name truncates instead of overflowing into the chevron */
   font-size: var(--m-size);
   color: inherit; /* node label color comes from the .node state classes (node/label/* tokens) */
   line-height: 1.4;
@@ -517,6 +520,14 @@ body.browser-empty .right-panel {
 .graph-node.comp .node-focus-btn { right: 34px; }
 .graph-node.comp .node-goto-btn  { right: 6px; }
 
+/* The action buttons are position:absolute and only appear on hover, so they
+   reserve no flex space. Reserve the button zone ONLY on hover — otherwise every
+   resting row shows a large empty gap on the right (the buttons aren't there).
+   On hover a long name truncates before the buttons instead of sliding under them.
+   comp: focus(right 34 + 24w) → 58px; desc: drill(right 6 + 24w) → 30px. */
+.graph-node.comp:hover .node-body { padding-right: 62px; }
+.graph-node.desc:hover .node-body { padding-right: 34px; }
+
 /* focus button on browser comp-item rows — sits left of the chevron */
 .comp-item-focus-btn {
   position: absolute;
@@ -554,6 +565,37 @@ body.browser-empty .right-panel {
 .node-drill-btn:hover svg,
 .comp-item-focus-btn:hover svg { color: var(--buttonTertiary-text-active); }
 
+/* Library-component indicator: appearance comes from .tooltipButton in the base —
+   only its size and placement are app-specific. Shown for components whose master
+   lives in an external library, in the slot the Focus button uses for local ones. */
+.lib-badge svg { width: 12px; height: 12px; }
+/* Hover-only, like the focus button it replaces. Absolute in the focus slot for
+   graph nodes and comp-item rows, so it never reserves space in the default state
+   and only appears (with its tooltip) when the row is hovered. */
+.graph-node.comp .lib-badge,
+.comp-item .lib-badge,
+.var-item .lib-badge {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 34px;
+  width: 24px;
+  height: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.1s;
+}
+.graph-node.comp:hover .lib-badge,
+.comp-item:hover .lib-badge,
+.var-item:hover .lib-badge { opacity: 1; pointer-events: auto; }
+/* List rows reveal it on hover in the buttonList action slot (no default space). */
+.buttonList .lib-badge { margin-left: auto; display: none; }
+.buttonList:not(.selected):hover .lib-badge,
+.buttonList:not(.selected).hovered .lib-badge { display: flex; }
+/* Component names read left-to-right, so truncate the END (keep the start),
+   unlike token paths where the meaningful part is the tail (rtl). */
+.graph-node.comp .node-name { direction: ltr; }
+
 
 /* col placeholder/loading state */
 .col-placeholder {
@@ -585,7 +627,7 @@ body.browser-empty .right-panel {
 .lrow.dimmed { opacity: 0.65; }
 
 .lrow-icon {
-  width: 14px; height: 14px;
+  width: 16px; height: 16px;
   flex-shrink: 0;
   color: var(--buttonList-iconPrimary);
   display: flex; align-items: center; justify-content: center;
@@ -694,7 +736,7 @@ body.browser-empty .right-panel {
 }
 
 .sb-type-icon {
-  width: 14px; height: 14px;
+  width: 16px; height: 16px;
   flex-shrink: 0;
   color: var(--statusbar-icon);
   display: flex; align-items: center; justify-content: center;
@@ -717,6 +759,10 @@ body.browser-empty .right-panel {
   background: var(--divider);
   flex-shrink: 0;
 }
+
+/* Library indicator in the status bar — shown in place of the (hidden) focus
+   button for external library components. Muted, non-interactive, tooltip only.
+   Size + appearance come entirely from .tooltipButton in the base. */
 
 .sb-stat {
   display: flex;
@@ -792,6 +838,12 @@ body.browser-empty .right-panel {
 .comp-item .var-name {
   direction: ltr;
 }
+/* Reserve the absolute action-button zone only on hover (they appear on hover),
+   so resting rows have no empty gap and a long name only re-truncates when the
+   buttons actually show. comp: focus(right 34+24)+chevron → 62px; var: chevron → 34px. */
+.comp-item:hover .var-name { padding-right: 62px; }
+.var-item:hover .var-name                    { padding-right: 34px; } /* chevron only */
+.var-item[data-remote="1"]:hover .var-name   { padding-right: 62px; } /* lib badge + chevron */
 
 /* comp-list sticky rules now merged with var-list rules above */
 
@@ -1145,7 +1197,7 @@ body.browser-empty .right-panel {
         <div class="segmented-control full-width" id="browser-mode-toggle">
           <span class="seg-pill" aria-hidden="true"></span>
           <button id="btn-mode-tokens" class="selected"><svg width="16" height="16"><use href="#icon-variable"/></svg><span class="tab-label">Tokens</span></button>
-          <button id="btn-mode-comps"><svg width="16" height="16"><use href="#icon-component"/></svg><span class="tab-label">Components</span></button>
+          <button id="btn-mode-comps"><svg width="16" height="16"><use href="#icon-object-component"/></svg><span class="tab-label">Components</span></button>
         </div>
       </div>
 
@@ -1162,7 +1214,7 @@ body.browser-empty .right-panel {
 
         <div id="browser-empty" class="empty-state hidden" style="position:absolute;inset:0;">
           <div class="empty-state-content">
-            <svg width="28" height="28"><use href="#icon-empty-search"/></svg>
+            <svg width="56" height="56"><use href="#icon-empty-search"/></svg>
             <p id="browser-empty-text">No results match<br>your search.</p>
             <button class="buttonSecondary" id="browser-empty-clear"><span>Clear search</span></button>
           </div>
@@ -1177,7 +1229,7 @@ body.browser-empty .right-panel {
       <!-- Placeholder: no var selected -->
       <div id="right-placeholder" class="empty-state">
         <div class="empty-state-content">
-          <svg width="48" height="48"><use href="#icon-empty-token" id="right-placeholder-icon"/></svg>
+          <svg width="56" height="56"><use href="#icon-empty-token" id="right-placeholder-icon"/></svg>
           <p id="right-placeholder-text">Select an item<br>to see what it affects.</p>
         </div>
       </div>
@@ -1197,6 +1249,7 @@ body.browser-empty .right-panel {
             <button id="sb-focus-btn" class="buttonTertiary hidden" data-tip="Focus on canvas">
               <svg width="16" height="16"><use href="#icon-focus"/></svg>
             </button>
+            <span id="sb-lib-badge" class="tooltipButton sb-lib-badge hidden" data-tip="From an external library. No canvas focus."><svg width="12" height="12"><use href="#icon-library"/></svg></span>
             <div style="flex:1;"></div>
             <button id="sb-export-btn" class="buttonQuaternary" data-tip="Copy report to clipboard">
               <svg width="16" height="16"><use href="#icon-copy"/></svg>
@@ -1204,7 +1257,7 @@ body.browser-empty .right-panel {
             <div class="segmented-control" id="view-mode-toggle" style="flex-shrink:0;">
               <span class="seg-pill" aria-hidden="true"></span>
               <button id="btn-view-graph" class="selected" title="Graph view">
-                <svg width="14" height="14"><use href="#icon-tree"/></svg>
+                <svg width="16" height="16"><use href="#icon-tree"/></svg>
               </button>
               <button id="btn-view-list" title="List view">
                 <svg width="16" height="16"><use href="#icon-list"/></svg>
@@ -1219,8 +1272,8 @@ body.browser-empty .right-panel {
           <div id="graph-body">
             <!-- Single full-width header row spanning both columns -->
             <div id="graph-col-headers">
-              <div class="dividerSection" id="gcol-2-lbl-wrap"><span id="gcol-2-lbl">Alias tokens</span><span class="div-sep">·</span><span class="count" id="gcol-2-count"></span></div>
-              <div class="dividerSection" id="gcol-3-lbl-wrap">Components<span class="div-sep">·</span><span class="count" id="gcol-3-count"></span></div>
+              <div class="dividerSection" id="gcol-2-lbl-wrap"><div class="dividerSection-content"><span id="gcol-2-lbl">Alias tokens</span><span class="div-sep">·</span><span class="count" id="gcol-2-count"></span></div></div>
+              <div class="dividerSection" id="gcol-3-lbl-wrap"><div class="dividerSection-content">Affected components<span class="div-sep">·</span><span class="count" id="gcol-3-count"></span></div><button class="dividerSection-action buttonSecondary place-action-btn" data-tip="Place affected components on canvas"><svg width="16" height="16"><use href="#icon-fit"/></svg></button></div>
             </div>
             <div id="graph-cols">
               <div class="graph-col-wrap" id="gcol-2-wrap">
@@ -1233,7 +1286,7 @@ body.browser-empty .right-panel {
             <svg id="graph-edges" aria-hidden="true"></svg>
             <div id="graph-empty" class="empty-state hidden" style="position:absolute;inset:0;z-index:1;">
               <div class="empty-state-content">
-                <svg width="32" height="32"><use href="#icon-empty-graph"/></svg>
+                <svg width="56" height="56"><use href="#icon-empty-graph"/></svg>
                 <p>No alias tokens or components<br>reference this variable.</p>
               </div>
             </div>
@@ -1357,8 +1410,11 @@ var _searchTimer         = null;
 var _selectedId          = null;
 var _selectedRemoteId    = null;
 var _currentComponents   = null;   // null = not yet fetched; [] = empty
+// Node ids the backend labelled focusable (had a pageId) but that turned out to
+// be unreachable when focus was attempted — i.e. actually external. Once known,
+// their rows render as a library badge instead of a focus button.
+var _unreachableNodes    = new Set();
 var _componentIndexBuilt = false;
-var _indexBuilding       = false;
 
 // Graph state
 var _currentChain        = null;
@@ -1417,47 +1473,33 @@ window.onmessage = function (event) {
   switch (msg.type) {
     case 'init-data':         return onInitData(msg);
     case 'init-progress':     return onInitProgress(msg);
-    case 'remote-vars-ready': return; // no-op: remote vars now arrive in init-data
     case 'index-progress':    return onIndexProgress(msg.text, msg.scanned, msg.total);
     case 'index-ready':       return onIndexReady(msg.components, msg.remoteVars, msg.remoteColls, msg.varComponentCounts, msg.varImpactScores);
     case 'chain-result':           return onChainResult(msg.chain, msg.styles, msg.components, msg.impact);
     case 'referenced-by':          return onReferencedBy(msg);
-    case 'component-browser-ready':
-      _compBrowserLoaded    = true;
-      _allBrowserComponents = (msg.components || []).filter(function (c) { return c.nodeName && c.nodeName.trim() !== ''; });
-      // Merge any variables the UI doesn't know yet (remote vars bound directly
-      // to components that were fetched by buildComponentIndex but never sent)
-      if (msg.vars && msg.vars.length) {
-        var _cbKnown = {};
-        for (var _i = 0; _i < _variables.length; _i++)       _cbKnown[_variables[_i].id] = true;
-        for (var _j = 0; _j < _remoteVariables.length; _j++) _cbKnown[_remoteVariables[_j].id] = true;
-        for (var _k = 0; _k < msg.vars.length; _k++) {
-          var _v = msg.vars[_k];
-          if (_cbKnown[_v.id]) continue;
-          if (_v.isRemote && _externalScanDone) _remoteVariables.push(_v);
-          else             _variables.push(_v);
-          _cbKnown[_v.id] = true;
-        }
-      }
-      if (_browserMode === 'components') renderComponentBrowser();
-      return;
     case 'usage-scan-progress':    return onCanvasScanProgress(msg.pct);
     case 'usage-scan-ready':       return onCanvasScanReady(msg);
     case 'usage-scan-error':       return onCanvasScanError(msg.message);
     case 'usage-scan-cancelled':   return onCanvasScanCancelled();
-    case 'canvas-scan-cancelled':  return onCanvasScanCancelled(); // legacy compat
-    case 'scan-cache-restore':
-      _lastScanTimestamp = msg.ts;
-      _lastScanDepth     = msg.depth;
-      msg._fromCache = true;  // prevent onCanvasScanReady from overwriting ts with Date.now()
-      onCanvasScanReady(msg);
-      showScanBar(msg.ts, msg.depth);
-      return;
     case 'scan-cache-write-failed':
       showToast('Cache write #' + msg.attempt + ' failed: ' + (msg.error || '?'));
       return;
-    case 'scan-cache-none':
-      return; // No cache — local analysis runs automatically at init; full scan is user's choice
+    case 'place-progress':
+      return showScanProgress('Placing components… ' + Math.round((msg.done / msg.total) * 100) + '%', msg.eta || '');
+    case 'place-done':        return onPlaceDone(msg);
+    case 'place-cancelled':
+      _placing = false;
+      return dismissProgress();
+    case 'place-error':
+      _placing = false;
+      dismissProgress();
+      showToast(msg.message || 'Could not place components');
+      return;
+    case 'focus-unavailable':
+      // A user clicked focus and it failed — retag that row and tell them why.
+      markNodeUnreachable(msg.nodeId);
+      showToast('This component lives in an external library — it has no canvas location.');
+      return;
     case 'error':             return onError(msg.message);
   }
 };
@@ -1539,7 +1581,10 @@ function onInitData(msg) {
   // Component index is always built at startup — absorb data immediately
   _componentIndexBuilt = true;
   _varComponentCounts  = msg.varComponentCounts || {};
-  _hasExternalLibraries = !!msg.hasExternalLibraries;
+  // External libraries are considered present when the library API reports them
+  // OR when the file actually references remote tokens (the API is unreliable —
+  // it misses libraries that are used but not formally added to the file).
+  _hasExternalLibraries = !!msg.hasExternalLibraries || _remoteVariables.length > 0;
   // Mark external vars as loaded if remote vars came in with init-data
   if (_remoteVariables.length > 0) _externalScanDone = true;
   // _lastScanDepth is session-only — set by triggerCanvasScan(), never loaded from storage
@@ -1615,21 +1660,23 @@ function onRemoteVarsReady(remoteVars, remoteColls) {
 // ─── Divider component (used by list and graph views) ───────────────────────
 
 function makeDivider(label, tier, count) {
-  return '<div class="dividerSection">' +
+  return '<div class="dividerSection"><div class="dividerSection-content">' +
     (tier ? '<span class="tier-dot ' + tier + '"></span>' : '') +
     label +
     '<span class="div-sep">·</span>' +
     '<span class="count">' + count + '</span>' +
-  '</div>';
+  '</div></div>';
 }
 
 // Inner content only — for pre-existing .dividerSection containers (#list-alias-hdr, #list-comp-hdr)
 // that must not be double-wrapped in another .dividerSection div.
 function makeDividerContent(label, tier, count) {
-  return (tier ? '<span class="tier-dot ' + tier + '"></span>' : '') +
+  return '<div class="dividerSection-content">' +
+    (tier ? '<span class="tier-dot ' + tier + '"></span>' : '') +
     label +
     '<span class="div-sep">·</span>' +
-    '<span class="count">' + count + '</span>';
+    '<span class="count">' + count + '</span>' +
+  '</div>';
 }
 
 // ─── Left panel browser ──────────────────────────────────────────────────────
@@ -1689,22 +1736,18 @@ function renderBrowser() {
   if (_browserMode === 'components') { renderComponentBrowser(); return; }
   var q = _filterQuery.toLowerCase();
 
+  // All tokens — local AND external library — are graded by impact and grouped
+  // into the same High/Medium/Low/Unused tiers. Remote tokens only appear once
+  // an Extended/Full scan has surfaced them (and their component counts).
   var allVars = [];
   for (var i = 0; i < _variables.length; i++) {
     if (matchesSearch(_variables[i].name, _variables[i].collectionName, q)) allVars.push(_variables[i]);
   }
-  // Only include external library variables when display depth >= 2
   if (_displayDepth >= 2) {
     for (var j = 0; j < _remoteVariables.length; j++) {
       if (matchesSearch(_remoteVariables[j].name, _remoteVariables[j].collectionName, q)) allVars.push(_remoteVariables[j]);
     }
   }
-
-  allVars.sort(function (a, b) {
-    var diff = varImpactScore(b) - varImpactScore(a);
-    if (diff !== 0) return diff;
-    return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
-  });
 
   var listEl  = document.getElementById('var-list');
   if (allVars.length === 0) {
@@ -1744,7 +1787,7 @@ function renderBrowser() {
   renderSection('High',   'high',   high);
   renderSection('Medium', 'medium', medium);
   renderSection('Low',    'low',    low);
-  renderSection('Unused',     'none',   none);
+  renderSection('Unused', 'none',   none);
 
   listEl.innerHTML = html;
   document.getElementById('comp-list').classList.add('hidden');
@@ -1840,9 +1883,15 @@ function renderAllBrowser() {
 function renderVarRow(v) {
   var isRemote   = !!v.isRemote;
   var isSelected = isRemote ? v.id === _selectedRemoteId : v.id === _selectedId;
+  // External-library tokens get the same library indicator + tooltip as external
+  // components, so their origin is clear at a glance.
+  var libBadge = isRemote
+    ? '<span class="tooltipButton lib-badge" data-tip="From an external library."><svg width="12" height="12"><use href="#icon-library"/></svg></span>'
+    : '';
   return '<button class="node var-item' + (isSelected ? ' node-selected' : '') + '" data-id="' + esc(v.id) + '" data-remote="' + (isRemote ? '1' : '0') + '">' +
-    '<div class="var-type-icon">' + varTypeIconHtml(v.resolvedType, 12) + '</div>' +
+    '<div class="var-type-icon">' + varTypeIconHtml(v.resolvedType, 16) + '</div>' +
     '<span class="var-name">' + esc(nodeLabelName(v.name)) + '</span>' +
+    libBadge +
     '<span class="node-goto-btn var-item-chevron"><svg width="16" height="16"><use href="#icon-arrow-right"/></svg></span>' +
   '</button>';
 }
@@ -1886,14 +1935,23 @@ function onVarClick(e) {
   var item     = (e instanceof Event) ? e.target.closest('.var-item') : e;
   if (!item) return;
   if (e instanceof Event && e.target.closest('.node-drill-btn, .node-focus-btn')) return;
+  // The chevron always SELECTS — never toggles — so it can't deselect an
+  // already-selected row the way the row body does.
+  var viaChevron = (e instanceof Event) && !!e.target.closest('.node-goto-btn, .var-item-chevron');
   var id       = item.getAttribute('data-id');
   var isRemote = item.getAttribute('data-remote') === '1';
   if (!id) return;
 
+  var alreadySelected = (isRemote && id === _selectedRemoteId) || (!isRemote && id === _selectedId);
+  // Chevron on the already-selected token → no-op. It must never deselect, and
+  // re-running the analyze would re-fetch and re-render, flickering the content.
+  if (viaChevron && alreadySelected) return;
+
   var _activeVarList = document.getElementById('var-list');
 
-  // Re-click on already-selected item → scroll to origin, then deselect
-  if ((isRemote && id === _selectedRemoteId) || (!isRemote && id === _selectedId)) {
+  // Re-click the row body on an already-selected item → scroll to origin, then
+  // deselect. Not reachable via the chevron (handled above).
+  if (!viaChevron && alreadySelected) {
     var originScroll = _selectedVarOriginScroll;
     if (originScroll !== null) _activeVarList.scrollTo({ top: originScroll, behavior: 'smooth' });
     setTimeout(function () {
@@ -2051,6 +2109,12 @@ function onChainResult(chain, styles, components, impact) {
   var sb = document.getElementById('status-bar');
   if (sb) sb.classList.remove('hidden');
   showRightPanel('detail');
+
+  // When reached via drill/navigation the selected list row smooth-scrolls into
+  // view, so the first edge draw can measure it mid-scroll (or before it's marked
+  // selected) and end up drawing nothing. Redraw once the scroll settles so the
+  // connectors always appear — harmless (idempotent) when the first draw succeeded.
+  if (_viewMode === 'graph') setTimeout(scheduleDrawEdges, 380);
  
 
   // Component index is built at init — no lazy scan needed
@@ -2154,7 +2218,7 @@ function makeVarNode(v, cssClass, dataId) {
     ? '<span class="node-external-badge" data-tip="From external library — run Full scan to explore">Library</span>'
     : '';
   return '<div class="node graph-node ' + cssClass + (isExternal ? ' node-external' : '') + '"' + idAttr + externalAttr + '>' +
-    '<div class="node-type-icon">' + varTypeIconHtml(v.resolvedType, 12) + '</div>' +
+    '<div class="node-type-icon">' + varTypeIconHtml(v.resolvedType, 16) + '</div>' +
     '<div class="node-body">' +
       '<div class="node-name" title="' + esc(v.name) + '">' + esc(nodeLabelName(v.name)) + '</div>' +
       externalBadge +
@@ -2167,17 +2231,35 @@ function nodeLabelName(name) {
   return name || '';
 }
 
+// A component the backend marked focusable turned out to be unreachable (external).
+// Record it so every future render shows a library badge, and patch the rows already
+// on screen without a full re-render — swap each focus control for the library badge.
+var LIB_BADGE_HTML = '<span class="tooltipButton lib-badge" data-tip="From an external library. No canvas focus."><svg width="12" height="12"><use href="#icon-library"/></svg></span>';
+function markNodeUnreachable(nodeId) {
+  if (!nodeId || _unreachableNodes.has(nodeId)) return;
+  _unreachableNodes.add(nodeId);
+  var sel = '.node-focus-btn[data-node-id="' + nodeId + '"], ' +
+            '.buttonList-action[data-node-id="' + nodeId + '"], ' +
+            '.comp-item-focus-btn[data-node-id="' + nodeId + '"]';
+  var btns = document.querySelectorAll(sel);
+  for (var i = 0; i < btns.length; i++) {
+    var tmp = document.createElement('template');
+    tmp.innerHTML = LIB_BADGE_HTML;
+    btns[i].replaceWith(tmp.content.firstChild);
+  }
+}
+
 function makeCompNodeHtml(c) {
   var count = c.boundCount || 1;
   var gotoBtn =
     '<button class="node-goto-btn" data-goto-node-id="' + esc(c.nodeId) + '" data-tip="Select component">' +
       '<svg width="16" height="16"><use href="#icon-arrow-right"/></svg>' +
     '</button>';
-  var focusBtn = c.pageId
+  var focusBtn = (c.pageId && !_unreachableNodes.has(c.nodeId))
     ? '<button class="node-focus-btn" data-node-id="' + esc(c.nodeId) + '" data-page-id="' + esc(c.pageId) + '" data-tip="Focus on canvas">' +
         '<svg width="16" height="16"><use href="#icon-focus"/></svg>' +
       '</button>'
-    : '';
+    : '<span class="tooltipButton lib-badge" data-tip="From an external library. No canvas focus."><svg width="12" height="12"><use href="#icon-library"/></svg></span>';
   return '<div class="node graph-node comp" data-node-id="' + esc(c.nodeId) + '" data-page-id="' + esc(c.pageId) + '">' +
     '<div class="node-type-icon">' + nodeTypeIcon(c.nodeType) + '</div>' +
     '<div class="node-body">' +
@@ -2291,7 +2373,6 @@ function renderComponents(components) {
     var rEl = col3Nodes[_rootCompIdxs[ri]];
     if (!rEl) continue;
     rEl.setAttribute('data-binds-root', '1');
-    rEl.setAttribute('data-tip', 'Binds “' + rootVarName + '” directly — not via this alias');
   }
 
   // Re-apply selection state: gcol-3 was just rebuilt so all new nodes need
@@ -2737,7 +2818,7 @@ function updateStatusBar(chain, compCount) {
   if (!chain) return;
   var v = chain.self;
 
-  document.getElementById('sb-type-icon').innerHTML = varTypeIconHtml(v.resolvedType, 12);
+  document.getElementById('sb-type-icon').innerHTML = varTypeIconHtml(v.resolvedType, 16);
   document.getElementById('sb-name').textContent    = v.name;
 
   var sv    = _selectedId ? findVar(_selectedId) : findRemoteVar(_selectedRemoteId);
@@ -2759,15 +2840,29 @@ function updateStatusBar(chain, compCount) {
   var ccEl = document.getElementById('sb-canvas-count');
   if (ccEl) ccEl.classList.add('hidden');
 
-  // Hide focus button when viewing a variable (only show for components)
+  // Focus is component-only, so always hide it for a variable.
   var focusBtn = document.getElementById('sb-focus-btn');
   if (focusBtn) focusBtn.classList.add('hidden');
+  // Library indicator: show it for a token that comes from an external library,
+  // matching the list rows and the component header.
+  var sbLib = document.getElementById('sb-lib-badge');
+  if (sbLib) {
+    var isExternalToken = !!_selectedRemoteId || !!(v && v.isRemote);
+    if (isExternalToken) {
+      sbLib.setAttribute('data-tip', 'From an external library.');
+      sbLib.classList.remove('hidden');
+    } else {
+      sbLib.classList.add('hidden');
+    }
+  }
 
   // Hide export and tree/list toggle when there is nothing to report or browse
   var hasDescs = (chain.descendants || []).length > 0;
   var hasComps = compCount !== null && compCount > 0;
   var exportBtn = document.getElementById('sb-export-btn');
   if (exportBtn) exportBtn.classList.toggle('hidden', !hasDescs && !hasComps);
+  // The Place action now lives on the "Affected components" divider, so it needs
+  // no status-bar visibility handling here.
   var toggle = document.getElementById('view-mode-toggle');
   if (toggle) toggle.classList.toggle('hidden', !hasDescs && !hasComps);
 }
@@ -2801,7 +2896,7 @@ function renderListView(chain) {
     for (var di = 0; di < descs.length; di++) {
       var d = descs[di];
       aliasHtml += '<div class="buttonList" data-id="' + esc(d.id) + '">' +
-        '<div class="lrow-icon">' + varTypeIconHtml(d.resolvedType, 12) + '</div>' +
+        '<div class="lrow-icon">' + varTypeIconHtml(d.resolvedType, 16) + '</div>' +
         '<span class="lrow-name">' + esc(nodeLabelName(d.name)) + '</span>' +
         '<svg width="16" height="16" class="buttonList-arrow"><use href="#icon-arrow-right"/></svg>' +
       '</div>';
@@ -2814,7 +2909,7 @@ function renderListView(chain) {
   // ensure it is shown and labelled even before renderListComponents fills the count.
   if (descs.length === 0 && compHdrEl) {
     if (!compHdrEl.innerHTML.trim()) {
-      compHdrEl.innerHTML = makeDividerContent('Components', null, '');
+      compHdrEl.innerHTML = makeDividerContent('Affected components', null, '');
     }
     compHdrEl.classList.remove('hidden');
   }
@@ -2826,7 +2921,7 @@ function renderListComponents(components) {
   if (!compBody) return;
 
   if (components === null) {
-    if (compHdr) { compHdr.innerHTML = makeDividerContent('Components', null, ''); compHdr.classList.remove('hidden'); }
+    if (compHdr) { compHdr.innerHTML = makeDividerContent('Affected components', null, ''); compHdr.classList.remove('hidden'); }
     compBody.style.display = '';
     compBody.innerHTML = '<div class="lrow dimmed" style="justify-content:center;gap:8px;">' +
       '<div class="spinner" style="width:12px;height:12px;border-width:1.5px;"></div>' +
@@ -2846,7 +2941,7 @@ function renderListComponents(components) {
     return;
   }
 
-  if (compHdr) { compHdr.innerHTML = makeDividerContent('Components', null, filteredComps.length); compHdr.classList.remove('hidden'); }
+  if (compHdr) { compHdr.innerHTML = makeDividerContent('Affected components', null, filteredComps.length) + placeActionBtnHtml(); compHdr.classList.remove('hidden'); }
   compBody.style.display = '';
 
   var sorted = filteredComps.slice().sort(function (a, b) {
@@ -2858,7 +2953,11 @@ function renderListComponents(components) {
     html += '<div class="buttonList" data-node-id="' + esc(c.nodeId) + '" data-page-id="' + esc(c.pageId) + '">' +
       '<div class="lrow-icon">' + nodeTypeIcon(c.nodeType) + '</div>' +
       '<span class="lrow-name">' + esc(c.nodeName) + '</span>' +
-      '<button class="buttonList-action buttonTertiary" data-node-id="' + esc(c.nodeId) + '" data-page-id="' + esc(c.pageId) + '" data-tip="Focus on canvas" tabindex="-1"><svg width="16" height="16"><use href="#icon-focus"/></svg></button>' +
+      // Focus only for local components — a library master lives in another file
+      // and can't be navigated to. Library components get a muted indicator instead.
+      ((c.pageId && !_unreachableNodes.has(c.nodeId))
+        ? '<button class="buttonList-action buttonTertiary" data-node-id="' + esc(c.nodeId) + '" data-page-id="' + esc(c.pageId) + '" data-tip="Focus on canvas" tabindex="-1"><svg width="16" height="16"><use href="#icon-focus"/></svg></button>'
+        : '<span class="tooltipButton lib-badge" data-tip="From an external library. No canvas focus."><svg width="12" height="12"><use href="#icon-library"/></svg></span>') +
       '<svg width="16" height="16" class="buttonList-arrow"><use href="#icon-arrow-right"/></svg>' +
     '</div>';
   }
@@ -2867,24 +2966,6 @@ function renderListComponents(components) {
 }
 
 // ─── Component scan ───────────────────────────────────────────────────────────
-
-function startComponentScan() {
-  if (_indexBuilding) return;
-  if (!_selectedId && !_selectedRemoteId) return;
-  _indexBuilding     = true;
-  _currentComponents = null;
-
-  var col3 = document.getElementById('gcol-3');
-  if (col3) {
-    col3.innerHTML = '<div class="col-placeholder"><div class="spinner"></div><span id="comp-load-text">Indexing…</span></div>';
-  }
-
-  if (_selectedId) {
-    parent.postMessage({ pluginMessage: { type: 'build-component-index', variableId: _selectedId } }, '*');
-  } else {
-    parent.postMessage({ pluginMessage: { type: 'build-component-index-remote', variableId: _selectedRemoteId } }, '*');
-  }
-}
 
 function onIndexProgress(text, scanned, total) {
   var el = document.getElementById('comp-load-text');
@@ -2898,7 +2979,6 @@ function onIndexProgress(text, scanned, total) {
 
 function onIndexReady(components, remoteVars, remoteColls, varComponentCounts, varImpactScores) {
   _componentIndexBuilt = true;
-  _indexBuilding       = false;
   _currentComponents   = components || [];
   _varComponentCounts  = varComponentCounts || {};
 
@@ -3007,7 +3087,6 @@ function triggerFullRescan() {
   _selectedRemoteId    = null;
   _currentComponents   = null;
   _componentIndexBuilt = false;
-  _indexBuilding       = false;
   _currentChain        = null;
   _varComponentCounts  = {};
   _graphDescVars       = [];
@@ -3088,7 +3167,13 @@ function syncBrowserModeButtons(mode) {
   var btnComps  = document.getElementById('btn-mode-comps');
   if (btnTokens) btnTokens.classList.toggle('selected', mode === 'tokens');
   if (btnComps)  btnComps.classList.toggle('selected',  mode === 'components');
-  updateSegPill(document.getElementById('browser-mode-toggle'));
+  var toggle = document.getElementById('browser-mode-toggle');
+  updateSegPill(toggle);
+  // These buttons are `flex:1 1 0; width:0`, so offsetWidth is only correct once
+  // flex layout has resolved. When this runs inside a search-driven auto-switch
+  // the measurement can land mid-layout and collapse the pill to a sliver, so
+  // re-measure on the next frame.
+  requestAnimationFrame(function () { updateSegPill(toggle, true); });
 }
 
 function switchBrowserMode(mode) {
@@ -3174,9 +3259,9 @@ function makeCompItem(c) {
   var classes = 'node comp-item';
   if (isSelected) classes += ' node-selected';
   var pageIdAttr = c.pageId ? esc(c.pageId) : '';
-  var focusBtn = (c.nodeId && c.pageId)
+  var focusBtn = (c.nodeId && c.pageId && !_unreachableNodes.has(c.nodeId))
     ? '<span class="comp-item-focus-btn" data-node-id="' + esc(c.nodeId) + '" data-page-id="' + pageIdAttr + '" data-tip="Focus on canvas"><svg width="16" height="16"><use href="#icon-focus"/></svg></span>'
-    : '';
+    : '<span class="tooltipButton lib-badge" data-tip="From an external library. No canvas focus."><svg width="12" height="12"><use href="#icon-library"/></svg></span>';
   return '<button class="' + classes +
     '" data-node-id="' + esc(c.nodeId) + '" data-page-id="' + pageIdAttr + '">' +
     '<div class="node-type-icon">' + nodeTypeIcon(c.nodeType) + '</div>' +
@@ -3265,16 +3350,25 @@ function onCompItemClick(e) {
       return;
     }
   }
+  // The chevron always SELECTS its node — never toggles — so clicking it can't
+  // accidentally deselect an already-selected row the way the row body does.
+  var viaChevron = (e instanceof Event) && !!e.target.closest('.node-goto-btn, .var-item-chevron');
+
   var btn    = (e instanceof Event) ? e.target.closest('.comp-item') : e;
   if (!btn) return;
   var nodeId = btn.getAttribute('data-node-id');
   if (!nodeId) return;
   clearSearchIfActive();
 
+  // Chevron on the already-selected component → no-op (never deselect, never
+  // re-run the render), matching the token list.
+  if (viaChevron && nodeId === _selectedCompNodeId) return;
+
   var _activeCompList = document.getElementById('comp-list');
 
-  // Re-click on already-selected item → scroll to origin, then deselect
-  if (nodeId === _selectedCompNodeId) {
+  // Re-click the row body on an already-selected item → scroll to origin, then
+  // deselect. Not reachable via the chevron (handled above).
+  if (nodeId === _selectedCompNodeId && !viaChevron) {
     var originScroll2 = _selectedCompOriginScroll;
     if (originScroll2 !== null) _activeCompList.scrollTo({ top: originScroll2, behavior: 'smooth' });
     setTimeout(function () {
@@ -3370,18 +3464,25 @@ function renderComponentDetail(comp) {
   }
   // Focus button — only meaningful for local components (library masters
   // live in another file and can't be navigated to)
+  // A library component (remote, or with no local page) can't be focused on this
+  // canvas — hide the focus button and show the muted library indicator instead.
+  var isLibComp = comp.isRemote === true || !comp.pageId;
   var focusBtn = document.getElementById('sb-focus-btn');
   if (focusBtn) {
-    if (comp.nodeId && comp.isRemote !== true) {
+    if (comp.nodeId && !isLibComp) {
       focusBtn.setAttribute('data-node-id', comp.nodeId);
-      if (comp.pageId) focusBtn.setAttribute('data-page-id', comp.pageId);
-      else focusBtn.removeAttribute('data-page-id');
+      focusBtn.setAttribute('data-page-id', comp.pageId);
       focusBtn.classList.remove('hidden');
     } else {
       focusBtn.removeAttribute('data-node-id');
       focusBtn.removeAttribute('data-page-id');
       focusBtn.classList.add('hidden');
     }
+  }
+  var sbLib = document.getElementById('sb-lib-badge');
+  if (sbLib) {
+    sbLib.setAttribute('data-tip', 'From an external library. No canvas focus.');
+    sbLib.classList.toggle('hidden', !isLibComp);
   }
   var sb = document.getElementById('status-bar');
   if (sb) sb.classList.remove('hidden');
@@ -3393,6 +3494,10 @@ function renderComponentDetail(comp) {
   // Only show export when component has bound tokens (otherwise nothing to report)
   var exportBtnComp = document.getElementById('sb-export-btn');
   if (exportBtnComp) exportBtnComp.classList.toggle('hidden', (comp.boundVars || []).length === 0);
+
+  // The Place action lives on the "Affected components" divider, which never shows
+  // in the component detail (this view has no affected-components column), so there
+  // is nothing to hide here.
 
   // Keep list view in sync if it's the active view
   if (_viewMode === 'list') renderListComponentDetail(comp);
@@ -3426,13 +3531,6 @@ function renderListComponentDetail(comp) {
   aliasBody.style.display = vars.length === 0 ? 'none' : '';
 
   if (vars.length === 0) {
-    aliasBody.innerHTML =
-      '<div class="empty-state">' +
-        '<div class="empty-state-content">' +
-          '<svg width="28" height="28"><use href="#icon-empty-list"/></svg>' +
-          '<p>No bound tokens<br>on this component.</p>' +
-        '</div>' +
-      '</div>';
     return;
   }
 
@@ -3440,7 +3538,7 @@ function renderListComponentDetail(comp) {
   for (var i = 0; i < vars.length; i++) {
     var v = vars[i];
     html += '<div class="buttonList" data-id="' + esc(v.id) + '">' +
-      '<div class="lrow-icon">' + varTypeIconHtml(v.resolvedType, 12) + '</div>' +
+      '<div class="lrow-icon">' + varTypeIconHtml(v.resolvedType, 16) + '</div>' +
       '<span class="lrow-name">' + esc(nodeLabelName(v.name)) + '</span>' +
       '<svg width="16" height="16" class="buttonList-arrow"><use href="#icon-arrow-right"/></svg>' +
     '</div>';
@@ -3494,7 +3592,7 @@ function drillToTokenMode(varId) {
 function onReferencedBy(msg) {
   document.getElementById('lib-detail-name').textContent = msg.remoteVarName;
   document.getElementById('lib-detail-coll').textContent = msg.remoteCollName;
-  document.getElementById('lib-detail-type').innerHTML   = varTypeIconHtml(msg.remoteType, 12);
+  document.getElementById('lib-detail-type').innerHTML   = varTypeIconHtml(msg.remoteType, 16);
 
   var listEl  = document.getElementById('lib-ref-list');
   var emptyEl = document.getElementById('lib-ref-empty');
@@ -3509,7 +3607,7 @@ function onReferencedBy(msg) {
     for (var i = 0; i < refs.length; i++) {
       var r = refs[i];
       html += '<div class="ref-var-row">' +
-        '<div class="var-type-icon">' + varTypeIconHtml(r.resolvedType, 12) + '</div>' +
+        '<div class="var-type-icon">' + varTypeIconHtml(r.resolvedType, 16) + '</div>' +
         '<span class="ref-var-name">' + esc(r.name) + '</span>' +
         '<span class="ref-coll-tag">' + esc(r.collectionName) + '</span>' +
       '</div>';
@@ -3673,6 +3771,9 @@ function onCanvasScanReady(msg) {
       if (!existingCollIds[msg.remoteColls[rcj].id]) _remoteCollections.push(msg.remoteColls[rcj]);
     }
   }
+  // A scan that surfaced remote tokens proves the file uses an external library,
+  // regardless of what the library API reported at init.
+  if (_remoteVariables.length > 0) _hasExternalLibraries = true;
 
   var btn = document.getElementById('canvas-scan-btn');
   if (btn) btn.classList.remove('scanning');
@@ -3684,6 +3785,12 @@ function onCanvasScanReady(msg) {
 
   var newCompCounts  = msg.updatedComponentCounts || null;
   var newScores      = msg.updatedImpactScores    || null;
+
+  // Replace the local variable list with the freshly-scanned one so deletions,
+  // additions and renames are reflected — the scores/counts below re-attach to it.
+  // (Remote vars are reconciled separately above; only local vars are replaced here.)
+  if (Array.isArray(msg.variables)) _variables = msg.variables;
+  if (Array.isArray(msg.collections)) _collections = msg.collections;
 
   // Bake canvas data into each variable's cached impact score (local + remote)
   var allVarsForCanvas = _variables.concat(_remoteVariables);
@@ -3758,7 +3865,6 @@ function onCanvasScanError(message) {
 // ─── Error ────────────────────────────────────────────────────────────────────
 
 function onError(message) {
-  _indexBuilding = false;
   var col3 = document.getElementById('gcol-3');
   if (col3) col3.innerHTML = '<div class="col-placeholder"><span>Error loading</span></div>';
   if (typeof showToast === 'function') showToast('Error: ' + message);
@@ -4180,6 +4286,99 @@ document.getElementById('modal-confirm-btn').addEventListener('click', function 
 document.getElementById('deep-scan-modal').querySelector('.modal-overlay').addEventListener('click', closeDeepScanModal);
 
 
+// ─── Place on canvas ─────────────────────────────────────────────────────────
+
+function selectedTierLabel() {
+  var sv = _selectedId ? findVar(_selectedId) : (_selectedRemoteId ? findRemoteVar(_selectedRemoteId) : null);
+  var score = sv ? varImpactScore(sv) : 0;
+  if (score === 0 && _currentComponents && _currentComponents.length > 0) score = _currentComponents.length;
+  return score === 0 ? 'Unused' : score <= 40 ? 'Low' : score <= 100 ? 'Medium' : 'High';
+}
+
+// Returns { title, subtitle, date, components } for the sandbox, or null when
+// there's nothing to place. The cell only renders the component name, so the
+// payload no longer carries per-component token lists.
+function buildPlacePayload() {
+  // Local date + time (YYYY-MM-DD HH:MM) so repeated placements are distinguishable
+  // in the layers panel, not just by day.
+  var _now = new Date();
+  function _p(n) { return (n < 10 ? '0' : '') + n; }
+  var today = _now.getFullYear() + '-' + _p(_now.getMonth() + 1) + '-' + _p(_now.getDate()) +
+              ' ' + _p(_now.getHours()) + ':' + _p(_now.getMinutes());
+
+  if (_detailMode === 'component' && _currentComp) {
+    var c = _currentComp;
+    var cTokens = (c.boundVars || []).length;
+    return {
+      title:    c.nodeName,
+      subtitle: cTokens + (cTokens === 1 ? ' bound token' : ' bound tokens') + '  ·  ' + today,
+      date:     today,
+      components: [{ nodeId: c.nodeId, name: c.nodeName }],
+    };
+  }
+
+  if (!_currentChain || !_currentComponents || _currentComponents.length === 0) return null;
+
+  var name  = _currentChain.self ? _currentChain.self.name : 'Token';
+  var comps = _currentComponents.map(function (comp) {
+    return { nodeId: comp.nodeId, name: comp.nodeName };
+  });
+  return {
+    title:    name,
+    subtitle: selectedTierLabel() + ' impact  ·  ' + comps.length +
+              (comps.length === 1 ? ' component' : ' components') + '  ·  ' + today,
+    date:     today,
+    components: comps,
+  };
+}
+
+var _placing = false;
+
+// The Place button now lives on the "Affected components" divider (graph header +
+// list header). The list header is re-rendered on every selection, so bind via
+// delegation rather than to a specific element.
+function placeActionBtnHtml() {
+  return '<button class="dividerSection-action buttonSecondary place-action-btn" data-tip="Place affected components on canvas"><svg width="16" height="16"><use href="#icon-fit"/></svg></button>';
+}
+
+function startPlace() {
+  if (_placing) return;
+  // The progress bar is shared with the canvas scan — don't let the two fight
+  // over it (and over the Cancel button bound to whichever started first).
+  if (_canvasScanRunning) { showToast('Wait for the scan to finish'); return; }
+
+  var payload = buildPlacePayload();
+  if (!payload) return;
+  _placing = true;
+  showScanProgress('Placing components… 0%', '', function () {
+    parent.postMessage({ pluginMessage: { type: 'place-cancel' } }, '*');
+    _placing = false;
+    dismissProgress();
+  });
+  parent.postMessage({ pluginMessage: {
+    type:       'place-components',
+    title:      payload.title,
+    subtitle:   payload.subtitle,
+    date:       payload.date,
+    components: payload.components,
+  } }, '*');
+}
+
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.closest && e.target.closest('.place-action-btn')) startPlace();
+});
+
+function onPlaceDone(msg) {
+  _placing = false;
+  dismissProgress();
+  var parts = [];
+  parts.push('Placed ' + msg.placed + (msg.placed === 1 ? ' component' : ' components') +
+             ' on the ' + (msg.pageName || 'Impact Atlas Previews') + ' page');
+  if (msg.skipped)   parts.push(msg.skipped + " couldn't be placed");
+  if (msg.truncated) parts.push('showing the ' + (msg.placed + msg.skipped) + ' most affected');
+  showToast(parts.join(' · '));
+}
+
 document.getElementById('sb-export-btn').addEventListener('click', function () {
   var text = buildExportText();
   if (!text) return;
@@ -4382,13 +4581,11 @@ function findRemoteVar(id) {
 
 function nodeTypeIcon(type) {
   switch (type) {
-    case 'TEXT':         return '<svg width="10" height="10"><use href="#icon-node-text"/></svg>';
+    case 'TEXT':         return '<svg width="16" height="16"><use href="#icon-object-text"/></svg>';
     case 'COMPONENT':
     case 'COMPONENT_SET':
-    case 'INSTANCE':    return '<svg width="16" height="16" style="flex-shrink:0"><use href="#icon-component"/></svg>';
-    case 'ELLIPSE':     return '<svg width="10" height="10"><use href="#icon-node-ellipse"/></svg>';
-    case 'VECTOR':      return '<svg width="10" height="10"><use href="#icon-node-vector"/></svg>';
-    default:            return '<svg width="10" height="10"><use href="#icon-node-frame"/></svg>';
+    case 'INSTANCE':    return '<svg width="16" height="16" style="flex-shrink:0"><use href="#icon-object-component"/></svg>';
+    default:            return '<svg width="16" height="16"><use href="#icon-object-frame"/></svg>';
   }
 }
 

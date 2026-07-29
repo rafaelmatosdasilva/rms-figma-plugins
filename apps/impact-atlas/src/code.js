@@ -22,8 +22,11 @@ let _localVarIds         = new Set(); // IDs of variables defined in this file
 
 // Node types that can carry variable bindings — used by findAllWithCriteria
 // to skip GROUP/SECTION/SLICE/STICKY/etc. natively instead of in JS recursion.
+// SLOT is included: component slots carry their own fills/strokes/radius bindings
+// (e.g. segmentedControl's background lives on its Slot child), and omitting it made
+// those bindings invisible — the token showed as unused though a component used it.
 const BINDING_TYPES = [
-  'FRAME', 'COMPONENT', 'COMPONENT_SET', 'INSTANCE',
+  'FRAME', 'COMPONENT', 'COMPONENT_SET', 'INSTANCE', 'SLOT',
   'RECTANGLE', 'ELLIPSE', 'POLYGON', 'STAR', 'LINE',
   'VECTOR', 'BOOLEAN_OPERATION', 'TEXT',
 ];
@@ -119,10 +122,14 @@ function resolveToRaw(variableId, depth) {
 
 function resolveHex(variableId) {
   const raw = resolveToRaw(variableId, 0);
-  if (!raw || typeof raw !== 'object' || raw.type === 'VARIABLE_ALIAS') return null;
-  const { r, g, b } = raw;
-  if (r == null || g == null || b == null) return null;
-  return rgbToHex(r, g, b);
+  if (raw && typeof raw === 'object' && raw.type !== 'VARIABLE_ALIAS') {
+    const { r, g, b } = raw;
+    if (r != null && g != null && b != null) return rgbToHex(r, g, b);
+  }
+  // No raw RGB (e.g. a remote var seeded from cache on reopen) — fall back to the
+  // hex precomputed and cached at scan time, if the variable carries one.
+  const v = _varById.get(variableId);
+  return (v && typeof v.hex === 'string') ? v.hex : null;
 }
 
 // ─── Chain node ───────────────────────────────────────────────────────────────
@@ -183,7 +190,13 @@ function computeImpact(variableId, chain, componentCount) {
   const compUsage  = componentCount != null ? componentCount : 0;
   const { type: tokenType, multiplier } = classifyToken(chain);
 
-  const base  = (varDeps * 6) + (depth * 2) + (compUsage * 4);
+  // Impact = what DEPENDS ON this token (alias tokens that reference it + components
+  // that use it). The token's own upward alias chain (depth = ancestors) is NOT impact:
+  // a token that references a primitive but is referenced by nothing breaks nothing when
+  // changed. Including depth here gave those zero-reference tokens a non-zero score, so
+  // they landed in "Low" instead of "Unused". (The UI's local-mode score already omits
+  // depth — this makes Full-scan agree.)
+  const base  = (varDeps * 6) + (compUsage * 4);
   const score = Math.round(base * multiplier);
 
   return { score, tokenType, multiplier, varDeps, depth, compUsage };
@@ -500,10 +513,36 @@ function _populateIndexFromCache(browserComponents) {
   _componentsByVarId = new Map();
   _componentById     = new Map();
   for (const comp of browserComponents) {
-    _componentById.set(comp.nodeId, { name: comp.nodeName, type: comp.nodeType, pageName: comp.pageName, pageId: comp.pageId });
+    _componentById.set(comp.nodeId, { name: comp.nodeName, type: comp.nodeType, pageName: comp.pageName, pageId: comp.pageId, isRemote: !!comp.isRemote });
     for (const bv of (comp.boundVars || [])) {
       if (!_componentsByVarId.has(bv.id)) _componentsByVarId.set(bv.id, new Set());
       _componentsByVarId.get(bv.id).add(comp.nodeId);
+    }
+  }
+}
+
+// On a cache hit we rebuild _varById from local variables only. The cached scan
+// also references REMOTE variables (bound to library components); without seeding
+// them here, lookupComponents' `_varById.has(vid)` filter would silently drop
+// every remote bound token, so external components would show with no tokens.
+// valuesByMode is left empty so resolveToRaw/resolveHex bail out safely (no colour
+// swatch on reopen, but names and types resolve — which is what matters).
+function _seedRemoteVarsFromCache(remoteVars, remoteColls) {
+  for (const rc of (remoteColls || [])) {
+    if (rc && rc.id && !_collById.has(rc.id)) {
+      _collById.set(rc.id, { id: rc.id, name: rc.name, key: rc.key || null, modes: rc.modes || [] });
+    }
+  }
+  for (const rv of (remoteVars || [])) {
+    if (rv && rv.id && !_varById.has(rv.id)) {
+      _varById.set(rv.id, {
+        id: rv.id, name: rv.name, key: rv.libraryKey || rv.key || null,
+        resolvedType: rv.resolvedType, variableCollectionId: rv.variableCollectionId,
+        // No raw RGB is cached, but the hex computed at scan time is — keep it so
+        // resolveHex can still produce the colour swatch on reopen.
+        hex: (typeof rv.hex === 'string') ? rv.hex : null,
+        valuesByMode: {}, remote: true,
+      });
     }
   }
 }
@@ -527,7 +566,6 @@ async function buildComponentIndex() {
     for (const c of comps) {
       // Skip variant children of a COMPONENT_SET — they're scanned as part of the set
       if (c.type === 'COMPONENT' && c.parent && c.parent.type === 'COMPONENT_SET') continue;
-      if (c.name.charCodeAt(0) === 46) continue; // skip private "." components
       const node   = c;
       const varIds = new Set();
 
@@ -661,7 +699,6 @@ async function buildLocalComponentIndex() {
     const comps = page.findAllWithCriteria({ types: ['COMPONENT', 'COMPONENT_SET'] });
     for (const c of comps) {
       if (c.type === 'COMPONENT' && c.parent && c.parent.type === 'COMPONENT_SET') continue;
-      if (c.name.charCodeAt(0) === 46) continue; // skip private "." components
 
       const node   = c;
       const varIds = new Set();
@@ -711,8 +748,12 @@ function lookupComponents(variableIds, selectedId) {
 
   const components = [];
   for (const [cid, varSet] of bindMap) {
-    const meta = _componentById.get(cid);
-    if (!meta) continue;
+    // A component present in _componentsByVarId (so it counts toward the impact score)
+    // must never be dropped from the detail just because its metadata wasn't indexed —
+    // that produced "Low" tier with a "no components reference this variable" panel.
+    // Fall back to a placeholder so the detail always reflects what the score counted.
+    const meta = _componentById.get(cid)
+      || { name: '(component)', type: 'COMPONENT', pageName: '', pageId: null };
 
     // For each bound var, walk its alias chain up to the selected variable
     // to produce a readable "aliases → ... → selected" path.
@@ -1008,7 +1049,11 @@ function computeAllImpactScores() {
     }
     const compCount = transitiveComps.size;
     const mult = (ancDepth > 0 && hasDesc) ? 1.5 : ancDepth > 0 ? 1.0 : 0.5;
-    scores[id] = Math.round(((varDeps * 6) + (ancDepth * 2) + (compCount * 4)) * mult);
+    // Impact = what depends on the token (descendant alias tokens + components), never
+    // its own upward alias depth. A token referenced by nothing scores 0 → "Unused",
+    // not "Low". (mult still uses ancDepth for chain-position weighting; the additive
+    // ancDepth*2 term was what wrongly lifted zero-reference tokens above 0.)
+    scores[id] = Math.round(((varDeps * 6) + (compCount * 4)) * mult);
   }
   return scores;
 }
@@ -1018,11 +1063,24 @@ function computeAllImpactScores() {
 async function handleInit() {
   try {
     // ── Phase 1a: local variables + styles (0% → 20%) ────────────────────────
-    // Read persisted scan depth + cached scan in parallel with variable loading
-    const _initCacheKey = 'scan-' + (figma.fileKey || 'local');
-    const [allVars, allColls, textStyles, paintStyles, effectStyles, lastScanDepth, libColls, _rawCachedScan] = await Promise.all([
+    // Variables + collections first: the cache key is derived from them when
+    // figma.fileKey is unavailable (Professional seats — the same user may run
+    // this on Enterprise seats where fileKey IS set, and on multiple accounts).
+    const [allVars, allColls] = await Promise.all([
       figma.variables.getLocalVariablesAsync(),
       figma.variables.getLocalVariableCollectionsAsync(),
+    ]);
+    // figma.fileKey is undefined for dev plugins on non-Enterprise seats, and
+    // figma.root.name/id don't identify the file, so a fixed fallback key would
+    // make EVERY file share one cache bucket. Put a content signature IN the key
+    // so each distinct file gets its own slot on any seat; a matching signature
+    // is still verified below before the cache is trusted.
+    const _fileSig = fileSigFrom(allVars, allColls);
+    // Stable key; correctness comes from the _fileSig check below, which holds on
+    // every seat (fileKey is absent on non-Enterprise ones). Alternating between
+    // files re-scans rather than serving the wrong cache.
+    const _initCacheKey = 'scan-' + (figma.fileKey || 'local');
+    const [textStyles, paintStyles, effectStyles, lastScanDepth, libColls, _rawCachedScan] = await Promise.all([
       figma.getLocalTextStylesAsync(),
       figma.getLocalPaintStylesAsync(),
       figma.getLocalEffectStylesAsync(),
@@ -1032,15 +1090,26 @@ async function handleInit() {
         : Promise.resolve([]),
       figma.clientStorage.getAsync(_initCacheKey).catch(() => null),
     ]);
-    const validCachedScan = (_rawCachedScan && _rawCachedScan.version === 1) ? _rawCachedScan : null;
+    const validCachedScan =
+      (_rawCachedScan && _rawCachedScan.version === 2 && _rawCachedScan._fileSig === _fileSig)
+        ? _rawCachedScan : null;
     // Send progress now that we know whether a cache exists — UI suppresses the bar if hasCachedScan
     figma.ui.postMessage({ type: 'init-progress', pct: 0, hasCachedScan: !!validCachedScan, cachedDepth: validCachedScan ? validCachedScan.depth : null });
-    const hasExternalLibraries = Array.isArray(libColls) && libColls.length > 0;
+    // Base signal from the library API — unreliable on its own: it misses
+    // libraries that are used but not formally added to the file. Augmented below
+    // with a cheap, reliable local signal once the alias maps are built.
+    let hasExternalLibraries = Array.isArray(libColls) && libColls.length > 0;
 
     _collById = new Map(allColls.map(c => [c.id, c]));
     buildAliasMaps(allVars);
     _descendantCounts = buildDescendantCountMap();
     _localVarIds = new Set(_varById.keys());
+
+    // A local variable that aliases an external target proves the file references
+    // an external library — detectable at init without any library API call.
+    // (Files whose only external usage is instances of remote components can't be
+    // detected this cheaply; a Full scan surfaces those and flips the flag then.)
+    if (_externalAliasMap.size > 0) hasExternalLibraries = true;
 
     // Style count per variable (for list badge)
     const styleCountMap = new Map();
@@ -1075,16 +1144,25 @@ async function handleInit() {
 
     // ── Fast path: cache hit with browserComponents → skip index build ────────
     if (validCachedScan && validCachedScan.browserComponents) {
+      _seedRemoteVarsFromCache(validCachedScan.remoteVars, validCachedScan.remoteColls);
       _populateIndexFromCache(validCachedScan.browserComponents);
       _componentIndexBuilt   = true;
       _componentBrowserCache = validCachedScan.browserComponents;
+      // Recompute counts and impact scores from the live alias graph + freshly-populated
+      // index rather than serving the cached values. Cached scores can be stale — from an
+      // earlier scan or an older impact formula — which mislabels a token with no
+      // dependents or components as "Low" instead of "Unused". The tier must reflect the
+      // same live data the detail panel reads, so the two can never disagree.
+      const freshComponentCounts = {};
+      for (const [vid, compIds] of _componentsByVarId.entries()) freshComponentCounts[vid] = compIds.size;
+      const freshImpactScores = computeAllImpactScores();
       figma.ui.postMessage({
         type: 'init-data', variables, collections,
         remoteVars:           validCachedScan.remoteVars  || [],
         remoteColls:          validCachedScan.remoteColls || [],
         componentIndexBuilt:  true,
-        varComponentCounts:   validCachedScan.updatedComponentCounts || {},
-        varImpactScores:      validCachedScan.updatedImpactScores    || {},
+        varComponentCounts:   freshComponentCounts,
+        varImpactScores:      freshImpactScores,
         lastScanDepth:        validCachedScan.depth || null,
         hasExternalLibraries: (validCachedScan.remoteVars || []).length > 0,
         browserComponents:    validCachedScan.browserComponents,
@@ -1170,48 +1248,6 @@ async function handleAnalyze(variableId) {
   }
 }
 
-async function handleBuildComponentIndex(variableId) {
-  try {
-    if (!_componentIndexBuilt) figma.ui.postMessage({ type: 'index-progress', text: 'Loading pages…' });
-    await ensureComponentIndex(); // deduplicates if startup build is still running
-
-    const chain      = await buildChain(variableId);
-    const varIds     = [variableId, ...chain.descendants.map(d => d.id)];
-    const components = lookupComponents(varIds, variableId);
-    const impact     = computeImpact(variableId, chain, components.length);
-
-    const remoteVars  = [];
-    const remoteColls = [];
-    const seenCollIds = new Set();
-    for (const [varId, compIds] of _componentsByVarId.entries()) {
-      if (_localVarIds.has(varId)) continue;
-      const v    = _varById.get(varId);
-      const coll = v ? _collById.get(v.variableCollectionId) : null;
-      if (!v) continue;
-      remoteVars.push({
-        id: v.id, libraryKey: v.key || null, name: v.name,
-        resolvedType: v.resolvedType, variableCollectionId: v.variableCollectionId,
-        hex: v.resolvedType === 'COLOR' ? resolveHex(v.id) : null,
-        dependentCount: compIds.size, isRemote: true,
-      });
-      if (coll && !seenCollIds.has(coll.id)) {
-        seenCollIds.add(coll.id);
-        remoteColls.push({ id: coll.id, name: coll.name, modes: coll.modes, isRemote: true });
-      }
-    }
-
-    const varComponentCounts = {};
-    for (const [varId, compIds] of _componentsByVarId.entries()) {
-      varComponentCounts[varId] = compIds.size;
-    }
-
-    const varImpactScores = computeAllImpactScores();
-
-    figma.ui.postMessage({ type: 'index-ready', components, impact, remoteVars, remoteColls, varComponentCounts, varImpactScores });
-  } catch (err) {
-    figma.ui.postMessage({ type: 'error', message: err.message });
-  }
-}
 
 async function handleAnalyzeRemote(remoteVarId, varName, resolvedType, collectionName) {
   try {
@@ -1293,98 +1329,302 @@ async function handleBuildComponentIndexRemote(remoteVarId) {
   }
 }
 
-async function handleFocusNode(nodeId) {
+// Cheap per-file signature to scope the scan cache when figma.fileKey is
+// unavailable (local/dev plugins on non-Enterprise plans). figma.root.name is
+// always "Document" and figma.root.id is always "0:0", so neither identifies the
+// file — instead fingerprint the actual token/collection set. Two files with
+// different variables get different signatures, so one file's cache is never
+// served for another. (Exact duplicates share a signature, which is harmless —
+// identical content scans identically.)
+function fileSigFrom(vars, colls) {
+  const names =
+    vars.map(v => v.name).sort().join(',') + '||' +
+    colls.map(c => c.name).sort().join(',');
+  let h = 0;
+  for (let i = 0; i < names.length; i++) h = ((h << 5) - h + names.charCodeAt(i)) | 0;
+  return figma.root.children.length + ':' + vars.length + ':' +
+    colls.length + ':' + (h >>> 0).toString(36);
+}
+
+async function handleFocusNode(nodeId, pageId) {
   try {
+    // documentAccess: dynamic-page — getNodeByIdAsync returns null for a node on
+    // a page that isn't loaded. The UI sends the node's pageId; load that page
+    // first, or a valid LOCAL component silently fails to focus and looks like a
+    // library component with no canvas location.
+    if (pageId) {
+      // A page is a node — getNodeByIdAsync, not a getPageByIdAsync (that API
+      // does not exist; calling it threw and made every focus click fail).
+      const page = await figma.getNodeByIdAsync(pageId);
+      if (page && page.type === 'PAGE') await page.loadAsync();
+    }
     const node = await figma.getNodeByIdAsync(nodeId);
-    if (!node) return;
+    if (!node) {
+      // Genuinely unreachable — the master lives in an external library, so it has
+      // no canvas location. Tell the user instead of doing nothing.
+      figma.ui.postMessage({ type: 'focus-unavailable', nodeId: nodeId });
+      return;
+    }
     let p = node;
     while (p && p.type !== 'PAGE') p = p.parent;
     if (p && p !== figma.currentPage) await figma.setCurrentPageAsync(p);
     figma.currentPage.selection = [node];
     figma.viewport.scrollAndZoomIntoView([node]);
+  } catch (_) {
+    figma.ui.postMessage({ type: 'focus-unavailable', nodeId: nodeId });
+  }
+}
+
+// ─── Place affected components on canvas ──────────────────────────────────────
+// Builds an "audit board": one frame holding a live instance of every component
+// the selected token affects, so the impact can be reviewed side by side before
+// the token changes. Instances (not clones) — editing the token afterwards
+// updates the board in place.
+//
+// Boards live on a plugin-owned page rather than the current one: generated
+// content dropped at the viewport would land on top of whatever the designer is
+// working on, and repeat runs would pile up on each other.
+
+const BOARD_PAGE_KEY = 'impact-atlas-boards';
+const MAX_PLACE = 200; // components already arrive sorted most-bound-first
+
+const BOARD_PAGE_NAME = 'Impact Atlas Previews';
+
+// Returns { page, created }. created=true only when this call had to make the
+// page — i.e. no previous placements existed. That flag lets a cancel/failure
+// clean up a page it just created without ever removing one that already holds
+// earlier placements.
+async function ensureBoardsPage() {
+  for (const p of figma.root.children) {
+    try {
+      if (p.getPluginData(BOARD_PAGE_KEY) === '1') {
+        // Rename pages tagged by earlier versions, so old files stay consistent.
+        if (p.name !== BOARD_PAGE_NAME) { try { p.name = BOARD_PAGE_NAME; } catch (_) {} }
+        return { page: p, created: false };
+      }
+    } catch (_) {}
+  }
+  const page = figma.createPage();
+  page.name = BOARD_PAGE_NAME;
+  try { page.setPluginData(BOARD_PAGE_KEY, '1'); } catch (_) {}
+  return { page, created: true };
+}
+
+// Undo a boards page this run created, when a cancel or failure leaves it empty.
+// Never touches a pre-existing page (created=false) — that one holds previous
+// placements the user asked us to keep.
+async function removeBoardsPageIfCreatedEmpty(page, created) {
+  if (!created) return;
+  try {
+    if (page.children.length > 0) return;             // something else landed — keep it
+    if (figma.currentPage === page) {                 // can't remove the active page
+      const other = figma.root.children.find(p => p !== page);
+      if (other) await figma.setCurrentPageAsync(other);
+    }
+    page.remove();
   } catch (_) {}
 }
 
-// ─── Message router ───────────────────────────────────────────────────────────
+// Local masters instance directly; library ones are imported by key first.
+// Returns null when the component can't be resolved — the caller skips it
+// instead of failing the whole run.
+async function instantiateComponent(nodeId) {
+  let comp = null;
+  try { comp = await figma.getNodeByIdAsync(nodeId); } catch (_) { return null; }
+  if (!comp) return null;
+  if (comp.type === 'COMPONENT_SET') {
+    comp = comp.defaultVariant || (comp.children && comp.children[0]) || null;
+  }
+  if (!comp || comp.type !== 'COMPONENT') return null;
+  if (comp.remote && comp.key) {
+    try { comp = await figma.importComponentByKeyAsync(comp.key); } catch (_) {}
+  }
+  try { return comp.createInstance(); } catch (_) { return null; }
+}
 
-// ─── Component browser ────────────────────────────────────────────────────────
-// Returns ALL components (across all pages) sorted by bound variable count.
-// Reuses the component index built by buildComponentIndex(); builds it first
-// if not already done.
 
-async function handleBuildComponentBrowser() {
+async function handlePlaceComponents(msg) {
+  const all   = (msg && Array.isArray(msg.components)) ? msg.components : [];
+  const list  = all.slice(0, MAX_PLACE);
+  // Group by name so related components (and their variants) sit together on the
+  // board. The slice above already kept the most-impactful ones; this only
+  // reorders how those are laid out.
+  list.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+  const total = list.length;
+  let section = null;
+  let page = null, pageCreated = false; // hoisted so the catch can clean up too
+
+  const GAP = 48;  // auto-layout spacing between instances
+  const PAD = 64;  // inset from the section edges
+
   try {
-    if (!_componentIndexBuilt) {
-      figma.ui.postMessage({ type: 'index-progress', text: 'Loading components…' });
-      await buildComponentIndex();
-      _componentIndexBuilt = true;
-    }
-
-    if (_componentBrowserCache) {
-      figma.ui.postMessage({ type: 'component-browser-ready', components: _componentBrowserCache });
+    if (total === 0) {
+      figma.ui.postMessage({ type: 'place-error', message: 'Nothing to place' });
       return;
     }
 
-    // Invert _componentsByVarId → compId → Set<varId>
-    const compToVars = new Map();
-    for (const [varId, compIds] of _componentsByVarId.entries()) {
-      for (const cid of compIds) {
-        if (!compToVars.has(cid)) compToVars.set(cid, new Set());
-        compToVars.get(cid).add(varId);
+    ({ page, created: pageCreated } = await ensureBoardsPage());
+    await page.loadAsync();
+
+    // A Section so its name — the token + date/time — is visible on the canvas
+    // itself, not just in the layers panel. Transparent (adds no colour). A single
+    // transparent auto-layout frame inside wraps the instances to a narrow set of
+    // columns and reflows if the token later changes their sizes.
+    section = figma.createSection();
+    section.name = 'Impact — ' + (msg.title || 'components') + (msg.date ? '  ·  ' + msg.date : '');
+    try { section.fills = []; } catch (_) {}
+    page.appendChild(section);
+    section.x = 0;
+    section.y = 0;
+
+    const board = figma.createFrame();
+    board.name       = 'Components';
+    board.layoutMode = 'HORIZONTAL';
+    board.layoutWrap = 'WRAP';
+    board.primaryAxisSizingMode = 'AUTO';
+    board.counterAxisSizingMode = 'AUTO';
+    board.counterAxisAlignItems = 'MIN';
+    board.itemSpacing        = GAP;
+    board.counterAxisSpacing = GAP;
+    board.fills        = [];
+    board.clipsContent = false;
+    section.appendChild(board);
+    board.x = PAD;
+    board.y = PAD;
+
+    const instances = [];
+    let skipped = 0, maxW = 1;
+    const startTs = Date.now();
+
+    for (let i = 0; i < total; i++) {
+      const instance = await instantiateComponent(list[i].nodeId);
+      if (instance) {
+        board.appendChild(instance);
+        instances.push(instance);
+        if (typeof instance.width === 'number' && instance.width > maxW) maxW = instance.width;
+      } else {
+        skipped++;
+      }
+
+      // Report progress every instance (with a rough ETA) and yield each time, so
+      // the bar advances smoothly and Cancel stays responsive — instead of jumping
+      // in big steps, which reads as "stuck".
+      const done = i + 1;
+      let eta = '';
+      if (done >= 2 && done < total) {
+        const secs = Math.round(((Date.now() - startTs) / done) * (total - done) / 1000);
+        if (secs > 0) eta = secs >= 60 ? ('~' + Math.floor(secs / 60) + 'm ' + (secs % 60) + 's left') : ('~' + secs + 's left');
+      }
+      figma.ui.postMessage({ type: 'place-progress', done, total, eta });
+      await yieldTick();
+      if (_placeCancelled) {
+        section.remove();
+        await removeBoardsPageIfCreatedEmpty(page, pageCreated);
+        figma.ui.postMessage({ type: 'place-cancelled' });
+        return;
       }
     }
 
-    const components = [];
-    for (const [cid, varIds] of compToVars.entries()) {
-      const meta = _componentById.get(cid);
-      if (!meta) continue;
-      const boundVars = [...varIds].filter(vid => _varById.has(vid)).map(vid => {
-        const v = _varById.get(vid);
-        return { id: vid, name: v.name, resolvedType: v.resolvedType };
-      }).sort((a, b) => a.name.localeCompare(b.name));
-      components.push({
-        nodeId: cid, nodeName: meta.name, nodeType: meta.type,
-        pageName: meta.pageName, pageId: meta.pageId,
-        boundCount: varIds.size, boundVars,
-      });
+    const placed = instances.length;
+    if (placed === 0) {
+      section.remove();
+      await removeBoardsPageIfCreatedEmpty(page, pageCreated);
+      figma.ui.postMessage({ type: 'place-error', message: "Couldn't place any components" });
+      return;
     }
 
-    components.sort((a, b) =>
-      b.boundCount - a.boundCount ||
-      a.pageName.localeCompare(b.pageName) ||
-      a.nodeName.localeCompare(b.nodeName)
-    );
+    // Sort by height (tallest first) and re-append in that order. Auto-layout gives
+    // every wrapped row the height of its tallest item, so grouping similar heights
+    // together leaves far less empty space below shorter components.
+    instances.sort((a, b) => ((b.height || 0) - (a.height || 0)));
+    for (let k = 0; k < placed; k++) board.appendChild(instances[k]);
 
-    _componentBrowserCache = components;
+    // Fix the frame to a ~2000px width so instances wrap into several columns
+    // (widened at least to the single widest component). Guarded: a rejected resize
+    // leaves a usable single row rather than losing every instance.
+    try {
+      const BOARD_W = 2000;
+      board.primaryAxisSizingMode = 'FIXED';
+      board.resize(Math.max(BOARD_W, maxW), Math.max(1, board.height));
+    } catch (_) {}
 
-    // Collect every variable referenced by the browser data so the UI can
-    // populate its list — buildComponentIndex() may have fetched remote/local
-    // vars via getVariableByIdAsync that were never sent to the UI.
-    const referencedIds = new Set();
-    for (const c of components) for (const bv of c.boundVars) referencedIds.add(bv.id);
-    const vars = [];
-    for (const vid of referencedIds) {
-      const v = _varById.get(vid);
-      if (!v) continue;
-      const coll = _collById.get(v.variableCollectionId);
-      vars.push({
-        id: v.id, name: v.name, resolvedType: v.resolvedType,
-        variableCollectionId: v.variableCollectionId,
-        collectionName: coll ? coll.name : '',
-        libraryKey: v.key || null,
-        isRemote: !!v.remote,
-      });
+    // Size the section to wrap the frame plus a uniform inset.
+    try {
+      section.resizeWithoutConstraints(board.width + PAD * 2, board.height + PAD * 2);
+    } catch (_) {}
+
+    // Move the section to the right of anything already on the page — sections sit
+    // side by side and never overlap, so repeat placements line up left to right.
+    let maxRight = null;
+    for (const child of page.children) {
+      if (child === section) continue;
+      if (typeof child.x !== 'number' || typeof child.width !== 'number') continue;
+      const right = child.x + child.width;
+      if (maxRight === null || right > maxRight) maxRight = right;
     }
+    section.x = maxRight === null ? 0 : Math.round(maxRight + 200);
+    section.y = 0;
 
-    figma.ui.postMessage({ type: 'component-browser-ready', components, vars });
+    await figma.setCurrentPageAsync(page);
+    figma.currentPage.selection = [section];
+    figma.viewport.scrollAndZoomIntoView([section]);
+
+    figma.ui.postMessage({
+      type: 'place-done',
+      placed, skipped,
+      truncated: all.length - total,
+      pageName:  page.name,
+    });
   } catch (err) {
-    figma.ui.postMessage({ type: 'error', message: err.message });
+    if (section) { try { section.remove(); } catch (_) {} }
+    if (page) await removeBoardsPageIfCreatedEmpty(page, pageCreated);
+    figma.ui.postMessage({ type: 'place-error', message: err.message });
   }
+}
+
+// Re-read local variables + collections and rebuild the alias/descendant maps, then
+// return the UI payload {variables, collections}. The variable list is otherwise only
+// built at init, so without this a rescan can't reflect variables added, renamed, or
+// deleted since the plugin opened — they'd persist until a full restart.
+async function refreshLocalVariablePayload() {
+  const [allVars, allColls, textStyles, paintStyles, effectStyles] = await Promise.all([
+    figma.variables.getLocalVariablesAsync(),
+    figma.variables.getLocalVariableCollectionsAsync(),
+    figma.getLocalTextStylesAsync(),
+    figma.getLocalPaintStylesAsync(),
+    figma.getLocalEffectStylesAsync(),
+  ]);
+  _collById         = new Map(allColls.map(c => [c.id, c]));
+  buildAliasMaps(allVars);
+  _descendantCounts = buildDescendantCountMap();
+  _localVarIds      = new Set(_varById.keys());
+
+  const styleCountMap = new Map();
+  const inc    = id => { if (id) styleCountMap.set(id, (styleCountMap.get(id) || 0) + 1); };
+  const scanBV = bv => { if (!bv) return; for (const b of Object.values(bv)) { if (Array.isArray(b)) { for (const x of b) if (x && x.id) inc(x.id); } else if (b && b.id) inc(b.id); } };
+  for (const s of textStyles)   scanBV(s.boundVariables);
+  for (const s of paintStyles)  { scanBV(s.boundVariables); for (const p of s.paints) if (p.boundVariables && p.boundVariables.color) inc(p.boundVariables.color.id); }
+  for (const s of effectStyles) { scanBV(s.boundVariables); for (const e of s.effects || []) scanBV(e.boundVariables); }
+
+  const variables = allVars.map(v => ({
+    id:                   v.id,
+    name:                 v.name,
+    resolvedType:         v.resolvedType,
+    variableCollectionId: v.variableCollectionId,
+    hex:                  v.resolvedType === 'COLOR' ? resolveHex(v.id) : null,
+    dependentCount:       (_descendantCounts.get(v.id) || 0) + (styleCountMap.get(v.id) || 0),
+    hasExternalAlias:     _externalAliasMap.has(v.id),
+  }));
+  const collections = allColls.map(c => ({ id: c.id, name: c.name, modes: c.modes }));
+  return { variables, collections };
 }
 
 async function handleUsageScan(msg) {
   const depth = (msg && msg.depth >= 2) ? msg.depth : 3;
   try {
+    // Refresh the variable list + alias maps first so this scan reflects the current
+    // file (added / renamed / deleted variables), not the stale set captured at init.
+    const refreshedVarPayload = await refreshLocalVariablePayload();
     // ── Phase 2a: remote / library variable discovery ─────────────────────────
     figma.ui.postMessage({ type: 'usage-scan-progress', pct: 0 });
 
@@ -1417,9 +1657,13 @@ async function handleUsageScan(msg) {
     if (_scanCancelled) { figma.ui.postMessage({ type: 'usage-scan-cancelled' }); return; }
 
     // ── Canvas instance scan (counts + library component discovery) ───────────
-    const hasExternalLibraries = remoteVars.length > 0 || remoteColls.length > 0;
+    // Runs for any user-triggered Extended/Full scan. Discovery must NOT be gated
+    // on library-collection availability: a file can USE a library (instances that
+    // reference its variables) without that library being formally added, in which
+    // case getAvailableLibraryVariableCollectionsAsync reports nothing. We still
+    // find those referenced-remote tokens by resolving the instance bindings below.
     let instObj = {}, directObj = {}, scanTotal = 0, newLibraryComponents = [];
-    if (depth >= 2 && hasExternalLibraries) {
+    if (depth >= 2) {
     await figma.loadAllPagesAsync();
 
     const pages = figma.root.children;
@@ -1430,6 +1674,46 @@ async function handleUsageScan(msg) {
       figma.ui.postMessage({ type: 'usage-scan-progress', pct: Math.round(((pi + 1) / pages.length) * 15) });
       await yieldTick();
       total += pages[pi].findAllWithCriteria({ types: ['INSTANCE'] }).length;
+    }
+
+    // Map published-component key → its local master node. A design-system SOURCE
+    // file that also consumes its own published library ends up with BOTH a local
+    // master AND remote instances of the same component. They share a published
+    // `key`, so collapsing the remote ones onto the local master below avoids
+    // listing the component twice (once local, once as a "library" duplicate).
+    // Rebuild the component index from scratch — a full scan is the authoritative
+    // snapshot. Inheriting the cache-restored index risks stale duplicates (old
+    // library twins, or variants indexed individually before variant rollup). We
+    // re-index local masters here (rolling variants up to their COMPONENT_SET) and
+    // Pass 1 below augments this with library components actually used on canvas.
+    _componentById     = new Map();
+    _componentsByVarId = new Map();
+    const localMasterByKey = new Map();
+    for (const page of pages) {
+      const masters = page.findAllWithCriteria({ types: ['COMPONENT', 'COMPONENT_SET'] });
+      for (const m of masters) {
+        if (m.type === 'COMPONENT' && m.parent && m.parent.type === 'COMPONENT_SET') continue; // roll up to the set
+        if (!m.remote && m.key && !localMasterByKey.has(m.key)) localMasterByKey.set(m.key, m);
+
+        const mVarIds = new Set();
+        collectNodeVarIds(m, mVarIds);
+        const mDesc = m.findAllWithCriteria({ types: BINDING_TYPES });
+        for (let d = 0; d < mDesc.length; d++) collectNodeVarIds(mDesc[d], mVarIds);
+        if (mVarIds.size === 0) continue;
+
+        const mRemote = !!m.remote;
+        _componentById.set(m.id, {
+          name: m.name, type: m.type,
+          pageName: mRemote ? 'Library' : page.name,
+          pageId:   mRemote ? null : page.id,
+          isRemote: mRemote,
+        });
+        for (const vid of mVarIds) {
+          if (!_componentsByVarId.has(vid)) _componentsByVarId.set(vid, new Set());
+          _componentsByVarId.get(vid).add(m.id);
+        }
+      }
+      await yieldTick();
     }
 
     // instanceCounts: varId → number of canvas instances that use it (via mainComponent)
@@ -1520,6 +1804,12 @@ async function handleUsageScan(msg) {
           // the same set group under one entry (matches buildComponentIndex).
           let cacheNode = mc;
           if (mc.parent && mc.parent.type === 'COMPONENT_SET') cacheNode = mc.parent;
+          // Collapse a remote instance onto its local master when both live here
+          // (same published key) — otherwise the component shows up twice, and the
+          // local one gets mislabelled as a library component.
+          if (cacheNode.remote && cacheNode.key && localMasterByKey.has(cacheNode.key)) {
+            cacheNode = localMasterByKey.get(cacheNode.key);
+          }
           const cacheKey = cacheNode.id;
 
           if (!compCache.has(cacheKey)) {
@@ -1541,15 +1831,23 @@ async function handleUsageScan(msg) {
             }
             compCache.set(cacheKey, varIds);
 
-            // Record metadata for Components view. A node is remote when it
-            // doesn't belong to the local component index (which only contains
-            // current-file masters).
-            const isRemote = !_componentById.has(cacheKey);
+            // Remote when the component's master lives in an external library.
+            // Use the node's own `remote` flag — NOT "absent from the local index":
+            // a local master that binds only remote tokens is skipped by the local
+            // index yet is not remote, and must not be mislabelled as a library one.
+            const isRemote = !!cacheNode.remote;
 
-            // Index library components into the main component index so they
-            // show up in impact analysis (deferred from init for performance).
-            if (isRemote && varIds.size > 0) {
-              _componentById.set(cacheKey, { name: cacheNode.name, type: cacheNode.type, pageName: 'Library', pageId: null, isRemote: true });
+            // Index any component not already indexed (local masters the local pass
+            // skipped, plus library components) so it shows up in impact analysis.
+            // Local masters keep their real page; library masters live nowhere here.
+            if (varIds.size > 0 && !_componentById.has(cacheKey)) {
+              let pageName = 'Library', pageId = null;
+              if (!isRemote) {
+                let p = cacheNode.parent;
+                while (p && p.type !== 'PAGE') p = p.parent;
+                if (p) { pageName = p.name; pageId = p.id; }
+              }
+              _componentById.set(cacheKey, { name: cacheNode.name, type: cacheNode.type, pageName, pageId, isRemote });
               for (const vid of varIds) {
                 if (!_componentsByVarId.has(vid)) _componentsByVarId.set(vid, new Set());
                 _componentsByVarId.get(vid).add(cacheKey);
@@ -1592,11 +1890,11 @@ async function handleUsageScan(msg) {
     for (const [k, v] of directCounts.entries())   directObj[k] = v;
     scanTotal = scanned;
 
-    // Fetch any external var IDs from library component bindings not yet in _varById
-    // Must happen before building newLibraryComponents so boundVars are populated
+    // Fetch any external var IDs referenced by discovered components but not yet in
+    // _varById — from library components AND from local masters that bind remote
+    // tokens. Must happen before building newLibraryComponents so boundVars resolve.
     const unknownCompIds = [];
     for (const [, info] of compInfo.entries()) {
-      if (!info.isRemote) continue;
       for (const vid of info.varIds) {
         if (!_localVarIds.has(vid) && !_varById.has(vid)) unknownCompIds.push(vid);
       }
@@ -1652,7 +1950,7 @@ async function handleUsageScan(msg) {
         }),
       });
     }
-    } // end if (depth >= 3)
+    } // end if (depth >= 2)
 
     // Recompute component counts + impact scores (always — reflects Phase 2a + 2b data)
     const updatedComponentCounts = {};
@@ -1682,6 +1980,41 @@ async function handleUsageScan(msg) {
       }
     }
 
+    // Rebuild the component browser cache from the FULL index (local + library
+    // components discovered in this scan) before it's persisted below. Without
+    // this, the cache would keep the init-time local-only list, so every
+    // token→library-component association would be lost on the next open until a
+    // fresh scan re-discovered them.
+    {
+      const compToVars = new Map();
+      for (const [varId, compIds] of _componentsByVarId.entries()) {
+        for (const cid of compIds) {
+          if (!compToVars.has(cid)) compToVars.set(cid, new Set());
+          compToVars.get(cid).add(varId);
+        }
+      }
+      const rebuilt = [];
+      for (const [cid, varIds] of compToVars.entries()) {
+        const meta = _componentById.get(cid);
+        if (!meta) continue;
+        const boundVars = [...varIds].filter(vid => _varById.has(vid)).map(vid => {
+          const v = _varById.get(vid);
+          return { id: vid, name: v.name, resolvedType: v.resolvedType };
+        }).sort((a, b) => a.name.localeCompare(b.name));
+        rebuilt.push({
+          nodeId: cid, nodeName: meta.name, nodeType: meta.type,
+          pageName: meta.pageName, pageId: meta.pageId, isRemote: !!meta.isRemote,
+          boundCount: varIds.size, boundVars,
+        });
+      }
+      rebuilt.sort((a, b) =>
+        b.boundCount - a.boundCount ||
+        (a.pageName || '').localeCompare(b.pageName || '') ||
+        a.nodeName.localeCompare(b.nodeName)
+      );
+      _componentBrowserCache = rebuilt;
+    }
+
     // Persist before posting results — guarantees cache is written even if user closes immediately.
     // Strip zero entries before storing: dense objects with thousands of varIds blow past the
     // 1 MB Figma clientStorage limit. Sparse representation cuts the payload by 10–100×.
@@ -1691,9 +2024,16 @@ async function handleUsageScan(msg) {
       return out;
     }
     const scanTs = Date.now();
+    // Same key derivation as init: content signature when fileKey is unavailable,
+    // so the write lands in this file's own slot (and is stamped for verification).
+    const [_sigVars, _sigColls] = await Promise.all([
+      figma.variables.getLocalVariablesAsync(),
+      figma.variables.getLocalVariableCollectionsAsync(),
+    ]);
+    const _writeSig = fileSigFrom(_sigVars, _sigColls);
     const scanCacheKey = 'scan-' + (figma.fileKey || 'local');
     const cacheBase = {
-      version: 1, ts: scanTs, depth,
+      version: 2, ts: scanTs, depth, _fileSig: _writeSig,
       instanceCounts:        sparseObj(instObj),
       directCounts:          sparseObj(directObj),
       updatedComponentCounts: sparseObj(updatedComponentCounts),
@@ -1735,14 +2075,21 @@ async function handleUsageScan(msg) {
       newLibraryComponents,
       remoteVars,
       remoteColls,
+      // Fresh local variable list so the UI can drop deleted vars and pick up
+      // additions/renames on rescan (not just recompute counts on the stale list).
+      variables:             refreshedVarPayload.variables,
+      collections:           refreshedVarPayload.collections,
     });
   } catch (err) {
     figma.ui.postMessage({ type: 'usage-scan-error', message: err.message });
   }
 }
 
-let _scanCancelled = false;
-let _initCancelled = false;
+// ─── Message router ───────────────────────────────────────────────────────────
+
+let _scanCancelled  = false;
+let _initCancelled  = false;
+let _placeCancelled = false;
 
 figma.ui.onmessage = async (msg) => {
   if (await handleResizeMsg(msg)) return;
@@ -1754,7 +2101,9 @@ figma.ui.onmessage = async (msg) => {
     case 'usage-scan':           _scanCancelled = false; return handleUsageScan(msg);
     case 'usage-scan-cancel':    _scanCancelled = true; return;
     case 'get-referenced-by':            return handleGetReferencedBy(msg.variableId);
-    case 'focus-node':            return handleFocusNode(msg.nodeId);
-    case 'close':                 _initCancelled = true; _scanCancelled = true; return figma.closePlugin();
+    case 'focus-node':            return handleFocusNode(msg.nodeId, msg.pageId);
+    case 'place-components':     _placeCancelled = false; return handlePlaceComponents(msg);
+    case 'place-cancel':         _placeCancelled = true; return;
+    case 'close':                 _initCancelled = true; _scanCancelled = true; _placeCancelled = true; return figma.closePlugin();
   }
 };
