@@ -70,6 +70,7 @@
     --node-label-disabled:    var(--neutral-400);  /* node/label/disabled N400 both modes */
     --node-icon-selected:   var(--neutral-400);  /* node/icon/selected/color L=N4, D→override */
     --node-icon-idle:       var(--neutral-600);  /* node/icon/idle L=N600 #adadad, D→override */
+    --node-icon-hover:      var(--neutral-600);  /* node/icon/hover → node/icon/idle → buttonList/iconPrimary → N600; D→override */
     --node-icon-disabled:   var(--neutral-600);  /* node/icon/disabled/color N600 both modes */
     --node-border-unselected: var(--neutral-800); /* node/border/unselected/color L=N8, D→override */
     --node-label-idle:        var(--neutral-300); /* node/label/idle L=N300 #404040, D=N300 #b8b8b8 — same step both modes */
@@ -292,7 +293,8 @@
       /* Node additional states */
       --node-border-unselected: var(--neutral-600); /* D=N6 */
       --node-icon-selected:   var(--neutral-300);   /* D=N3 */
-      --node-icon-idle:       var(--neutral-400);   /* Dark = N400 #808080 */
+      --node-icon-idle:       var(--neutral-500);   /* Dark = N500 #5e5e5e (was N400; DS rebound via buttonList/iconPrimary) */
+      --node-icon-hover:      var(--neutral-500);   /* Dark = N500 #5e5e5e — same chain as idle */
       /* listItem */
       --listItem-description: var(--neutral-300); /* Dark = N300 */
 
@@ -410,6 +412,7 @@
     color: var(--node-label-idle);
   }
   .node svg { color: var(--node-icon-idle); flex-shrink: 0; }
+  .node:hover svg { color: var(--node-icon-hover); }  /* DS node State=Hover */
   .node.node-selected svg { color: var(--node-icon-selected); }
   .node.node-unselected svg { color: var(--node-icon-idle); }
   /* State colour applies to the node's OWN type icon only. Action buttons

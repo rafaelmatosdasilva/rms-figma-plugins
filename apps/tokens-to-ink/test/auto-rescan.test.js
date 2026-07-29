@@ -131,3 +131,53 @@ describe('tokens-to-ink — rescanning after the document changes', () => {
     expect(postedOf('scan-results').length).toBe(before);
   });
 });
+
+describe('tokens-to-ink — overlapping scans', () => {
+  it('keeps the export pointed at the artwork the newest scan chose', async () => {
+    // A document-change rescan can still be resolving its old node ids when the
+    // user scans something else. If the slow one writes its list back afterwards,
+    // Export silently ships the frame they navigated away from.
+    const rect = makeNode('RECTANGLE', { id: 'r1', name: 'Swatch', fills: [solid(1, 0, 0)] });
+    const older = makeNode('FRAME', { id: 'f-old', name: 'Poster A', fills: [] });
+    older.appendChild(rect);
+    const newer = makeNode('FRAME', { id: 'f-new', name: 'Poster B', fills: [] });
+
+    const page = makePage('Page 1');
+    page.appendChild(older);
+    page.appendChild(newer);
+    page.selection = [older];
+
+    const s = {
+      variables: [makeVar('v-brand', 'brand/primary', { value: { r: 1, g: 0, b: 0 } })],
+      collections: [makeCollection('coll-1', 'Tokens')],
+      pages: [page],
+    };
+    const { figma, send, lastOf, postedOf } = await loadPlugin(ENTRY, s);
+    figma.currentPage = page;
+    await scanOnce({ send, lastOf, postedOf });   // scans Poster A
+
+    // Freeze the rescan mid-flight, right where it re-resolves its node ids.
+    let release;
+    const held = new Promise((r) => { release = r; });
+    const realGet = figma.getNodeByIdAsync;
+    figma.getNodeByIdAsync = async (id) => { await held; return realGet(id); };
+
+    figma.emit('documentchange');
+    await new Promise((r) => setTimeout(r, DEBOUNCE_GRACE));  // rescan now parked
+
+    // Meanwhile the user picks different artwork and scans it.
+    figma.getNodeByIdAsync = realGet;
+    page.selection = [newer];
+    await send({ type: 'request-scan' });
+    await waitFor(() => lastOf('scan-results').sourceNodes.some((n) => n.id === 'f-new'), {
+      label: 'scan of the new selection',
+    });
+
+    release();                                    // the parked rescan finishes last
+    await new Promise((r) => setTimeout(r, 50));
+
+    await send({ type: 'export-request', format: 'pdf' });
+    await send({ type: 'export-frames' });
+    expect(lastOf('export-data').frameName).toBe('Poster B');
+  });
+});

@@ -42,10 +42,19 @@ describe('tokens-to-ink UI — boot', () => {
     expect(ui.$('#color-body')).toBeTruthy();
   });
 
+  it('opens straight into the results view, never a "select something" state', () => {
+    // The plugin scans on launch, so there is nothing to ask the user for.
+    ui = loadUI(UI);
+    expect(ui.$('#empty-state')).toBeNull();
+    expect(ui.$('#results-ui').style.display).toBe('flex');
+    // ...but nothing is exportable until a scan says what the artwork was.
+    expect(ui.$('#export-picker').style.display).toBe('none');
+  });
+
   it('lets you scan with nothing selected — the whole file is a valid target', () => {
     ui = loadUI(UI);
     ui.receive({ type: 'selection-count', count: 0 });
-    expect(ui.$('#scan-btn').disabled).toBe(false);
+    expect(ui.$('#rescan-btn').disabled).toBe(false);
   });
 
   it('says what the next scan will cover', () => {
@@ -59,6 +68,17 @@ describe('tokens-to-ink UI — boot', () => {
 
     // The DS icon has to survive the relabelling — the parity contract requires it.
     expect(ui.$('#rescan-btn').querySelector('use').getAttribute('href')).toBe('#icon-update');
+  });
+
+  it('names the same target while scanning as the button did', () => {
+    ui = loadUI(UI);
+    ui.receive({ type: 'selection-count', count: 0 });
+    ui.receive({ type: 'scan-started' });
+    expect(ui.$('.progress-msg.progress-scan').textContent).toContain('Scanning file…');
+
+    ui.receive({ type: 'selection-count', count: 2 });
+    ui.receive({ type: 'scan-started' });
+    expect(ui.$('.progress-msg.progress-scan').textContent).toContain('Scanning selection…');
   });
 
   it('does not scan just because the selection changed', async () => {

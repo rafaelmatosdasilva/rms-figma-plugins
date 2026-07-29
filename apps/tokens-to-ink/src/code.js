@@ -105,6 +105,7 @@ async function buildVariableEntry(variable, allVariablesById) {
     vinyl: parseDescTag(desc, "vinyl") || null,
     source: "variable",
     isExternal: !!variable.remote,
+    collectionId: variable.variableCollectionId,
   };
 }
 
@@ -137,10 +138,14 @@ async function _runScan(fromAuto, seq) {
   _scanCancelled = false;
   let selection;
   if (fromAuto) {
-    if (_allVarsMode) return _scanAllVariables(seq);
+    if (_allVarsMode) return _scanAllVariables(seq, true);
     const resolved = await Promise.all(
       _lastScannedIds.map(id => figma.getNodeByIdAsync(id).catch(() => null))
     );
+    // A newer scan may have started during that await and already repointed
+    // _lastScannedIds — writing the stale list back would aim the export at the
+    // artwork the user just navigated away from.
+    if (seq !== _scanSeq) return;
     selection = resolved.filter(n => n && !n.removed);
     _lastScannedIds = selection.map(n => n.id);
     if (selection.length === 0) return;
@@ -149,7 +154,7 @@ async function _runScan(fromAuto, seq) {
     if (selection.length === 0) {
       _lastScannedIds = [];
       _allVarsMode = true;
-      return _scanAllVariables(seq);
+      return _scanAllVariables(seq, false);
     }
     _lastScannedIds = selection.map(n => n.id);
     _allVarsMode = false;
@@ -222,7 +227,13 @@ async function _runScan(fromAuto, seq) {
 // Local variables plus the ones published by subscribed libraries. There is no
 // artwork to export from, so the UI hides the export button for these results.
 
-async function _collectLibraryColorVariables() {
+// Enumerating every library collection and importing each colour variable costs
+// one round trip per variable, so it is held for the session. Document edits
+// reuse it — only an explicit scan goes back to the library.
+let _libColorVarsCache = null;
+
+async function _collectLibraryColorVariables(fromAuto) {
+  if (fromAuto && _libColorVarsCache) return _libColorVarsCache;
   try {
     const collections = await figma.teamLibrary.getAvailableLibraryVariableCollectionsAsync();
     const keys = [];
@@ -235,19 +246,20 @@ async function _collectLibraryColorVariables() {
     const imported = await Promise.all(
       keys.map(k => figma.variables.importVariableByKeyAsync(k).catch(() => null))
     );
-    return imported.filter(v => v && v.resolvedType === "COLOR");
+    _libColorVarsCache = imported.filter(v => v && v.resolvedType === "COLOR");
+    return _libColorVarsCache;
   } catch (_) {
     return []; // no team-library access in this file — local variables still list fine
   }
 }
 
-async function _scanAllVariables(seq) {
+async function _scanAllVariables(seq, fromAuto) {
   const localVariables = await figma.variables.getLocalVariablesAsync();
   const allVariablesById = new Map(localVariables.map(v => [v.id, v]));
   const colorVariables = localVariables.filter(v => v.resolvedType === "COLOR");
   if (_scanCancelled) return;
 
-  for (const v of await _collectLibraryColorVariables()) {
+  for (const v of await _collectLibraryColorVariables(fromAuto)) {
     if (allVariablesById.has(v.id)) continue;
     allVariablesById.set(v.id, v);
     colorVariables.push(v);
@@ -284,26 +296,24 @@ function postScanResults(seq, results, sourceNodes) {
     },
   });
 
-  // Resolve library name per external variable — one teamLibrary fetch, then
-  // one collection lookup per unique collection (grouped to minimise API calls).
+  // Resolve library name per external variable — one teamLibrary fetch, then one
+  // collection lookup per *unique* collection. The collection id rides along on
+  // the entry, so a file-wide list doesn't refetch every variable it just read.
   if (hasExternalVars) {
-    const externalResults = results.filter(r => r.isExternal);
+    const externalResults = results.filter(r => r.isExternal && r.collectionId);
     (async () => {
       try {
         const libCollections = await figma.teamLibrary.getAvailableLibraryVariableCollectionsAsync();
         const collectionToLib = new Map(); // collectionId → libraryName
         const libraries = {};             // varId → libraryName
 
+        for (const collId of new Set(externalResults.map(r => r.collectionId))) {
+          const coll = await figma.variables.getVariableCollectionByIdAsync(collId).catch(() => null);
+          const match = coll ? libCollections.find(lc => lc.key === coll.key) : null;
+          collectionToLib.set(collId, match ? match.libraryName : null);
+        }
         for (const r of externalResults) {
-          const v = await figma.variables.getVariableByIdAsync(r.colorVarId);
-          if (!v) continue;
-          const collId = v.variableCollectionId;
-          if (!collectionToLib.has(collId)) {
-            const coll = await figma.variables.getVariableCollectionByIdAsync(collId);
-            const match = coll ? libCollections.find(lc => lc.key === coll.key) : null;
-            collectionToLib.set(collId, match ? match.libraryName : null);
-          }
-          const libName = collectionToLib.get(collId);
+          const libName = collectionToLib.get(r.collectionId);
           if (libName) libraries[r.colorVarId] = libName;
         }
 

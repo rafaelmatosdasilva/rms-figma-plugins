@@ -17,11 +17,12 @@ import { makeNode, makePage } from './nodes.js';
  *   pages        — array of page nodes (figma.root.children)
  *   variables    — array of local Variable-like objects
  *   collections  — array of local VariableCollection-like objects
- *   remoteVars   — Variable-like objects resolvable by id but not local
- *                  (what getVariableByIdAsync can find for library bindings)
+ *   remoteVars   — Variable-like objects resolvable by id (and by key via
+ *                  importVariableByKeyAsync) but never from getLocalVariablesAsync
  *   remoteColls  — collections for those remote vars
  *   libraryCollections — what teamLibrary reports; omit/empty for the "no linked
  *                  library" path
+ *   libraryVariables — { collectionKey: [LibraryVariable] } listed per collection
  *   clientStorage — seed data, e.g. { 'scan-local': cachedScan }
  *   fileKey      — defaults to undefined, mirroring dev plugins where it's blocked
  *   textStyles / paintStyles / effectStyles — local style lists
@@ -45,6 +46,7 @@ export function makeFigmaMock(scene = {}) {
   };
   pages.forEach(indexNode);
 
+  const imported = [];   // keys passed to importVariableByKeyAsync, in order
   const storage = new Map(Object.entries(scene.clientStorage || {}));
   const posted = [];
   const created = { frames: [], sections: [], pages: [], instances: [] };
@@ -104,7 +106,8 @@ export function makeFigmaMock(scene = {}) {
       return null;
     },
 
-    viewport: { scrollAndZoomIntoView: () => {} },
+    // Record focus targets so tests can assert focus actually navigated.
+    viewport: { scrollAndZoomIntoView: (nodes) => { figma._focused.push(...(nodes || [])); } },
 
     // ── Variables ───────────────────────────────────────────────────────────
     variables: {
@@ -114,6 +117,14 @@ export function makeFigmaMock(scene = {}) {
       async getVariableCollectionByIdAsync(id) { return collById.get(id) || null; },
       getVariableById(id) { return byId.get(id) || null; },
       getVariableCollectionById(id) { return collById.get(id) || null; },
+      // Resolves a library variable into this file. Counted so tests can assert
+      // callers don't re-import on every refresh. Throws on an unknown key, as
+      // the real API does.
+      async importVariableByKeyAsync(key) {
+        imported.push(key);
+        for (const v of byId.values()) if (v.key === key) return v;
+        throw new Error(`No variable found for key ${key}`);
+      },
     },
 
     async getLocalTextStylesAsync() { return scene.textStyles || []; },
@@ -127,9 +138,11 @@ export function makeFigmaMock(scene = {}) {
     },
 
     // Test-only handles (not part of the real API)
+    _focused: [],
     _created: created,
     _storage: storage,
     _nodeById: nodeById,
+    _importedVarKeys: imported,
   };
 
   // teamLibrary is optional: omitting it exercises the "no linked libraries" path,
