@@ -13,9 +13,11 @@
     table-layout: fixed;
   }
 
+  /* Output column takes half the table so the CMYK / Pantone / Vinyl inputs grow
+     with the window — at the 600px default this still resolves to the old 300px. */
   .color-table col:nth-child(1) { width: auto; }
   .color-table col:nth-child(2) { width: 56px; }
-  .color-table col:nth-child(3) { width: 300px; }
+  .color-table col:nth-child(3) { width: 50%; }
 
   .color-table td {
     height: auto;
@@ -274,7 +276,8 @@
   .cmyk-spacer { width: 24px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
   .cmyk-group.cmyk-readonly .cmyk-box-wrap { background: transparent; border-color: var(--input-auto-border); }
   .cmyk-box[readonly], .output-text-input[readonly] { pointer-events: none; opacity: 0.8; }
-  .btn-lib-info { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0; flex-shrink: 0; vertical-align: middle; margin-left: var(--gap-s); }
+  /* Placement only — appearance comes from .tooltipButton in the base. */
+  .lib-info { vertical-align: middle; margin-left: var(--gap-s); }
 
   /* ── Output cell (CMYK + optional outputs stacked) ── */
   .output-cell {
@@ -306,6 +309,16 @@
   .pantone-wrap:focus-within { border-color: var(--pantone-focus); }
   .output-text-input { padding: 0 var(--padding-xs); }
   .pantone-input { padding: 0; }
+
+  /* Stands in for the source chips when the list isn't tied to a selection. */
+  .actionbar-note {
+    font-size: var(--m-size);
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
 
   /* ── Export picker (top-right) ── */
   .export-picker {
@@ -340,8 +353,8 @@
     <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M30.5642 29.9269C30.5388 29.6007 30.7035 29.2882 30.9868 29.1245C31.2701 28.961 31.6223 28.9749 31.8921 29.1597L49.0878 40.9581C49.3611 41.1458 49.5013 41.4752 49.4455 41.802C49.3894 42.129 49.1473 42.3942 48.8268 42.4801L42.9655 44.049L46.307 49.8363C46.5414 50.2427 46.4025 50.7631 45.9963 50.9978L42.6271 52.9417C42.2207 53.1763 41.7005 53.0373 41.4657 52.6309L38.1352 46.8629L33.6613 51.4087C33.4278 51.6456 33.0768 51.7248 32.7643 51.611C32.4516 51.4969 32.2344 51.2102 32.2084 50.8784L30.5642 29.9269ZM33.7565 48.8869L37.7085 44.8755L37.7817 44.8093C37.9605 44.6656 38.1914 44.5996 38.4218 44.629C38.6848 44.6628 38.9169 44.8171 39.0495 45.0468L42.5125 51.0441L44.4094 49.9496L40.9402 43.9406C40.8083 43.7119 40.7896 43.4345 40.8905 43.1906C40.9915 42.9469 41.2005 42.7634 41.4553 42.6948L46.6032 41.3145L32.3983 31.5676L33.7565 48.8869ZM43.779 31.5324V32.5613H41.7792V31.5324H43.779ZM43.7796 27.4216L43.779 29.4773H41.7792L41.7785 27.4216H43.7796ZM28.7785 42.1148L28.7792 44.1153L27.6957 44.1146V42.1148H28.7785ZM25.5288 42.1148V44.1146H23.3619V42.1148H25.5288ZM43.7796 23.3102L43.779 25.3659H41.7792L41.7785 23.3102H43.7796ZM21.1964 42.1148L21.1957 44.1153H19.0288L19.0295 42.1148H21.1964ZM43.779 19.1994V21.2544H41.7792V19.1994H43.779ZM14.9968 42.0388C15.2487 42.0887 15.5103 42.1148 15.7785 42.1148H16.8626L16.8619 44.1153H15.7792C15.3798 44.1153 14.9885 44.0756 14.6094 44.0006L14.8035 43.0208L14.9968 42.0388ZM42.6845 15.1398L43.665 14.945C43.74 15.3241 43.7796 15.7154 43.7796 16.1148L43.779 17.143H41.7792L41.7785 16.1148C41.7785 15.8464 41.7531 15.5844 41.7032 15.3324L42.6845 15.1398ZM11.6208 40.8932L12.4522 40.3367C12.7445 40.7732 13.1212 41.1499 13.5577 41.4422L13.0005 42.2729L12.4453 43.1043C11.7915 42.6666 11.2278 42.1029 10.7901 41.4491L11.6208 40.8932ZM41.1135 11.1257C41.7672 11.5634 42.331 12.1271 42.7687 12.7809L41.9373 13.3361L41.1066 13.8934C40.8143 13.4568 40.4376 13.0801 40.001 12.7878L40.5576 11.9564L41.1135 11.1257ZM11.7789 37.1982V38.1152C11.7789 38.3834 11.8051 38.6451 11.8549 38.8969L10.8736 39.0909L9.89377 39.285C9.81877 38.9059 9.77916 38.5145 9.77914 38.1152V37.1982H11.7789ZM37.7796 10.1148C38.1788 10.1148 38.5704 10.1544 38.9494 10.2294L38.7546 11.2099L38.5613 12.1905C38.3093 12.1407 38.0473 12.1152 37.7789 12.1152H36.8619L36.8626 10.1148H37.7796ZM11.7789 33.5315L11.7796 35.3648L9.77914 35.3655V33.5315H11.7789ZM35.0292 10.1154V12.1152L33.1958 12.1145V10.1148L35.0292 10.1154ZM11.7789 29.8647V31.6974H9.77914V29.8647H11.7789ZM31.3618 10.1148V12.1145H29.5291V10.1148H31.3618ZM11.7789 26.198V28.032H9.77914V26.198H11.7789ZM27.6964 10.1148L27.6957 12.1152L25.8624 12.1145V10.1148H27.6964ZM11.7796 22.5319L11.7789 24.3653H9.77914L9.77845 22.5319H11.7796ZM24.029 10.1154V12.1152H22.1963L22.1956 10.1148L24.029 10.1154ZM11.7789 18.8645L11.7796 20.6979H9.77845L9.77914 18.8645H11.7789ZM20.3616 10.1148L20.3623 12.1152L18.5289 12.1145V10.1148H20.3616ZM10.8736 15.1391L11.8556 15.3324C11.8057 15.5844 11.7789 15.8464 11.7789 16.1148V17.0318H9.77914V16.1148C9.77914 15.7154 9.81876 15.3242 9.89377 14.945L10.8736 15.1391ZM14.6094 10.2294C14.9885 10.1544 15.3798 10.1148 15.7792 10.1148H16.6962V12.1145H15.7792C15.5108 12.1145 15.2488 12.1413 14.9968 12.1912L14.8035 11.2093L14.6094 10.2294ZM10.7901 12.7809C11.2278 12.1271 11.7915 11.5634 12.4453 11.1257L13.0005 11.9571L13.5577 12.7878C13.1211 13.0801 12.7445 13.4567 12.4522 13.8934L11.6208 13.3368L10.7901 12.7809Z" fill="currentColor"/>
     </svg>
-    <p>Select a frame, component set, or instance to start scanning.</p>
-    <button id="scan-btn" class="buttonPrimary" disabled>Start scanning</button>
+    <p>Reading the colors in this file…</p>
+    <button id="scan-btn" class="buttonPrimary">Start scanning</button>
   </div>
 </div>
 
@@ -360,15 +373,19 @@
         <button class="overflowList" id="export-tiff-btn">TIFF CMYK 300 DPI</button>
       </div>
     </div>
-    <button id="rescan-btn" class="buttonPrimary buttonRescan" data-tip="Refresh scan">
-      <svg width="16" height="16"><use href="#icon-update"/></svg>
+    <!-- Label swaps with the selection — see the selection-count handler. -->
+    <button id="rescan-btn" class="buttonPrimary">
+      <svg width="16" height="16"><use href="#icon-update"/></svg><span id="rescan-label">Scan file</span>
     </button>
   </div>
   <div class="dividerLine"></div>
   <div id="no-colors-state" class="empty-state" style="display:none;">
     <div class="empty-state-content">
-      <svg width="32" height="32"><use href="#icon-image"/></svg>
-      <p>No colors found<br>in this selection.</p>
+      <svg width="56" height="56"><use href="#icon-empty-colors"/></svg>
+      <div class="empty-state-text">
+        <p class="empty-state-title">No color variables found</p>
+        <p class="empty-state-desc">The current selection has no bound color variables.</p>
+      </div>
     </div>
   </div>
   <div class="scroll-area">
@@ -525,11 +542,6 @@
     }
   }, true); // capture phase — fires before browser default
 
-  function showEmpty() {
-    document.getElementById("empty-state").style.display = "";
-    if (window._notifyResize) window._notifyResize();
-    document.getElementById("results-ui").style.display = "none";
-  }
   function showResults() {
     document.getElementById("empty-state").style.display = "none";
     document.getElementById("results-ui").style.display = "flex";
@@ -541,8 +553,10 @@
   let _scanCancelled = false;
 
   function _setScanBusy(busy) {
-    const btn = document.getElementById('scan-btn');
-    if (btn) btn.disabled = busy || (window._selectionCount === 0);
+    ['scan-btn', 'rescan-btn'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) btn.disabled = busy;
+    });
   }
 
   function _startScanToastTimer() {
@@ -1900,7 +1914,7 @@
 
     if (msg.type === "external-vars-resolved") {
       Object.entries(msg.libraries).forEach(([varId, libName]) => {
-        const btn = document.querySelector(`.btn-lib-info[data-color-var-id="${varId}"]`);
+        const btn = document.querySelector(`.lib-info[data-color-var-id="${varId}"]`);
         if (btn) {
           btn.dataset.libName = libName;
           btn.dataset.tip = `Read-only because it comes from an external library. Edit it in ${libName}.`;
@@ -1920,17 +1934,16 @@
     }
 
     if (msg.type === "selection-count") {
-      const btn = document.getElementById("scan-btn");
-      btn.disabled = msg.count === 0;
       window._selectionCount = msg.count;
+      // Scanning is manual, so the button has to say what the next click will do.
+      document.getElementById("rescan-label").textContent =
+        msg.count > 0 ? 'Scan selection' : 'Scan file';
       return;
     }
-    if (msg.type === "selection-empty") { _clearScanToastTimer(); showEmpty(); return; }
 
-    if (msg.type === "debug") {
-      document.getElementById("error-container").innerHTML=`<div class="error-msg" style="font-size:10px;word-break:break-all">DEBUG: ${JSON.stringify(msg.payload)}</div>`;
-      return;
-    }
+    // code.js kicked off a scan on its own (launch or selection change).
+    if (msg.type === "scan-started") { _startScanToastTimer(); return; }
+
 
     if (msg.type === "error") {
       _clearScanToastTimer();
@@ -1954,8 +1967,9 @@
 
       // Always update source chips regardless of result count
       const chipsEl = document.getElementById('source-chips');
+      const hasSource = !!(msg.sourceNodes && msg.sourceNodes.length > 0);
 
-      if (msg.sourceNodes && msg.sourceNodes.length > 0) {
+      if (hasSource) {
         window._sourceNodeCount = msg.sourceNodes.length;
         chipsEl.innerHTML = msg.sourceNodes.map(n =>
           `<button class="buttonTertiary source-focus-btn" data-node-id="${n.id}" data-tip="Focus in canvas"><span>${n.name}</span>${focusIcon}</button>`
@@ -1967,7 +1981,7 @@
         });
       } else {
         window._sourceNodeCount = 0;
-        chipsEl.innerHTML = '';
+        chipsEl.innerHTML = '<span class="actionbar-note">All color variables in this file</span>';
       }
 
       // Don't rebuild table while user is actively editing a field
@@ -1978,16 +1992,28 @@
         ae.classList.contains("pantone-input")
       )) return;
 
-      if (msg.data.length === 0) {
+      const rows = Array.isArray(msg.data) ? msg.data : [];
+      // Plain "raw" colors are skipped by the render loop below, so a selection whose
+      // only colors are raw (no color variables) renders nothing. Treat that as empty —
+      // otherwise the table is blank while the export button lingers with nothing to export.
+      const renderable = rows.filter(r => r && r.source !== "raw");
+      if (renderable.length === 0) {
         document.getElementById("color-body").innerHTML = '';
+        document.querySelector('#no-colors-state .empty-state-desc').textContent = hasSource
+          ? 'The current selection has no bound color variables.'
+          : 'This file has no color variables to pair with print values.';
         document.getElementById("no-colors-state").style.display = 'flex';
         document.querySelector('.scroll-area').style.display = 'none';
+        // Nothing to export → hide the export button; keep rescan so they can refresh.
+        document.getElementById("export-picker").style.display = 'none';
         setTimeout(() => { if (window._notifyResize) window._notifyResize(); }, 50);
         return;
       }
 
       document.getElementById("no-colors-state").style.display = 'none';
       document.querySelector('.scroll-area').style.display = '';
+      // Without a selection there is no artwork to export — the list is reference only.
+      document.getElementById("export-picker").style.display = hasSource ? '' : 'none';
 
       // Store scan data for reference
       window._lastScanData = msg.data;
@@ -2055,7 +2081,6 @@
         const readOnly = !!r.isExternal;
         const groupClass = readOnly ? 'cmyk-group cmyk-auto cmyk-readonly' : (isSystem ? 'cmyk-group' : 'cmyk-group cmyk-auto');
         const infoIcon = `<svg width="12" height="12"><use href="#icon-info"/></svg>`;
-        const extIcon = `<svg width="10" height="10"><use href="#icon-external"/></svg>`;
         const cmykUnpairBtn = readOnly
           ? `<span class="cmyk-spacer"></span>`
           : (isSystem
@@ -2116,7 +2141,7 @@
         const cmykCell = `<div class="output-cell"${readOnly ? ' data-readonly="1"' : ''}>${cmykRow}${extraRows}${addBtn ? `<div class="output-row output-add-row">${addBtn}</div>` : ''}</div>`;
 
         const infoBtn = readOnly
-          ? `<button class="buttonQuaternary buttonUnpair btn-lib-info" data-color-var-id="${r.colorVarId || ''}" data-lib-name="" data-tip="Read-only because it comes from an external library.">${infoIcon}</button>`
+          ? `<span class="tooltipButton lib-info" data-color-var-id="${r.colorVarId || ''}" data-lib-name="" data-tip="Read-only because it comes from an external library.">${infoIcon}</span>`
           : '';
 
         html += `<tr>

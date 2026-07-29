@@ -1,5 +1,6 @@
 // Tokens to Ink
-// Auto-scans on selection change. Exports as vector PDF or 300 DPI CMYK TIFF.
+// Scans on launch, then only when asked. With nothing selected it lists every
+// colour variable the file can use. Exports as vector PDF or 300 DPI CMYK TIFF.
 // Output values (CMYK, Pantone, RAL, Vinyl) are stored as tags in the origin
 // color variable's description field, e.g.: [cmyk:0,100,100,0] [pantone:485 C]
 
@@ -24,9 +25,13 @@ function notifySelectionCount() {
 
 (async () => {
   await figma.loadAllPagesAsync();
+  // Selecting something only relabels the scan button — scanning stays a
+  // deliberate click, so a stray selection never throws away the current results.
   figma.on("selectionchange", notifySelectionCount);
   figma.on("documentchange", scheduleRescan);
   notifySelectionCount();
+  figma.ui.postMessage({ type: "scan-started" });
+  runScan();
 })();
 
 // ─── Variable value helpers ─────────────────────────────────────────
@@ -73,6 +78,36 @@ async function buildColorLookup(colorVariables, allVariablesById) {
   return lookup;
 }
 
+// ─── Result row for one colour variable ──────────────────────────────
+
+async function buildVariableEntry(variable, allVariablesById) {
+  const colorValue = await resolveColorValue(variable, allVariablesById);
+  if (!colorValue) return null;
+
+  const hex = rgbToHex(colorValue.r, colorValue.g, colorValue.b);
+  const desc = variable.description || "";
+  const cmykStr = parseDescTag(desc, "cmyk");
+  const manualCmyk = cmykStr ? parseCmykString(cmykStr) : null;
+
+  return {
+    name: variable.name,
+    hex,
+    rgb: {
+      r: Math.round(colorValue.r * 255),
+      g: Math.round(colorValue.g * 255),
+      b: Math.round(colorValue.b * 255),
+    },
+    cmyk: manualCmyk || rgbToCmyk(colorValue.r, colorValue.g, colorValue.b),
+    hasCmykVariable: !!manualCmyk,
+    colorVarId: variable.id,
+    pantone: parseDescTag(desc, "pantone") || null,
+    ral: parseDescTag(desc, "ral") || null,
+    vinyl: parseDescTag(desc, "vinyl") || null,
+    source: "variable",
+    isExternal: !!variable.remote,
+  };
+}
+
 // ─── Node helpers ────────────────────────────────────────────────────
 
 function getPageForNode(node) {
@@ -84,17 +119,25 @@ function getPageForNode(node) {
 // ─── Scan current selection ──────────────────────────────────────────
 
 let _lastScannedIds = [];
+let _allVarsMode = false;   // nothing selected — listing every available colour variable
+
+// Scans overlap — the launch scan can still be in flight when a rescan or an
+// edit-triggered refresh starts another. Only the newest one is allowed to report.
+let _scanSeq = 0;
 
 async function runScan(fromAuto) {
-  try { return await _runScan(fromAuto); } catch (err) {
+  const seq = ++_scanSeq;
+  try { return await _runScan(fromAuto, seq); } catch (err) {
+    if (seq !== _scanSeq) return;
     figma.ui.postMessage({ type: "error", message: "Scan error: " + err.message });
   }
 }
 
-async function _runScan(fromAuto) {
+async function _runScan(fromAuto, seq) {
   _scanCancelled = false;
   let selection;
   if (fromAuto) {
+    if (_allVarsMode) return _scanAllVariables(seq);
     const resolved = await Promise.all(
       _lastScannedIds.map(id => figma.getNodeByIdAsync(id).catch(() => null))
     );
@@ -105,10 +148,11 @@ async function _runScan(fromAuto) {
     selection = Array.from(figma.currentPage.selection);
     if (selection.length === 0) {
       _lastScannedIds = [];
-      figma.ui.postMessage({ type: "selection-empty" });
-      return;
+      _allVarsMode = true;
+      return _scanAllVariables(seq);
     }
     _lastScannedIds = selection.map(n => n.id);
+    _allVarsMode = false;
   }
   if (_scanCancelled) return;
 
@@ -161,31 +205,7 @@ async function _runScan(fromAuto) {
 
     if (!allVariablesById.has(variable.id)) allVariablesById.set(variable.id, variable);
 
-    const colorValue = await resolveColorValue(variable, allVariablesById);
-    if (!colorValue) return null;
-
-    const hex = rgbToHex(colorValue.r, colorValue.g, colorValue.b);
-    const desc = variable.description || "";
-    const cmykStr = parseDescTag(desc, "cmyk");
-    const manualCmyk = cmykStr ? parseCmykString(cmykStr) : null;
-
-    return {
-      name: variable.name,
-      hex,
-      rgb: {
-        r: Math.round(colorValue.r * 255),
-        g: Math.round(colorValue.g * 255),
-        b: Math.round(colorValue.b * 255),
-      },
-      cmyk: manualCmyk || rgbToCmyk(colorValue.r, colorValue.g, colorValue.b),
-      hasCmykVariable: !!manualCmyk,
-      colorVarId: variable.id,
-      pantone: parseDescTag(desc, "pantone") || null,
-      ral: parseDescTag(desc, "ral") || null,
-      vinyl: parseDescTag(desc, "vinyl") || null,
-      source: "variable",
-      isExternal: !!variable.remote,
-    };
+    return buildVariableEntry(variable, allVariablesById);
   }));
 
   const results = resolved.filter(Boolean);
@@ -195,12 +215,67 @@ async function _runScan(fromAuto) {
     return a.name.localeCompare(b.name);
   });
 
+  postScanResults(seq, results, selection.map(n => ({ id: n.id, name: n.name })));
+}
+
+// ─── Scan every colour variable the file can use (nothing selected) ──
+// Local variables plus the ones published by subscribed libraries. There is no
+// artwork to export from, so the UI hides the export button for these results.
+
+async function _collectLibraryColorVariables() {
+  try {
+    const collections = await figma.teamLibrary.getAvailableLibraryVariableCollectionsAsync();
+    const keys = [];
+    for (const coll of collections) {
+      if (_scanCancelled) return [];
+      const libVars = await figma.teamLibrary.getVariablesInLibraryCollectionAsync(coll.key);
+      for (const lv of libVars) if (lv.resolvedType === "COLOR") keys.push(lv.key);
+    }
+    if (_scanCancelled) return [];
+    const imported = await Promise.all(
+      keys.map(k => figma.variables.importVariableByKeyAsync(k).catch(() => null))
+    );
+    return imported.filter(v => v && v.resolvedType === "COLOR");
+  } catch (_) {
+    return []; // no team-library access in this file — local variables still list fine
+  }
+}
+
+async function _scanAllVariables(seq) {
+  const localVariables = await figma.variables.getLocalVariablesAsync();
+  const allVariablesById = new Map(localVariables.map(v => [v.id, v]));
+  const colorVariables = localVariables.filter(v => v.resolvedType === "COLOR");
+  if (_scanCancelled) return;
+
+  for (const v of await _collectLibraryColorVariables()) {
+    if (allVariablesById.has(v.id)) continue;
+    allVariablesById.set(v.id, v);
+    colorVariables.push(v);
+  }
+  if (_scanCancelled) return;
+
+  const resolved = await Promise.all(
+    colorVariables.map(v => buildVariableEntry(v, allVariablesById))
+  );
+  if (_scanCancelled) return;
+
+  const results = resolved.filter(Boolean);
+  results.sort((a, b) => a.name.localeCompare(b.name));
+
+  postScanResults(seq, results, []);
+}
+
+// ─── Publish results + resolve external library names ────────────────
+
+function postScanResults(seq, results, sourceNodes) {
+  if (seq !== _scanSeq) return; // a newer scan has already taken over
+
   const hasExternalVars = results.some(r => r.source === "variable" && r.isExternal);
 
   figma.ui.postMessage({
     type: "scan-results",
     data: results,
-    sourceNodes: selection.map(n => ({ id: n.id, name: n.name })),
+    sourceNodes,
     hasExternalVars,
     externalLibrary: null,
     summary: {
@@ -243,7 +318,7 @@ async function _runScan(fromAuto) {
 let _autoScanTimer = null;
 
 function scheduleRescan() {
-  if (_lastScannedIds.length === 0) return;
+  if (_lastScannedIds.length === 0 && !_allVarsMode) return;
   if (_autoScanTimer) clearTimeout(_autoScanTimer);
   _autoScanTimer = setTimeout(() => {
     _autoScanTimer = null;
