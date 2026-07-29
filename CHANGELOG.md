@@ -32,12 +32,35 @@ Published to Figma Community.
   than being dimmed along with the node.
 - Disabled label and icon colours corrected against the DS.
 
+Landed since publishing, and going out with the next Community release:
+- Place affected components on canvas. From a token, one action drops live
+  instances of every component it affects into a named, transparent Section on a
+  plugin-owned "Impact Atlas Previews" page, so nothing lands on top of your work
+  and no colour is added to your document. The Section is titled with the token and
+  timestamp; repeat placements sit side by side. Because they're instances, editing
+  the token updates them in place.
+- Library components are included too: when a token affects a component from an
+  external library, its live instance appears on the board alongside the rest.
+  Library components are marked with a small library icon (no canvas focus, since
+  their master lives in another file).
+
 ### v4 — 17 July 2026
 Published to Figma Community.
 
 ---
 
 ## Tokens to Ink
+
+### Unreleased
+- The plugin scans as soon as it opens. With nothing selected it lists every
+  colour variable the file can use (local and library), so you can pair print
+  values without picking artwork first. There's no export button in that state,
+  since there's nothing to export.
+- Scanning after that stays manual, and the scan button now names its target
+  next to its icon: "Scan selection" when something is selected, "Scan file"
+  otherwise.
+- The output column now grows with the window, so long Pantone and vinyl names
+  stay readable instead of being cut off.
 
 ### v4 — 17 July 2026
 Published to Figma Community. Later shared design-system work landed here without
