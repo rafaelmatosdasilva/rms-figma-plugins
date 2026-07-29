@@ -11,9 +11,14 @@
     "build:impact-atlas": "pnpm --filter @rms/impact-atlas build",
     "release": "node scripts/release.mjs",
     "check": "node scripts/check-manifests.mjs",
-    "package": "node scripts/package-plugin.mjs"
+    "package": "node scripts/package-plugin.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
-    "esbuild": "^0.21.0"
+    "@rms/test-utils": "workspace:*",
+    "esbuild": "^0.21.0",
+    "jsdom": "^30.0.0",
+    "vitest": "^2.1.0"
   }
 }

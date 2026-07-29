@@ -16,6 +16,13 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+
+      # Regression tests: each plugin backend runs against a mocked `figma` and is
+      # driven through its real message handlers. Runs before the build so a broken
+      # behaviour fails fast, on every push and pull request.
+      - name: Run tests
+        run: pnpm test
+
       - run: pnpm build
       # Fail if the committed build output is stale — i.e. someone changed a
       # source file but committed without rebuilding. Keeps the sideloadable
