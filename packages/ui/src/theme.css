@@ -157,6 +157,7 @@
     --tooltip-background:     var(--neutral-1000);   /* tooltip/background/color N1000 — same primitive both modes */
     --tooltip-border: var(--neutral-800);    /* tooltip/border/color N800 — same primitive both modes */
     --tooltip-text:   var(--neutral-300);    /* tooltip/text/color N300 — same primitive both modes */
+    --tooltipButton-icon: var(--neutral-300); /* tooltipButton/icon/color → primitives/Neutral 300 (L #404040, D #b8b8b8) */
     --hex-sub-color: var(--neutral-300); /* input/value/empty secondary: N3 both modes */
     /* Overflow container */
     --overflow-background: var(--neutral-1000); /* overflow/background/color L=N1000, D→override */
@@ -458,6 +459,26 @@
     line-height: 1.5;
     color: var(--emptyState-title); /* emptyState/title/color */
   }
+  /* DS EmptyState (node 1431:21215): Icon + Text(title/s-gap/description).
+     Title = m (emptyState/title/color); description = s (neutral-300 via text-secondary),
+     max-width 200. Wrap the two in .empty-state-text so gap/s sits between them while the
+     icon keeps its gap/xl from the group. */
+  .empty-state-text {
+    display: flex; flex-direction: column; align-items: center;
+    gap: var(--gap-s); /* gap/s = 4px */
+  }
+  .empty-state-content .empty-state-title {
+    max-width: 200px; margin: 0 auto;
+    font-size: var(--m-size); font-weight: var(--m-weight); line-height: var(--m-lh);
+    color: var(--emptyState-title); /* emptyState/title/color */
+  }
+  .empty-state-content .empty-state-desc {
+    max-width: 200px; margin: 0 auto;
+    font-size: var(--s-size); font-weight: var(--s-weight); line-height: var(--s-lh);
+    color: var(--text-secondary); /* neutral-300 — emptyState description */
+  }
+  /* DS Content group: icon → text sit gap/s (4px) apart, not the generic gap/xl. */
+  .empty-state-content > svg + .empty-state-text { margin-top: var(--gap-s); }
 
   /* ── Scroll area ── */
   .scroll-area { overflow-y: auto; overflow-x: hidden; min-height: 0; margin: 0 calc(-1 * var(--padding-l)); padding-right: 12px; }
@@ -564,6 +585,28 @@
 
   /* ── Ghost action button (buttonQuaternary DS component) ── */
   /* h=24, padding 0 4px, no default bg/border. Hover: ::before pill fills N1000. */
+  /* ── Tooltip button (DS component tooltipButton, node 1810:27212) ──
+     The unified info/help trigger across every plugin. A 24×24 box holding a
+     12×12 DS icon; it only carries a `data-tip`, so it is not pressable and
+     borrows no button hover/active states. The icon inside varies by feature
+     (DS annotation: "Icon can change depending on the feature") — e.g. info in
+     Font Scaling Lab, library in Impact Atlas — so the wrapper is unified, not
+     the glyph. Replaces the former per-plugin .infoBadge / .clipped-info
+     triggers. Placement stays with the consuming layout. */
+  .tooltipButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px; height: 24px;
+    flex-shrink: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: default;
+    color: var(--tooltipButton-icon);
+  }
+  .tooltipButton svg { color: var(--tooltipButton-icon); display: block; }
+
   .buttonQuaternary {
     display: inline-flex;
     align-items: center;
@@ -636,7 +679,10 @@
     display: inline-flex;
     align-items: center;
     gap: var(--gap-s);
-    padding: 6px var(--padding-s);
+    /* DS buttonPrimary is h=24 (structure-contract). Text-only buttons already
+       landed there via padding; the explicit height keeps icon+label ones honest. */
+    height: var(--min-height);
+    padding: 0 var(--padding-s);
     font-size: var(--m-size);
     color: var(--buttonPrimary-text);
     cursor: pointer;
@@ -650,6 +696,7 @@
     transition: background 0.15s ease, color 0.15s ease;
   }
   .buttonPrimary:hover { opacity: 0.85; }
+  .buttonPrimary svg { display: block; flex-shrink: 0; }
   /* ── Action bar (rescan + source chips + actions) ── */
   .actionbar {
     flex-shrink: 0;
@@ -1061,13 +1108,23 @@
 
   .dividerSection {
     display: flex; align-items: center; gap: var(--gap-s);  /* gap/s = 4px */
-    padding: var(--padding-xl) 0 var(--padding-xs); /* 24px top, 4px bottom (DS 135:46577, was xxs); horizontal from parent container */
+    padding: var(--padding-l) 0 var(--padding-xs); /* DS 135:46577 — top l(16), bottom xs(4); horizontal from parent */
     font-size: var(--s-size); font-weight: var(--s-weight); line-height: var(--s-lh);
     color: var(--dividerSection-title); /* dividerSection/title/color */
     flex-shrink: 0;
     position: sticky; top: 0; z-index: 2;
     background: var(--bg);
   }
+  /* Content — the label group (dot + title + count). Its own xs vertical padding
+     keeps the text's rhythm independent of an optional action button beside it
+     (DS 135:46577: dividerSection padding l/xs wraps Content padding xs/xs). */
+  .dividerSection-content {
+    display: flex; align-items: center; gap: var(--gap-s);
+    padding: var(--padding-xs) 0;
+    min-width: 0;
+  }
+  /* Optional trailing action — the DS "show button" slot (a buttonSecondary). */
+  .dividerSection-action { margin-left: auto; flex-shrink: 0; }
   .dividerSection .count {
     letter-spacing: normal;
     text-transform: none;
