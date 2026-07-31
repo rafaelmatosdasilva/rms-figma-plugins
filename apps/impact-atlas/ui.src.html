@@ -671,16 +671,8 @@ body.browser-empty .right-panel {
 /* ─── External var detail (library) ────────────────────────────────────── */
 
 
-.detail-header {
-  padding: var(--padding-s) var(--padding-m);
-  border-bottom: var(--thickness) solid var(--divider);
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: var(--gap-m);
-  min-height: 36px;
-}
-
+/* layout-only: let the DS title group fill the bar so the name can ellipsis */
+.statusBar-title:has(.detail-var-name) { flex: 1; }
 .detail-var-name {
   flex: 1;
   min-width: 0;
@@ -1310,9 +1302,11 @@ body.browser-empty .right-panel {
 
       <!-- Library variable detail (remote var selected) -->
       <div id="right-library" class="hidden" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
-        <div class="detail-header">
-          <div class="var-type-icon" id="lib-detail-type"></div>
-          <span class="detail-var-name" id="lib-detail-name"></span>
+        <div class="statusBar">
+          <div class="statusBar-title">
+            <div class="var-type-icon" id="lib-detail-type"></div>
+            <span class="detail-var-name" id="lib-detail-name"></span>
+          </div>
         </div>
         <div style="padding:var(--padding-xs) var(--padding-m) var(--padding-s);font-size:var(--s-size);color:var(--text-muted);flex-shrink:0;border-bottom:var(--thickness) solid var(--divider);" id="lib-detail-coll"></div>
         <div class="section-label">Referenced by</div>

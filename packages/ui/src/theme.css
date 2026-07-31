@@ -1250,6 +1250,10 @@
     align-items: center;
     padding: 0 var(--padding-l);
     gap: var(--gap-m);
+    /* DS 789:38384 binds strokes to dividerLine/border with strokeBottomWeight 1.5
+       and strokeAlign INSIDE — a bottom rule only, inside the 56px. */
+    border-bottom: var(--thickness) solid var(--border);
+    flex-shrink: 0; /* fixed-height DS component — must not compress in a flex column */
   }
   /* DS Title group: type icon ↔ label, gap/s */
   .statusBar-title {
