@@ -57,6 +57,15 @@ Landed since publishing, and going out with the next Community release:
 - The action bar now uses its own design-system colours and gains a bottom rule,
   matching the design system. It had been borrowing the colour of Figma's own
   plugin titlebar, which has since diverged.
+- The header of the library detail panel is now the design system's status bar,
+  the same component the main status bar already used. It was a hand-built
+  near-copy at its own size, so it is taller now and its divider is the right
+  colour.
+- Spacing throughout was snapped onto the design system's scale. A lot of it had
+  been typed as loose numbers — 6px, 10px, 7px — that exist nowhere in the system,
+  so gaps and paddings now line up with the rest of the plugin.
+- The level and priority dots take their size from a new design-system value
+  instead of a fixed one, so they follow the system if it changes.
 
 ### v4 — 17 July 2026
 Published to Figma Community.
@@ -79,6 +88,8 @@ Published to Figma Community.
   the panel, and an error toast stays up longer than a confirmation.
 - Dark mode colours updated against the design system — the greys shifted slightly
   across the whole ramp, so panels, borders and text all move together.
+- Spacing snapped onto the design system's scale, replacing loose numbers that
+  matched nothing in the system.
 
 ### v4 — 17 July 2026
 Published to Figma Community. Later shared design-system work landed here without
@@ -102,6 +113,10 @@ Landed since publishing, and going out with the next Community release:
   across the whole ramp, so panels, borders and text all move together.
 - The scale field's border was too dim in dark mode and slightly too thin, and its
   focus ring used a text colour instead of the design system's focus colour.
+- Spacing throughout the issue list and details panel snapped onto the design
+  system's scale, replacing loose numbers that matched nothing in the system.
+- Loading spinners are a pixel larger, matching the size of the design system's
+  spinner rather than the shape drawn inside it.
 
 ### v5.2 — 22 July 2026
 Repo only — not republished to the Community.
