@@ -39,7 +39,7 @@
 .left-panel {
   flex: 1;
   min-width: 120px;
-  border-right: 1px solid var(--divider);
+  border-right: var(--thickness) solid var(--divider);
   background: var(--bg);
   position: relative;
   z-index: 5;
@@ -385,7 +385,7 @@ body.browser-empty .right-panel {
   flex-direction: column;
   align-items: center;
   gap: 0;
-  padding: 6px 16px 18px;
+  padding: var(--padding-s) var(--padding-l) var(--padding-l);
   overflow-y: auto;
   overflow-x: hidden;
   box-sizing: border-box;
@@ -698,7 +698,7 @@ body.browser-empty .right-panel {
 .ref-var-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--gap-m);
   padding: var(--padding-xs) var(--padding-m);
   min-height: 28px;
 }
@@ -755,8 +755,8 @@ body.browser-empty .right-panel {
 }
 
 .sb-divider {
-  width: 1px;
-  height: 16px;
+  width: var(--thickness);
+  height: var(--gap-xl);
   background: var(--divider);
   flex-shrink: 0;
 }
@@ -850,10 +850,10 @@ body.browser-empty .right-panel {
 
 
 /* ─── Canvas scan ───────────────────────────────────────────────────────── */
-#canvas-scan-btn { flex-shrink: 0; display: flex; align-items: center; gap: 6px; }
+#canvas-scan-btn { flex-shrink: 0; display: flex; align-items: center; gap: var(--gap-m); }
 #canvas-scan-btn.scanning { opacity: 0.6; pointer-events: none; }
 .scan-status-label { font-size: var(--m-size); color: var(--text-muted); white-space: nowrap; font-weight: var(--m-weight); }
-.scan-status-change { height: var(--button-min-height); padding: 0 9px; font-size: var(--m-size); flex-shrink: 0; }
+.scan-status-change { height: var(--button-min-height); padding: 0 var(--padding-s); font-size: var(--m-size); flex-shrink: 0; }
 .scan-status-change.icon-only { padding: 0 var(--padding-xs); display: inline-flex; align-items: center; justify-content: center; }
 
 #canvas-scan-bar {

@@ -817,7 +817,7 @@
   /* Feedback toasts — bottom-center, no overlay */
   #toast-container:not(:empty) {
     position: fixed; bottom: var(--padding-xl); left: 50%; transform: translateX(-50%); z-index: 9998;
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    display: flex; flex-direction: column; align-items: center; gap: var(--gap-m);
     pointer-events: none;
     white-space: nowrap;
   }
@@ -1047,7 +1047,7 @@
     width: 100%;
     text-align: left;
     background: transparent;
-    border-bottom: 1px solid var(--border); /* border-bottom only — items stack touching */
+    border-bottom: var(--thickness) solid var(--border); /* border-bottom only — items stack touching */
     padding: 0 var(--padding-xs);           /* padding/xs LR — icon+text inset */
     height: 40px;
     flex-shrink: 0; /* DS buttonList is a fixed 40px (hug) — must never compress in a constrained flex list */
@@ -1228,7 +1228,7 @@
   /* ── Spinner ── */
   .toast-spinner {
     width: 13px; height: 13px;
-    border: 1.6px solid currentColor;
+    border: var(--thickness) solid currentColor; /* general/thickness */
     border-top-color: transparent;
     border-radius: 50%;
     opacity: 0.7;
@@ -1280,7 +1280,7 @@
   ::-webkit-scrollbar-corner { background: transparent; }
   ::-webkit-scrollbar-thumb {
     background: var(--scrollbar-thumb);
-    border-radius: 99px;
+    border-radius: var(--radius-full); /* radii/button pill */
     border: 2px solid transparent;
     background-clip: content-box;
   }
@@ -1326,7 +1326,7 @@
 
   .sidePanelHeader {
     display: flex; align-items: flex-start; gap: var(--gap-m);
-    padding: 10px var(--padding-l);
+    padding: var(--padding-s) var(--padding-l);
     flex-shrink: 0;
     background: var(--bg);
   }
