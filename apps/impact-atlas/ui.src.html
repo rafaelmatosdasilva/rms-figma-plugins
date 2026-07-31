@@ -86,7 +86,10 @@
 .search-input {
   width: 100%;
   height: var(--button-min-height);
-  padding: 0 10px 0 28px;
+  /* Left inset clears the absolutely-positioned search icon: its own padding/s offset
+     + the 16px DS icon box + gap/s. Composed from tokens rather than the old flat 28px
+     so it tracks the DS if any of the three change. */
+  padding: 0 var(--padding-s) 0 calc(var(--padding-s) + 16px + var(--gap-s));
   background: var(--input-background);
   /* input/border/default — NOT --border (dividerLine). The two are the same N700 in
      light but one ramp step apart in dark (#454545 vs #303030), so a divider token
@@ -223,7 +226,7 @@
   align-items: center;
   justify-content: center;
   flex: 1;
-  gap: 10px;
+  gap: var(--gap-m);
   color: var(--text-muted);
 }
 
@@ -601,7 +604,7 @@ body.browser-empty .right-panel {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: var(--gap-m);
   color: var(--text-muted);
   padding: var(--padding-xl) var(--padding-m);
   text-align: center;
@@ -652,7 +655,7 @@ body.browser-empty .right-panel {
   background: var(--text);
   color: var(--surface);
   border-radius: var(--radius-full);
-  padding: 1px 6px;
+  padding: var(--padding-xxs) var(--padding-s);
   flex-shrink: 0;
 }
 
@@ -696,7 +699,7 @@ body.browser-empty .right-panel {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 12px;
+  padding: var(--padding-xs) var(--padding-m);
   min-height: 28px;
 }
 .ref-var-row:hover { background: var(--bg-secondary); }
@@ -810,7 +813,7 @@ body.browser-empty .right-panel {
   background: var(--bg-secondary);
   border: var(--thickness) solid var(--border);
   border-radius: var(--radius-full);
-  padding: 1px 6px;
+  padding: var(--padding-xxs) var(--padding-s);
 
   min-width: 18px;
   text-align: center;
@@ -822,7 +825,7 @@ body.browser-empty .right-panel {
 /* Library/remote component marker — explicit element placed before the name */
 .comp-library-tag {
   flex-shrink: 0;
-  margin-right: 6px;
+  margin-right: var(--gap-s);
   font-size: var(--s-size);
   font-weight: var(--m-weight);
   letter-spacing: 0.04em;
@@ -854,7 +857,7 @@ body.browser-empty .right-panel {
 .scan-status-change.icon-only { padding: 0 var(--padding-xs); display: inline-flex; align-items: center; justify-content: center; }
 
 #canvas-scan-bar {
-  padding: 5px 12px;
+  padding: var(--padding-xs) var(--padding-m);
   display: flex;
   align-items: center;
   gap: var(--gap-m);
@@ -1310,7 +1313,7 @@ body.browser-empty .right-panel {
           <div class="var-type-icon" id="lib-detail-type"></div>
           <span class="detail-var-name" id="lib-detail-name"></span>
         </div>
-        <div style="padding:4px 12px 6px;font-size:var(--s-size);color:var(--text-muted);flex-shrink:0;border-bottom:1px solid var(--divider);" id="lib-detail-coll"></div>
+        <div style="padding:var(--padding-xs) var(--padding-m) var(--padding-s);font-size:var(--s-size);color:var(--text-muted);flex-shrink:0;border-bottom:var(--thickness) solid var(--divider);" id="lib-detail-coll"></div>
         <div class="section-label">Referenced by</div>
         <div id="lib-ref-list" style="flex:1;overflow-y:auto;"></div>
         <div id="lib-ref-empty" class="empty-state hidden"><div class="empty-state-content"><p>No local variables alias this.</p></div></div>
