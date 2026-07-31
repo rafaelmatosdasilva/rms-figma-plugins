@@ -28,3 +28,7 @@ parity-history.json
 bound-tokens.json
 packages/ui/src/*.snapshot.json
 apps/*/preview-*.html
+
+# full findings written by the audit when a list is truncated
+.parity-out/
+.parity-out
