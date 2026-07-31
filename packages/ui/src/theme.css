@@ -242,7 +242,7 @@
       /* Base — tokens with different primitives per mode */
       --bg-secondary: var(--neutral-900); /* dark hover surface = same as bg */
       --surface: var(--neutral-800);      /* input/background/filled Dark = N800 */
-      --border: var(--neutral-700);       /* dividerLine/border Dark = N600 */
+      --border: var(--neutral-700);       /* dividerLine/border Dark = N700 #303030 */
       --divider: var(--neutral-600);      /* dividerSection/divider Dark = N600 */
       --text-muted: var(--neutral-300);   /* semantic/text/secondary Dark = N300 */
       /* Buttons */

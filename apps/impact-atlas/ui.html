@@ -90,8 +90,11 @@
   width: 100%;
   height: var(--button-min-height);
   padding: 0 10px 0 28px;
-  background: var(--surface);
-  border: var(--thickness) solid var(--border);
+  background: var(--input-background);
+  /* input/border/default — NOT --border (dividerLine). The two are the same N700 in
+     light but one ramp step apart in dark (#454545 vs #303030), so a divider token
+     here reads correct in light and too dim in dark. */
+  border: var(--thickness) solid var(--input-border);
   border-radius: var(--radius-full);
   font-size: var(--m-size);
   font-weight: var(--m-weight);

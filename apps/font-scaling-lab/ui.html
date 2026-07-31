@@ -425,7 +425,10 @@
   #scale-input {
     width: 58px; height: var(--button-min-height);
     text-align: center;
-    border: 1.2px solid var(--border);
+    /* DS input geometry + colour: general/thickness (1.5px) and input/border/default.
+       Was 1.2px (the icon-stroke token's value) against --border (dividerLine), which
+       matches in light but is one ramp step too dark in dark mode. */
+    border: var(--thickness) solid var(--input-border);
     border-radius: var(--radius-full);
     background: transparent;
     color: var(--text);
@@ -437,7 +440,7 @@
     cursor: default;
   }
   #scale-input:focus {
-    border-color: var(--text-muted);
+    border-color: var(--input-border-focus); /* DS input/border/focus — was --text-muted */
     cursor: text;
   }
 
