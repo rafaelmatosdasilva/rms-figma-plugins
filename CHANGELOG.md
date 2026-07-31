@@ -51,6 +51,12 @@ Landed since publishing, and going out with the next Community release:
   what it had rather than clearing your results.
 - Failures are reported as a toast in the corner instead of a red bar wedged into
   the panel. The old bar stayed on screen after the problem had passed.
+- The search field's border was too dim in dark mode — it was using the divider
+  line colour rather than the input colour. The two are identical in light mode,
+  which is why it only ever looked wrong in dark.
+- The action bar now uses its own design-system colours and gains a bottom rule,
+  matching the design system. It had been borrowing the colour of Figma's own
+  plugin titlebar, which has since diverged.
 
 ### v4 — 17 July 2026
 Published to Figma Community.
@@ -94,6 +100,8 @@ Landed since publishing, and going out with the next Community release:
   the panel. The old bar stayed on screen after the problem had passed.
 - Dark mode colours updated against the design system — the greys shifted slightly
   across the whole ramp, so panels, borders and text all move together.
+- The scale field's border was too dim in dark mode and slightly too thin, and its
+  focus ring used a text colour instead of the design system's focus colour.
 
 ### v5.2 — 22 July 2026
 Repo only — not republished to the Community.
