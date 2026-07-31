@@ -420,17 +420,6 @@ async function detectIssues(clone, refNode, scaleValue, isStale) {
     return out;
   }
 
-  // ── Detail collectors (for the pinned side-panel) ──
-  function nodePath(node) {
-    const list = [];
-    var p = node;
-    while (p && p !== clone && p.type !== 'PAGE') {
-      var n = (p.name || '').trim();
-      if (n && !AUTO_NAME.test(n)) list.unshift(n);
-      try { p = p.parent; } catch (_) { p = null; }
-    }
-    return list;
-  }
   function fmtLength(v) {
     if (!v || v === figma.mixed) return null;
     if (v.unit === 'AUTO') return 'Auto';
@@ -801,13 +790,6 @@ async function detectIssues(clone, refNode, scaleValue, isStale) {
     });
   }
 
-  // Container-level overflow: an auto-layout frame whose own sizing is FIXED
-  // on an axis, but whose children's cumulative extent exceeds that axis.
-  // Catches the case where text inside hugs/fills correctly, but the wrapping
-  // container has a fixed height/width that can't adapt to scaled content.
-  function isAutoLayoutFrame(n) {
-    try { return !!n.layoutMode && n.layoutMode !== 'NONE'; } catch (_) { return false; }
-  }
   function axisFixed(n) {
     // Returns { h: bool, v: bool } — true if that axis is fixed (not Hug/Fill).
     // Trust the modern unified layoutSizing* properties when they're set;
@@ -833,65 +815,12 @@ async function detectIssues(clone, refNode, scaleValue, isStale) {
     }
     return { h: h, v: v };
   }
-  function containerOverflows(node) {
-    const nb = node.absoluteBoundingBox;
-    if (!nb) return false;
-    const fix = axisFixed(node);
-    if (!fix.h && !fix.v) return false;
-    var hOver = false, vOver = false;
-    for (const ch of (node.children || [])) {
-      try { if (ch.visible === false) continue; } catch (_) { continue; }
-      const cb = ch.absoluteBoundingBox;
-      if (!cb) continue;
-      if (fix.h && (cb.x + cb.width  > nb.x + nb.width  + 2 || cb.x < nb.x - 2)) hOver = true;
-      if (fix.v && (cb.y + cb.height > nb.y + nb.height + 2 || cb.y < nb.y - 2)) vOver = true;
-      if (hOver || vOver) break;
-    }
-    return hOver || vOver;
-  }
-
   // Tracks containers flagged as the overflowing layer — descendants of these
   // are NOT individually flagged, because the issue is the container, not the
   // child. The child has the right properties (Hug/Fill); only the wrapper
   // needs to change.
   const flaggedContainers = new Set();
 
-  // Image-bearing nodes are excluded from the generic out-of-bounds check —
-  // they're routinely cropped by an enclosing frame on purpose (avatars, hero
-  // crops), and at scale they don't grow, so flagging them is just noise.
-  function nodeHasImageFill(n) {
-    try {
-      const fills = n.fills;
-      if (fills === figma.mixed) return false;
-      if (!fills || !Array.isArray(fills)) return false;
-      for (var fi = 0; fi < fills.length; fi++) {
-        const f = fills[fi];
-        if (f && f.type === 'IMAGE' && f.visible !== false) return true;
-      }
-    } catch (_) {}
-    return false;
-  }
-
-  // An image-holder is a frame/group whose job is to crop an image to a fixed
-  // shape (circular avatars, hero crops, cards with cover photos).  The fixed
-  // size is by design — flagging it as "Width: Fixed → set to Hug" would be
-  // wrong.  A container counts as an image-holder when it either carries an
-  // image fill itself, or its direct children are all image-bearing.
-  function isImageHolder(n) {
-    try {
-      if (nodeHasImageFill(n)) return true;
-      const children = n.children;
-      if (!children || !children.length) return false;
-      let visibleCount = 0;
-      for (let i = 0; i < children.length; i++) {
-        const c = children[i];
-        try { if (c.visible === false) continue; } catch (_) { continue; }
-        visibleCount++;
-        if (!nodeHasImageFill(c)) return false;
-      }
-      return visibleCount > 0;
-    } catch (_) { return false; }
-  }
   function insideFlaggedContainer(node) {
     var anc = node.parent;
     while (anc && anc !== clone) {
