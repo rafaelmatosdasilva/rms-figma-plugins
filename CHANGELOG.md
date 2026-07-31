@@ -43,6 +43,14 @@ Landed since publishing, and going out with the next Community release:
   external library, its live instance appears on the board alongside the rest.
   Library components are marked with a small library icon (no canvas focus, since
   their master lives in another file).
+- Renaming a variable in a library file no longer makes it show up twice. Library
+  variables live in another file, so the plugin had no way of knowing when one was
+  renamed, deleted or republished there — its cached copy still looked current. It
+  now re-checks each cached library variable against the live library, takes the new
+  name, and drops any that were deleted. If the library can't be reached it keeps
+  what it had rather than clearing your results.
+- Failures are reported as a toast in the corner instead of a red bar wedged into
+  the panel. The old bar stayed on screen after the problem had passed.
 
 ### v4 — 17 July 2026
 Published to Figma Community.
@@ -61,6 +69,10 @@ Published to Figma Community.
   otherwise.
 - The output column now grows with the window, so long Pantone and vinyl names
   stay readable instead of being cut off.
+- Failures are reported as a toast in the corner instead of a red bar wedged into
+  the panel, and an error toast stays up longer than a confirmation.
+- Dark mode colours updated against the design system — the greys shifted slightly
+  across the whole ramp, so panels, borders and text all move together.
 
 ### v4 — 17 July 2026
 Published to Figma Community. Later shared design-system work landed here without
@@ -76,6 +88,12 @@ a new Community release, since none of it changed how the plugin works:
 Published to Figma Community.
 - Added tooltips for objects outside the visible area.
 - Fixed minor UI issues and improved overall polish.
+
+Landed since publishing, and going out with the next Community release:
+- Failures are reported as a toast in the corner instead of a red bar wedged into
+  the panel. The old bar stayed on screen after the problem had passed.
+- Dark mode colours updated against the design system — the greys shifted slightly
+  across the whole ramp, so panels, borders and text all move together.
 
 ### v5.2 — 22 July 2026
 Repo only — not republished to the Community.
