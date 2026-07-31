@@ -1129,7 +1129,7 @@
   }
 
   .dividerSection {
-    display: flex; align-items: center; gap: var(--gap-s);  /* gap/s = 4px */
+    display: flex; align-items: center; gap: var(--gap-m);  /* DS 135:46577 root gap/m = 8px */
     padding: var(--padding-l) 0 var(--padding-xs); /* DS 135:46577 — top l(16), bottom xs(4); horizontal from parent */
     font-size: var(--s-size); font-weight: var(--s-weight); line-height: var(--s-lh);
     color: var(--dividerSection-title); /* dividerSection/title/color */
