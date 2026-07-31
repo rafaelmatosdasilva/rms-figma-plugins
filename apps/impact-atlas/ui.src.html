@@ -780,21 +780,6 @@ body.browser-empty .right-panel {
 
 /* ─── Misc ──────────────────────────────────────────────────────────────── */
 
-.color-swatch {
-  /* DS swatch component (31:38588) is a 24x24 box */
-  width: var(--button-min-height); height: var(--button-min-height);
-  border-radius: 50%;
-  border: var(--thickness) solid rgba(0,0,0,0.12);
-  flex-shrink: 0;
-}
-.color-swatch-empty {
-  width: var(--button-min-height); height: var(--button-min-height);
-  border-radius: 50%;
-  border: var(--thickness) solid var(--swatch-border-empty);
-  background: repeating-linear-gradient(-45deg, var(--border) 0px, var(--border) 1.2px, transparent 1.2px, transparent 5.6px);
-  flex-shrink: 0;
-}
-
 /* ─── Component browser ─────────────────────────────────────────────── */
 #comp-list { flex: 1; overflow-y: overlay; }
 .comp-item { width: 100%; margin-bottom: var(--gap-m); }
