@@ -638,7 +638,12 @@ async function buildComponentIndex() {
           } catch (_) {}
 
           libCompCache.set(cacheKey, varIds);
-          if (varIds.size > 0) {
+          // Only a genuinely remote master is a library component. This pass also reaches
+          // deleted local masters (still resolved by orphaned instances, absent from the
+          // page scan); remote===true keeps them from being labelled "external library".
+          let isRemoteComp = false;
+          try { isRemoteComp = cacheNode.remote === true; } catch (_) {}
+          if (varIds.size > 0 && isRemoteComp) {
             _componentById.set(cacheKey, { name: cacheNode.name, type: cacheNode.type, pageName: 'Library', pageId: null, isRemote: true });
             for (const varId of varIds) {
               if (!_componentsByVarId.has(varId)) _componentsByVarId.set(varId, new Set());
@@ -1931,10 +1936,15 @@ async function handleUsageScan(msg) {
                 while (p && p.type !== 'PAGE') p = p.parent;
                 if (p) { pageName = p.name; pageId = p.id; }
               }
-              _componentById.set(cacheKey, { name: cacheNode.name, type: cacheNode.type, pageName, pageId, isRemote });
-              for (const vid of varIds) {
-                if (!_componentsByVarId.has(vid)) _componentsByVarId.set(vid, new Set());
-                _componentsByVarId.get(vid).add(cacheKey);
+              // A non-remote master with no page is a DELETED/orphaned local component;
+              // indexing it gives pageId=null, which the browser renders as a "From an
+              // external library" badge. Skip it rather than mislabel a deleted component.
+              if (isRemote || pageId !== null) {
+                _componentById.set(cacheKey, { name: cacheNode.name, type: cacheNode.type, pageName, pageId, isRemote });
+                for (const vid of varIds) {
+                  if (!_componentsByVarId.has(vid)) _componentsByVarId.set(vid, new Set());
+                  _componentsByVarId.get(vid).add(cacheKey);
+                }
               }
             }
 

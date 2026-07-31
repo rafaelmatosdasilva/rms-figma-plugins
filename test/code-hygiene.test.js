@@ -44,11 +44,11 @@ const UNUSED_ALLOWLIST = {
 /** Longest tolerated function, and the functions already above it. */
 const MAX_FUNCTION_LINES = 120;
 const LENGTH_BASELINE = {
-  handleUsageScan: 473,       // impact-atlas: multi-phase scan, staged progress
+  handleUsageScan: 478,       // impact-atlas: multi-phase scan, staged progress (+5 for the deleted-component guard, 2026-07-31)
   convertPdfToCmyk: 430,      // tokens-to-ink: PDF colour conversion
   handleInit: 178,            // impact-atlas
   handlePlaceComponents: 138, // impact-atlas
-  buildComponentIndex: 130,   // impact-atlas
+  buildComponentIndex: 135,   // impact-atlas (+5 for the deleted-component remote guard, 2026-07-31)
 };
 
 function read(file) {

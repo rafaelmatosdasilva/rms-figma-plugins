@@ -99,4 +99,38 @@ describe('impact-atlas — external libraries', () => {
       .find((c) => c.nodeName === 'localOnlyRemoteTokens');
     expect(asLibrary).toBeUndefined();
   });
+
+  it('does not surface a deleted local component as an external-library one', async () => {
+    // A component deleted from the file while its instances remain: the orphaned
+    // instances still resolve it via getMainComponentAsync(), but it sits on no page.
+    // The scan then gave it pageId=null, and the browser renders any null-pageId row as
+    // a "From an external library" badge — so a deleted LOCAL component was shown as
+    // external. It must not appear as a library-badged component at all.
+    const token = makeVar('v1', 'button/background', { collectionId: 'coll-1' });
+    const deletedMaster = makeComponent('deletedLocalMaster', {
+      id: 'comp-del',
+      key: 'del-key',
+      remote: false,            // local — it was deleted, it is not from a library
+      fills: paint,
+      boundVariables: { fills: [{ id: 'v1' }] },
+    });
+    // Only the orphaned instance is on the page; the master lives nowhere.
+    const orphanInstance = makeInstance(deletedMaster, { id: 'inst-1' });
+
+    const { figma, send } = await loadPlugin(ENTRY, {
+      variables: [token],
+      collections: [makeCollection('coll-1', 'Tokens')],
+      pages: [makePage('Page 1', [orphanInstance])],
+    });
+
+    await send({ type: 'init' });
+    await send({ type: 'usage-scan', depth: 3 });
+
+    // browserComponents is the affected-components list the browser renders; a null
+    // pageId there becomes the library badge. The deleted master must not be in it.
+    const cached = await figma.clientStorage.getAsync(`scan-${figma.fileKey || 'local'}`);
+    const rows = (cached && cached.browserComponents) || [];
+    const ghost = rows.find((c) => c.nodeName === 'deletedLocalMaster');
+    expect(ghost).toBeUndefined();
+  });
 });
