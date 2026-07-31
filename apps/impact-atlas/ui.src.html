@@ -789,13 +789,14 @@ body.browser-empty .right-panel {
 /* ─── Misc ──────────────────────────────────────────────────────────────── */
 
 .color-swatch {
-  width: 13px; height: 13px;
+  /* DS swatch component (31:38588) is a 24x24 box */
+  width: var(--button-min-height); height: var(--button-min-height);
   border-radius: 50%;
   border: var(--thickness) solid rgba(0,0,0,0.12);
   flex-shrink: 0;
 }
 .color-swatch-empty {
-  width: 13px; height: 13px;
+  width: var(--button-min-height); height: var(--button-min-height);
   border-radius: 50%;
   border: var(--thickness) solid var(--swatch-border-empty);
   background: repeating-linear-gradient(-45deg, var(--border) 0px, var(--border) 1.2px, transparent 1.2px, transparent 5.6px);
@@ -866,7 +867,7 @@ body.browser-empty .right-panel {
   border-bottom: var(--thickness) solid var(--divider);
   flex-shrink: 0;
 }
-#canvas-scan-bar .spinner { width: 11px; height: 11px; border-width: 1.5px; flex-shrink: 0; }
+#canvas-scan-bar .spinner { width: 14px; height: 14px; border-width: var(--thickness); flex-shrink: 0; }
 
 /* canvas usage count on var-items */
 .var-canvas-count {
@@ -1078,7 +1079,7 @@ body.browser-empty .right-panel {
 }
 .depth-circle::after {
   content: '';
-  width: 6px; height: 6px;
+  width: var(--dividerSection-height); height: var(--dividerSection-height);
   border-radius: 50%;
   background: transparent;
   transition: background 0.24s cubic-bezier(0.4, 0, 0.2, 1),

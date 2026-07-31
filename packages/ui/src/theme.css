@@ -48,6 +48,7 @@
     /* Spacing tokens — Figma DS (gap/*, padding/*, general/*) */
     --min-height:  60px;  /* general/min-height */
     --button-min-height: 24px; /* button/min-height — the 24px control height (was --min-height before the DS split the two) */
+    --dividerSection-height: 6px; /* dividerSection/height — the level/priority dot box (DS 135:46577 binds it to the Level ellipse) */
     --gap-xs:      2px;
     --gap-s:       4px;
     --gap-m:       8px;
@@ -957,7 +958,7 @@
   }
   .segmented-control button.no-icon svg { display: none; }
   .seg-status {
-    width: 6px; height: 6px;
+    width: var(--dividerSection-height); height: var(--dividerSection-height);
     border-radius: var(--radius-full);
     background: currentColor;
     flex-shrink: 0;
@@ -1170,7 +1171,7 @@
   .dividerSection.no-number .count, .dividerSection.no-number .div-sep { display: none; }
   /* Level/priority dot — showPriority indicator from DS; 6px circle before label */
   .tier-dot {
-    width: 6px; height: 6px;
+    width: var(--dividerSection-height); height: var(--dividerSection-height);
     border-radius: 50%;
     flex-shrink: 0;
   }
@@ -1227,7 +1228,8 @@
 
   /* ── Spinner ── */
   .toast-spinner {
-    width: 13px; height: 13px;
+    /* DS toast Spinner instance box is 14x14; the 13px Union inside it is the glyph. */
+    width: 14px; height: 14px;
     border: var(--thickness) solid currentColor; /* general/thickness */
     border-top-color: transparent;
     border-radius: 50%;
