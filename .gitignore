@@ -13,6 +13,7 @@ parity-check-result.json
 
 # DS visual-regression baselines — kept locally for parity, not shipped
 .parity-refs/
+.parity-refs
 
 # Internal reference / work-in-progress — kept locally, not shipped
 apps/style-guide/
