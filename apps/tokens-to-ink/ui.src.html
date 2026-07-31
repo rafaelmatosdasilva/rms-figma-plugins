@@ -1703,7 +1703,7 @@
         const colorVarId = ref ? ref.dataset.colorVarId : '';
         const idx = ref ? ref.dataset.idx : '';
         const pickerBtns = OUTPUT_TYPES.map(t =>
-          `<button class="buttonPrimary" data-output-type="${t.key}" data-color-var-id="${colorVarId}" data-idx="${idx}">${t.label}</button>`
+          `<button class="buttonPrimary" data-output-type="${t.key}" data-color-var-id="${colorVarId}" data-idx="${idx}"><span>${t.label}</span></button>`
         ).join('');
         addRow = document.createElement('div');
         addRow.className = 'output-row output-add-row';
@@ -2044,7 +2044,7 @@
         // Determine which types are still available to add (hidden in read-only)
         const availableTypes = OUTPUT_TYPES.filter(t => !renderedTypes.has(t.key));
         const pickerBtns = availableTypes.map(t =>
-          `<button class="buttonPrimary" data-output-type="${t.key}" data-color-var-id="${r.colorVarId || ''}" data-idx="${idx}">${t.label}</button>`
+          `<button class="buttonPrimary" data-output-type="${t.key}" data-color-var-id="${r.colorVarId || ''}" data-idx="${idx}"><span>${t.label}</span></button>`
         ).join('');
         const addBtn = !readOnly && availableTypes.length > 0
           ? `<div class="output-picker" data-color-var-id="${r.colorVarId || ''}" data-idx="${idx}"><button class="buttonSecondary buttonAddOutput" data-tip="Add output"><svg width="16" height="16"><use href="#icon-plus"/></svg></button><div class="output-picker-flyout">${pickerBtns}</div></div>`

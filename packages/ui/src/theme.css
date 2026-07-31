@@ -714,7 +714,9 @@
     /* DS buttonPrimary is h=24 (structure-contract). Text-only buttons already
        landed there via padding; the explicit height keeps icon+label ones honest. */
     height: var(--button-min-height);
-    padding: 0 var(--padding-s);
+    /* DS 1428:21123: padding/xs on the frame + padding/xs inside its LabelContainer.
+       Mirrors Figma structurally, same pattern as the other three buttons. */
+    padding: 0 var(--padding-xs);
     font-size: var(--m-size);
     color: var(--buttonPrimary-text);
     cursor: pointer;
@@ -729,6 +731,7 @@
   }
   .buttonPrimary:hover { opacity: 0.85; }
   .buttonPrimary svg { display: block; flex-shrink: 0; }
+  .buttonPrimary span { white-space: nowrap; padding: 0 var(--padding-xs); /* LabelContainer inner padding — matches Figma 4px LR inside LabelContainer frame */ }
   /* ── Action bar (rescan + source chips + actions) ── */
   .actionbar {
     flex-shrink: 0;
