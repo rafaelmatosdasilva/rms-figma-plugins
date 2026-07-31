@@ -124,4 +124,39 @@ describe('impact-atlas — place components', () => {
     expect(done.placed).toBe(2);
     expect(done.skipped).toBe(1);
   });
+
+  it('cleans up the page it created when the run is cancelled', async () => {
+    // Cancelling used to leave an empty "Impact Atlas Previews" page behind.
+    const { scene, payload } = sceneWithComponents(3);
+    const { figma, send } = await loadPlugin(ENTRY, scene);
+    await send({ type: 'init' });
+
+    const pagesBefore = figma.root.children.length;
+    // Don't await: cancel has to arrive while the run is still placing.
+    const run = send({ type: 'place-components', components: payload, title: 'token' });
+    await send({ type: 'place-cancel' });
+    await run;
+
+    expect(figma._created.pages.every((p) => p.removed)).toBe(true);
+    expect(figma.root.children.length).toBe(pagesBefore);
+  });
+
+  it('keeps a boards page that already holds earlier placements', async () => {
+    // Only a page THIS run created may be removed — never one with earlier work.
+    const { scene, payload } = sceneWithComponents(3);
+    const { figma, send } = await loadPlugin(ENTRY, scene);
+    await send({ type: 'init' });
+
+    await send({ type: 'place-components', components: payload, title: 'first' });
+    const boards = figma._created.pages[0];
+    expect(boards.removed).toBeFalsy();
+
+    const run = send({ type: 'place-components', components: payload, title: 'second' });
+    await send({ type: 'place-cancel' });
+    await run;
+
+    // The cancelled run's section goes; the page and its earlier board stay.
+    expect(boards.removed).toBeFalsy();
+    expect(boards.children.length).toBeGreaterThan(0);
+  });
 });

@@ -1060,7 +1060,55 @@ function computeAllImpactScores() {
 
 // ─── Handlers ─────────────────────────────────────────────────────────────────
 
-async function handleInit() {
+// Reconcile the cached library variables against the live library. Library variables
+// live in ANOTHER file, so renaming, deleting or republishing one there leaves this
+// file's cache signature untouched and the cache still looks valid. Per cached entry:
+//   id resolves     → take the LIVE name (a rename otherwise shows up twice)
+//   id returns null → deleted or unpublished, so drop it
+//   id throws       → transient; keep what we had rather than wipe the user's data
+// Then add anything newly aliased from this file, and collapse on the library key —
+// the only stable identity, since the id is per-file.
+async function reconcileCachedLibraryVars(cachedScan) {
+  const cached = cachedScan.remoteVars || [];
+  const verified = await Promise.all(cached.map((rv) =>
+    figma.variables.getVariableByIdAsync(rv.id)
+      .then((live) => {
+        if (!live) return null;
+        _varById.set(live.id, live);            // the real entry beats the seeded stub
+        return Object.assign({}, rv, { name: live.name, resolvedType: live.resolvedType });
+      })
+      .catch(() => rv)
+  ));
+
+  let remoteVars = [];
+  for (let i = 0; i < verified.length; i++) {
+    if (verified[i]) { remoteVars.push(verified[i]); continue; }
+    _varById.delete(cached[i].id);
+    _componentsByVarId.delete(cached[i].id);
+  }
+  let remoteColls = cachedScan.remoteColls || [];
+
+  let discovered = null;
+  try { discovered = await discoverRemoteVarsFromAliases(); } catch (_) {}
+  if (discovered) {
+    for (const fv of discovered.remoteVars) {
+      const at = remoteVars.findIndex((rv) => rv.id === fv.id);
+      if (at === -1) remoteVars.push(fv); else remoteVars[at] = fv;
+    }
+    const collIds = new Set(remoteColls.map((c) => c.id));
+    for (const fc of discovered.remoteColls) if (!collIds.has(fc.id)) remoteColls.push(fc);
+  }
+
+  const liveNames = new Map();
+  try {
+    const lib = await enumerateAllLibraryVars();
+    for (const lv of lib.libVars) if (lv.libraryKey) liveNames.set(lv.libraryKey, lv.name);
+  } catch (_) {}
+
+  return { remoteVars: dedupeRemoteVarsByKey(remoteVars, liveNames), remoteColls };
+}
+
+async function handleInit(force) {
   try {
     // ── Phase 1a: local variables + styles (0% → 20%) ────────────────────────
     // Variables + collections first: the cache key is derived from them when
@@ -1090,7 +1138,10 @@ async function handleInit() {
         : Promise.resolve([]),
       figma.clientStorage.getAsync(_initCacheKey).catch(() => null),
     ]);
-    const validCachedScan =
+    // An explicit rescan must re-read the file, not replay the cache. Library
+    // variables live in another file, so a rename there leaves this file's
+    // signature untouched — without this, a rescan re-served the old names.
+    const validCachedScan = force ? null :
       (_rawCachedScan && _rawCachedScan.version === 2 && _rawCachedScan._fileSig === _fileSig)
         ? _rawCachedScan : null;
     // Send progress now that we know whether a cache exists — UI suppresses the bar if hasCachedScan
@@ -1146,6 +1197,8 @@ async function handleInit() {
     if (validCachedScan && validCachedScan.browserComponents) {
       _seedRemoteVarsFromCache(validCachedScan.remoteVars, validCachedScan.remoteColls);
       _populateIndexFromCache(validCachedScan.browserComponents);
+      const { remoteVars: _remoteVars, remoteColls: _remoteColls } =
+        await reconcileCachedLibraryVars(validCachedScan);
       _componentIndexBuilt   = true;
       _componentBrowserCache = validCachedScan.browserComponents;
       // Recompute counts and impact scores from the live alias graph + freshly-populated
@@ -1158,13 +1211,13 @@ async function handleInit() {
       const freshImpactScores = computeAllImpactScores();
       figma.ui.postMessage({
         type: 'init-data', variables, collections,
-        remoteVars:           validCachedScan.remoteVars  || [],
-        remoteColls:          validCachedScan.remoteColls || [],
+        remoteVars:           _remoteVars,
+        remoteColls:          _remoteColls,
         componentIndexBuilt:  true,
         varComponentCounts:   freshComponentCounts,
         varImpactScores:      freshImpactScores,
         lastScanDepth:        validCachedScan.depth || null,
-        hasExternalLibraries: (validCachedScan.remoteVars || []).length > 0,
+        hasExternalLibraries: _remoteVars.length > 0,
         browserComponents:    validCachedScan.browserComponents,
         cachedScan:           validCachedScan,
       });
@@ -1619,6 +1672,35 @@ async function refreshLocalVariablePayload() {
   return { variables, collections };
 }
 
+// A library variable's KEY is its stable identity; its id is per-file. When a file
+// is subscribed to an older publish of the library, the id bound on canvas resolves
+// to the old NAME while the library enumeration reports the new one — the same
+// variable, twice, under two names. Collapse by key: keep the entry that is
+// actually used (so impact and component links survive) and take the name from the
+// live library when it is known.
+function dedupeRemoteVarsByKey(remoteVars, liveNameByKey) {
+  const byKey = new Map();
+  const out   = [];
+  for (const rv of remoteVars) {
+    if (!rv.libraryKey) { out.push(rv); continue; }   // no key — nothing to match on
+    const seen = byKey.get(rv.libraryKey);
+    if (!seen) { byKey.set(rv.libraryKey, rv); out.push(rv); continue; }
+    // Prefer whichever entry has real usage; that id is the one components reference.
+    const usage = (v) => (v.aliasCount || 0) + (v.dependentCount || 0) +
+      (_componentsByVarId.has(v.id) ? _componentsByVarId.get(v.id).size : 0);
+    if (usage(rv) > usage(seen)) {
+      const at = out.indexOf(seen);
+      if (at !== -1) out[at] = rv;
+      byKey.set(rv.libraryKey, rv);
+    }
+  }
+  // The library is the authority on the current name.
+  for (const rv of out) {
+    if (rv.libraryKey && liveNameByKey.has(rv.libraryKey)) rv.name = liveNameByKey.get(rv.libraryKey);
+  }
+  return out;
+}
+
 async function handleUsageScan(msg) {
   const depth = (msg && msg.depth >= 2) ? msg.depth : 3;
   try {
@@ -1630,11 +1712,13 @@ async function handleUsageScan(msg) {
 
     let remoteVars = [];
     let remoteColls = [];
+    const liveNameByKey = new Map(); // libraryKey → current name as the library publishes it
     try {
       const [discovered, allLib] = await Promise.all([
         discoverRemoteVarsFromAliases(),
         enumerateAllLibraryVars(),
       ]);
+      for (const lv of allLib.libVars) if (lv.libraryKey) liveNameByKey.set(lv.libraryKey, lv.name);
       const seenKeys = new Set();
       for (const rv of discovered.remoteVars) {
         if (rv.libraryKey) seenKeys.add(rv.libraryKey);
@@ -1980,6 +2064,12 @@ async function handleUsageScan(msg) {
       }
     }
 
+    // The three sources above (local aliases, library enumeration, canvas bindings)
+    // can each surface the SAME library variable under a different per-file id —
+    // and, when the file is subscribed to an older publish, a different name. Only
+    // the key is stable, so collapse on it.
+    remoteVars = dedupeRemoteVarsByKey(remoteVars, liveNameByKey);
+
     // Rebuild the component browser cache from the FULL index (local + library
     // components discovered in this scan) before it's persisted below. Without
     // this, the cache would keep the init-time local-only list, so every
@@ -2094,7 +2184,7 @@ let _placeCancelled = false;
 figma.ui.onmessage = async (msg) => {
   if (await handleResizeMsg(msg)) return;
   switch (msg.type) {
-    case 'init':                  _initCancelled = false; return handleInit();
+    case 'init':                  _initCancelled = false; return handleInit(msg && msg.force === true);
     case 'analyze':                       return handleAnalyze(msg.variableId);
     case 'analyze-remote':               return handleAnalyzeRemote(msg.variableId, msg.varName, msg.resolvedType, msg.collectionName);
     case 'build-component-index-remote': return handleBuildComponentIndexRemote(msg.variableId);

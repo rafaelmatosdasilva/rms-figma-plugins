@@ -100,6 +100,44 @@ describe('impact-atlas — referenced by', () => {
 });
 
 describe('impact-atlas — close', () => {
+  it('loads the target page before resolving the node', async () => {
+    // documentAccess is dynamic-page: a node on an unloaded page does not resolve,
+    // so focus silently did nothing. The UI sends pageId; the handler must load that
+    // page first. (There is no figma.getPageByIdAsync — using it threw and broke
+    // every focus button.)
+    const scene = twoPageScene();
+    const page2 = scene.pages[1];
+    const { figma, send } = await loadPlugin(ENTRY, scene);
+
+    const before = page2.loadCount;
+    await send({ type: 'focus-node', nodeId: 'comp-2', pageId: page2.id });
+
+    expect(page2.loadCount).toBeGreaterThan(before);
+    expect(figma._focused.map((n) => n.id)).toContain('comp-2');
+  });
+
+  it('reports when a node cannot be focused instead of doing nothing', async () => {
+    // A library master has no canvas location here. Silence read as a broken button,
+    // so the backend says so and the UI retags the row to the library badge.
+    const { send, lastOf } = await loadPlugin(ENTRY, twoPageScene());
+
+    await send({ type: 'focus-node', nodeId: 'not-here', pageId: null });
+
+    expect(lastOf('focus-unavailable')).toBeDefined();
+  });
+
+  it('does not bulk-load pages on init', async () => {
+    // A background reachability pass that loaded every page pulled in other files'
+    // content and thrashed the caches. Page loading belongs to an explicit scan.
+    const scene = twoPageScene();
+    const { send } = await loadPlugin(ENTRY, scene);
+
+    await send({ type: 'init' });
+
+    const loads = scene.pages.reduce((n, p) => n + p.loadCount, 0);
+    expect(loads).toBeLessThanOrEqual(scene.pages.length);
+  });
+
   it('closes the plugin', async () => {
     const { figma, send } = await loadPlugin(ENTRY, twoPageScene());
     await send({ type: 'close' });

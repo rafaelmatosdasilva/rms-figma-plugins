@@ -138,7 +138,10 @@ export function deepCloneNode(node) {
 /** A page. Pages are the roots the plugins iterate via figma.root.children. */
 export function makePage(name, children = []) {
   const page = makeNode('PAGE', { id: nextId('page'), name, width: 0, height: 0 });
-  page.loadAsync = async () => {};
+  // Count loads so tests can prove a code path doesn't bulk-load pages — doing that
+  // in the background once pulled in other files' data and thrashed the caches.
+  page.loadCount = 0;
+  page.loadAsync = async () => { page.loadCount += 1; };
   page.selection = [];
   for (const child of children) page.appendChild(child);
   return page;

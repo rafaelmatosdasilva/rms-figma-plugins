@@ -57,4 +57,25 @@ describe('impact-atlas — init', () => {
     const data = lastOf('init-data');
     expect(data.varComponentCounts['v-alias']).toBe(1);
   });
+
+  it('indexes components whose name starts with a dot', async () => {
+    // The master walks skipped "private" dot components while the instance walk did
+    // not, so they showed as affected components but were never searchable.
+    const token = makeVar('v-dot', 'dot/token');
+    const hidden = makeComponent('.dropDownRowBackground', {
+      id: 'comp-dot',
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0 } }],
+      boundVariables: { fills: [{ id: 'v-dot' }] },
+    });
+    const { send, lastOf } = await loadPlugin(ENTRY, {
+      variables: [token],
+      collections: [makeCollection('c1', 'Tokens')],
+      pages: [makePage('Page 1', [hidden])],
+    });
+
+    await send({ type: 'init' });
+
+    const names = (lastOf('init-data').browserComponents || []).map((c) => c.nodeName);
+    expect(names).toContain('.dropDownRowBackground');
+  });
 });

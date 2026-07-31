@@ -99,6 +99,10 @@ export function makeFigmaMock(scene = {}) {
       created.pages.push(p);
       pages.push(p);
       indexNode(p);
+      // Give the page a parent whose children ARE figma.root.children, so
+      // page.remove() detaches it from the document the way Figma does. Without
+      // this a removed page lingered in root.children and hid cleanup bugs.
+      p.parent = { children: pages };
       return p;
     },
     async importComponentByKeyAsync(key) {
