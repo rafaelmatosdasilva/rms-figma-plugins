@@ -455,27 +455,6 @@ body.browser-empty .right-panel {
   direction: rtl;
   text-align: left;
 }
-
-
-/* connection count badge — top-right of comp nodes */
-.node-conn-badge {
-  position: absolute;
-  top: -7px;
-  right: -7px;
-  min-width: 16px;
-  height: 16px;
-  border-radius: var(--radius-md);
-  background: var(--neutral-300);
-  color: var(--neutral-1000);
-  font-size: var(--s-size);
-  font-weight: var(--s-weight);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 var(--padding-xs);
-}
-.node-conn-badge.dim { background: var(--neutral-600); }
-
 /* focus button on comp nodes (visible on hover) */
 /* ── Node action buttons (focus / drill / goto) — shared base ── */
 .node-focus-btn,
@@ -642,31 +621,6 @@ body.browser-empty .right-panel {
   text-overflow: ellipsis;
 }
 
-.lrow-coll {
-  font-size: var(--s-size);
-  color: var(--listItem-description);
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-
-.lrow-badge {
-  font-size: var(--s-size);
-  font-weight: var(--s-weight);
-  background: var(--text);
-  color: var(--surface);
-  border-radius: var(--radius-full);
-  padding: var(--padding-xxs) var(--padding-s);
-  flex-shrink: 0;
-}
-
-.lrow-selected-tag {
-  font-size: var(--s-size);
-  color: var(--text-muted);
-  font-style: italic;
-  flex-shrink: 0;
-}
-
-
 
 /* ─── External var detail (library) ────────────────────────────────────── */
 
@@ -746,38 +700,14 @@ body.browser-empty .right-panel {
   flex-shrink: 1;
 }
 
-.sb-divider {
-  width: var(--thickness);
-  height: var(--gap-xl);
-  background: var(--divider);
-  flex-shrink: 0;
-}
-
 /* Library indicator in the status bar — shown in place of the (hidden) focus
-   button for external library components. Muted, non-interactive, tooltip only.
-   Size + appearance come entirely from .tooltipButton in the base. */
-
-.sb-stat {
+   button for external library components. Muted,
+  non-interactive {
   display: flex;
   align-items: center;
   gap: var(--gap-s);
   flex-shrink: 0;
 }
-.sb-num {
-  font-size: var(--m-size);
-  font-weight: var(--s-weight);
-  color: var(--statusbar-text);
-  min-width: 12px;
-  text-align: center;
-}
-.sb-label {
-  font-size: var(--s-size);
-  font-weight: var(--m-weight);
-  color: var(--statusbar-icon);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
 /* ─── Misc ──────────────────────────────────────────────────────────────── */
 
 /* ─── Component browser ─────────────────────────────────────────────── */
@@ -893,28 +823,12 @@ body.browser-empty .right-panel {
 }
 .modal.is-closing .modal-card    { animation: modal-out var(--modal-duration-out) var(--modal-easing-out) both; }
 .modal-overlay                   { animation: modal-bg-in var(--modal-duration) var(--modal-easing) both; }
-.modal.is-closing .modal-overlay { animation: modal-bg-out var(--modal-duration-out) var(--modal-easing-out) both; }
-.modal-icon {
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: var(--gap-m);
-}
-.modal-card h2 {
+.modal.is-closing .modal-overlay { animation: modal-bg-out var(--modal-duration-out) var(--modal-easing-out) both; }.modal-card h2 {
   font-size: var(--l-size);
   font-weight: var(--m-weight);
   margin: 0;
   color: var(--modal-title);
-}
-.modal-body {
-  font-size: var(--m-size);
-  color: var(--text-muted);
-  line-height: 1.5;
-  margin: var(--gap-s) 0 0;
-}
-.modal-body p { margin: 0; }
-.modal-footer {
+}.modal-footer {
   display: flex;
   flex-direction: row;
   gap: var(--gap-m);
@@ -936,15 +850,7 @@ body.browser-empty .right-panel {
   align-items: flex-start;
   text-align: left;
   gap: 0;
-}
-#deep-scan-modal .modal-icon { margin-bottom: var(--gap-l); }
-#deep-scan-modal h2 { font-size: var(--l-size); margin-bottom: var(--padding-xl); }
-#deep-scan-modal .modal-subtitle {
-  font-size: var(--m-size);
-  color: var(--text-muted);
-  margin: 0 0 var(--gap-xl);
-}
-
+}#deep-scan-modal h2 { font-size: var(--l-size); margin-bottom: var(--padding-xl); }
 .depth-options {
   /* Single source for the label's line box — the circle column and the connector
      both derive their vertical geometry from it. */

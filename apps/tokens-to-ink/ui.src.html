@@ -66,15 +66,6 @@
     position: relative;
     z-index: 2;
   }
-
-  /* Small swatch next to hex value in variable column */
-  .hex-swatch {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
   .var-name {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -150,24 +141,6 @@
     gap: 0;
     width: 100%;
   }
-
-  /* The origin swatch block — vertically centered in the full fork height */
-  .status-origin {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    margin-right: var(--gap-s);
-    align-self: center;
-  }
-  .status-origin .hex-label {
-    font-size: var(--s-size);
-    font-weight: var(--s-weight);
-    color: var(--text-muted);
-    white-space: nowrap;
-    line-height: 1;
-  }
-
   /* Container for all fork arrows */
   .status-fork {
     display: flex;
@@ -304,10 +277,7 @@
   .output-text-wrap { flex: 1; min-width: 0; }
   .output-text-wrap.output-readonly { background: transparent; border-color: var(--input-auto-border); pointer-events: none; opacity: 0.8; }
   .output-text-wrap:not(.output-readonly):hover { border-color: var(--input-border-hover); }
-  .output-text-wrap:not(.output-readonly):focus-within { border-color: var(--input-border-focus) !important; }
-  .pantone-wrap { flex: 1; min-width: 0; }
-  .pantone-wrap:focus-within { border-color: var(--pantone-focus); }
-  .output-text-input { padding: 0 var(--padding-xs); }
+  .output-text-wrap:not(.output-readonly):focus-within { border-color: var(--input-border-focus) !important; }  .output-text-input { padding: 0 var(--padding-xs); }
   .pantone-input { padding: 0; }
 
   /* Stands in for the source chips when the list isn't tied to a selection. */

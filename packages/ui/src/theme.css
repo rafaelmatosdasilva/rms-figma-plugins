@@ -227,8 +227,9 @@
     --radioButton-border-unselected:   var(--neutral-100);  /* radioButton/border/unselected N100 both */
     --radioButton-text-selected:       var(--neutral-200);  /* radioButton/text/selected N200 both */
     --radioButton-text-unselected:     var(--neutral-200);  /* radioButton/text/unselected N200 both */
-    /* listItem component — title var removed with library-atlas (last consumer); declare when a plugin uses it */
-    --listItem-description: var(--neutral-400);  /* listItem/description/color L=N400, D=N300 */
+    /* listItem component — title and description vars removed with their last consumers
+       (library-atlas, then the retired Font Scaling Lab details rows). Both DS tokens are
+       in COVERED; declare a var again when a plugin actually renders a listItem. */
   }
 
   @media (prefers-color-scheme: dark) {
@@ -312,8 +313,6 @@
       --node-icon-selected:   var(--neutral-300);   /* D=N3 */
       --node-icon-idle:       var(--neutral-500);   /* Dark = N500 #5e5e5e (was N400; DS rebound via buttonList/iconPrimary) */
       --node-icon-hover:      var(--neutral-300);   /* Dark = N300 #b8b8b8 — same alias chain as selected (node/icon/hover → node/icon/selected → Neutral 300) */
-      /* listItem */
-      --listItem-description: var(--neutral-300); /* Dark = N300 */
 
       /* buttonList */
       --buttonList-background-hover:    var(--neutral-800); /* D=N8 */
@@ -1125,11 +1124,7 @@
   .tableRow:not(.selected).hovered { background: var(--tableRow-background-hover); }
   .tableRow.selected,
   .tableRow.selected:hover { background: var(--buttonList-background-selected); }
-  .tableRow .tableRow-action { opacity: 0; transition: opacity 0.1s; background: transparent; border-color: transparent; }
-  .tableRow:not(.selected):hover .tableRow-action,
-  .tableRow:not(.selected).hovered .tableRow-action { opacity: 1; }
-  .dividerLine,
-  .flyout-divider {
+  .dividerLine {
     height: 1px;
     background: var(--divider);
     flex-shrink: 0;
