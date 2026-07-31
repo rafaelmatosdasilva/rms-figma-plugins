@@ -148,9 +148,13 @@
     --input-icon:                var(--neutral-400);   /* input/icon/color L=N4, D→override */
     --input-min-width:           80px;                 /* input/min-width */
     --input-auto-border: rgba(0,0,0,0.1);
-    /* Figma window chrome (plugin titlebar) */
-    --figmaWindowChrome-background: var(--neutral-1000); /* figmaWindowChrome/background/color L=N1000, D→override */
-    /* figmaWindowChrome/title, /button, /divider — Figma-native chrome, not HTML-controllable. No CSS vars. */
+    /* Action bar — gained its own DS tokens 2026-07-31 (was borrowing figmaWindowChrome).
+       Border mirrors Figma's chain actionbar/border → dividerLine/border, so it routes
+       through --border rather than straight to the primitive. Same in both modes. */
+    --actionbar-background: var(--neutral-1000); /* actionbar/background/color L=N1000, D→override */
+    --actionbar-border:     var(--border);       /* actionbar/border/color → dividerLine/border, both modes */
+    /* figmaWindowChrome/background, /title, /button, /divider — Figma-native chrome,
+       not HTML-controllable. No CSS vars; see COVERED in parity-map.mjs. */
     /* Scrollbar */
     --scrollbar-thumb: rgba(0,0,0,0.2);
     --scrollbar-thumb-hover: rgba(0,0,0,0.35);
@@ -236,7 +240,7 @@
       --neutral-500: #5e5e5e;
       --neutral-600: #454545;
       --neutral-700: #303030;
-      --neutral-800: #262626;
+      --neutral-800: #2b2b2b;
       --neutral-900: #1f1f1f;
       --neutral-1000: #171717;
       /* Base — tokens with different primitives per mode */
@@ -265,7 +269,7 @@
       --input-value-disabled:      var(--neutral-100);   /* input/value/disabled D=N100 */
       --input-background-disabled: var(--neutral-900);   /* input/background/disabled D=N900 */
       --input-auto-border: rgba(255,255,255,0.08);
-      --figmaWindowChrome-background: var(--neutral-800);    /* figmaWindowChrome/background Dark = N800 */
+      --actionbar-background: var(--neutral-800);            /* actionbar/background Dark = N800 #2b2b2b */
       --scrollbar-thumb: rgba(255,255,255,0.2);
       --scrollbar-thumb-hover: rgba(255,255,255,0.4);
       --overlay-bg: rgba(44,44,44,0.6);
@@ -736,7 +740,11 @@
     padding: var(--padding-s) var(--padding-l); /* DS actionBar 138:16657: tb padding/s, lr padding/l */
     margin: 0 calc(-1 * var(--padding-l));
     height: 40px; /* 24px content + padding/s × 2 */
-    background: var(--figmaWindowChrome-background);
+    background: var(--actionbar-background);
+    /* DS 138:16657 binds strokes to actionbar/border with strokeBottomWeight 1.5 and
+       strokeAlign INSIDE — a bottom rule only, drawn inside the 40px (box-sizing is
+       border-box globally, so the height is unaffected). */
+    border-bottom: var(--thickness) solid var(--actionbar-border);
   }
   #rescan-btn, .export-picker { margin-top: 0; align-self: center; }
   .buttonRescan {
