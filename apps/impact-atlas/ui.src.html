@@ -85,7 +85,7 @@
 
 .search-input {
   width: 100%;
-  height: 24px;
+  height: var(--button-min-height);
   padding: 0 10px 0 28px;
   background: var(--surface);
   border: var(--thickness) solid var(--border);
@@ -173,15 +173,10 @@
 }
 
 /* .node-external appearance — defined in theme.css (disabled tokens, no opacity) */
-.node-external-badge {
-  font-size: var(--fs-xs, 9px);
-  color: var(--text-muted);
-  background: var(--bg-secondary);
-  border-radius: var(--radius-sm);
-  padding: 1px 4px;
-  margin-top: var(--gap-xs);
-  display: inline-block;
-}
+/* External-library marker on a graph node. Same icon + .tooltipButton appearance
+   as every other external indicator (list rows, status bar) — it used to be the
+   only one rendering the word "Library", which read as a different concept. */
+.node-lib-badge { margin-top: var(--gap-xs); }
 
 /* .node-disabled — defined in theme.css */
 
@@ -485,8 +480,8 @@ body.browser-empty .right-panel {
   transform: translateY(-50%);
   right: 6px;
   /* use buttonTertiary sizing */
-  width: 24px;
-  height: 24px;
+  width: var(--button-min-height);
+  height: var(--button-min-height);
   padding: 0;
   border: var(--thickness) solid var(--buttonTertiary-background);
   border-radius: var(--radius-full);
@@ -534,7 +529,7 @@ body.browser-empty .right-panel {
   top: 50%;
   transform: translateY(-50%);
   right: 34px; /* 6px chevron pos + 24px chevron width + 4px gap */
-  width: 24px; height: 24px;
+  width: var(--button-min-height); height: var(--button-min-height);
   padding: 0;
   border: var(--thickness) solid var(--buttonTertiary-background);
   border-radius: var(--radius-full);
@@ -579,8 +574,8 @@ body.browser-empty .right-panel {
   top: 50%;
   transform: translateY(-50%);
   right: 34px;
-  width: 24px;
-  height: 24px;
+  width: var(--button-min-height);
+  height: var(--button-min-height);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.1s;
@@ -852,7 +847,7 @@ body.browser-empty .right-panel {
 #canvas-scan-btn { flex-shrink: 0; display: flex; align-items: center; gap: 6px; }
 #canvas-scan-btn.scanning { opacity: 0.6; pointer-events: none; }
 .scan-status-label { font-size: var(--m-size); color: var(--text-muted); white-space: nowrap; font-weight: var(--m-weight); }
-.scan-status-change { height: 24px; padding: 0 9px; font-size: var(--m-size); flex-shrink: 0; }
+.scan-status-change { height: var(--button-min-height); padding: 0 9px; font-size: var(--m-size); flex-shrink: 0; }
 .scan-status-change.icon-only { padding: 0 var(--padding-xs); display: inline-flex; align-items: center; justify-content: center; }
 
 #canvas-scan-bar {
@@ -944,7 +939,7 @@ body.browser-empty .right-panel {
 }
 .modal-footer button {
   flex: 1;
-  height: 24px;
+  height: var(--button-min-height);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -959,7 +954,7 @@ body.browser-empty .right-panel {
   gap: 0;
 }
 #deep-scan-modal .modal-icon { margin-bottom: var(--gap-l); }
-#deep-scan-modal h2 { font-size: var(--l-size); margin-bottom: 24px; }
+#deep-scan-modal h2 { font-size: var(--l-size); margin-bottom: var(--padding-xl); }
 #deep-scan-modal .modal-subtitle {
   font-size: var(--m-size);
   color: var(--text-muted);
@@ -1404,6 +1399,24 @@ function getSelectionColor() {
 var _variables           = [];
 var _collections         = [];
 var _remoteVariables     = [];
+// How much a remote variable is actually used. When one library variable arrives under
+// several per-file ids, the entry with usage is the one components reference — keep it.
+function remoteVarUsage(v) {
+  return (v.aliasCount || 0) + (v.dependentCount || 0) + (v.componentCount || 0);
+}
+// One library variable can arrive under several per-file ids; only its key is stable.
+function dedupeRemoteByKey(list) {
+  var byKey = {}, out = [];
+  var usage = remoteVarUsage;
+  for (var i = 0; i < list.length; i++) {
+    var v = list[i];
+    if (!v.libraryKey) { out.push(v); continue; }
+    if (byKey[v.libraryKey] === undefined) { byKey[v.libraryKey] = out.length; out.push(v); continue; }
+    var at = byKey[v.libraryKey];
+    if (usage(v) > usage(out[at])) out[at] = v;
+  }
+  return out;
+}
 var _remoteCollections   = [];
 var _filterQuery         = '';
 var _searchTimer         = null;
@@ -1482,7 +1495,7 @@ window.onmessage = function (event) {
     case 'usage-scan-error':       return onCanvasScanError(msg.message);
     case 'usage-scan-cancelled':   return onCanvasScanCancelled();
     case 'scan-cache-write-failed':
-      showToast('Cache write #' + msg.attempt + ' failed: ' + (msg.error || '?'));
+      showError('Cache write #' + msg.attempt + ' failed: ' + (msg.error || '?'));
       return;
     case 'place-progress':
       return showScanProgress('Placing components… ' + Math.round((msg.done / msg.total) * 100) + '%', msg.eta || '');
@@ -1493,7 +1506,7 @@ window.onmessage = function (event) {
     case 'place-error':
       _placing = false;
       dismissProgress();
-      showToast(msg.message || 'Could not place components');
+      showError(msg.message || 'Could not place components');
       return;
     case 'focus-unavailable':
       // A user clicked focus and it failed — retag that row and tell them why.
@@ -1575,7 +1588,9 @@ function onInitProgress(msg) {
 function onInitData(msg) {
   _variables         = msg.variables   || [];
   _collections       = msg.collections || [];
-  _remoteVariables   = msg.remoteVars  || [];
+  // Collapse on the library key here too: a single payload can already carry the
+  // same variable under two ids when the file is on an older library publish.
+  _remoteVariables   = dedupeRemoteByKey(msg.remoteVars || []);
   _remoteCollections = msg.remoteColls || [];
 
   // Component index is always built at startup — absorb data immediately
@@ -1637,24 +1652,6 @@ function onInitData(msg) {
     showScanBar(_lastScanTimestamp, 1);
     renderBrowser();
   }
-}
-
-function onRemoteVarsReady(remoteVars, remoteColls) {
-  remoteVars  = remoteVars  || [];
-  remoteColls = remoteColls || [];
-
-  var existingIds = {};
-  for (var i = 0; i < _remoteVariables.length; i++) existingIds[_remoteVariables[i].id] = true;
-  for (var j = 0; j < remoteVars.length; j++) {
-    if (!existingIds[remoteVars[j].id]) _remoteVariables.push(remoteVars[j]);
-  }
-  var existingCollIds = {};
-  for (var k = 0; k < _remoteCollections.length; k++) existingCollIds[_remoteCollections[k].id] = true;
-  for (var l = 0; l < remoteColls.length; l++) {
-    if (!existingCollIds[remoteColls[l].id]) _remoteCollections.push(remoteColls[l]);
-  }
-
-  renderBrowser();
 }
 
 // ─── Divider component (used by list and graph views) ───────────────────────
@@ -1793,90 +1790,6 @@ function renderBrowser() {
   document.getElementById('comp-list').classList.add('hidden');
   listEl.classList.remove('hidden');
   setupDividerTracking('var-list');
-  updateBrowserTabStates();
-}
-
-function renderAllBrowser() {
-  var q = _filterQuery.toLowerCase();
-  var emptyEl  = document.getElementById('browser-empty');
-  var allListEl = document.getElementById('all-list');
-
-  // Collect filtered vars
-  var vars = [];
-  for (var i = 0; i < _variables.length; i++) {
-    var v = _variables[i];
-    if (matchesSearch(v.name, v.collectionName, q)) vars.push(v);
-  }
-  if (_displayDepth >= 2) {
-    for (var j = 0; j < _remoteVariables.length; j++) {
-      var rv = _remoteVariables[j];
-      if (matchesSearch(rv.name, rv.collectionName, q)) vars.push(rv);
-    }
-  }
-
-  // Collect filtered components (exclude remote components when display depth < 2)
-  var comps = [];
-  for (var k = 0; k < _allBrowserComponents.length; k++) {
-    var c = _allBrowserComponents[k];
-    if (_displayDepth < 2 && c.isRemote) continue;
-    if (matchesSearch(c.nodeName, '', q)) comps.push(c);
-  }
-
-  if (vars.length === 0 && comps.length === 0) {
-    allListEl.innerHTML = '';
-    showBrowserEmpty(true);
-    document.getElementById('var-list').classList.add('hidden');
-    document.getElementById('comp-list').classList.add('hidden');
-    allListEl.classList.remove('hidden');
-    document.body.classList.add('browser-empty');
-    return;
-  }
-  showBrowserEmpty(false);
-  document.body.classList.remove('browser-empty');
-
-  // Classify vars into tiers
-  var vHigh = [], vMedium = [], vLow = [], vNone = [];
-  for (var vi = 0; vi < vars.length; vi++) {
-    var s = varImpactScore(vars[vi]);
-    if      (s > 100) vHigh.push(vars[vi]);
-    else if (s > 40)  vMedium.push(vars[vi]);
-    else if (s > 0)   vLow.push(vars[vi]);
-    else              vNone.push(vars[vi]);
-  }
-
-  // Classify components into tiers
-  var cHigh = [], cMedium = [], cLow = [];
-  for (var ci = 0; ci < comps.length; ci++) {
-    var bc = comps[ci].boundCount || 0;
-    if      (bc >= 5) cHigh.push(comps[ci]);
-    else if (bc >= 2) cMedium.push(comps[ci]);
-    else              cLow.push(comps[ci]);
-  }
-
-  function scoreSort(a, b) { return varImpactScore(b) - varImpactScore(a) || a.name.localeCompare(b.name); }
-  function boundSort(a, b) { return (b.boundCount || 0) - (a.boundCount || 0) || a.nodeName.localeCompare(b.nodeName); }
-
-  var html = '';
-  function renderTier(label, tier, varsArr, compsArr) {
-    if (varsArr.length === 0 && compsArr.length === 0) return;
-    var count = varsArr.length + compsArr.length;
-    html += makeDivider(label, tier, count);
-    var sv = varsArr.slice().sort(scoreSort);
-    var sc = compsArr.slice().sort(boundSort);
-    for (var i = 0; i < sv.length; i++) html += renderVarRow(sv[i]);
-    for (var j = 0; j < sc.length; j++) html += makeCompItem(sc[j]);
-  }
-
-  renderTier('High',   'high',   vHigh,   cHigh);
-  renderTier('Medium', 'medium', vMedium, cMedium);
-  renderTier('Low',    'low',    vLow,    cLow);
-  renderTier('Unused',     'none',   vNone,   []);
-
-  allListEl.innerHTML = html;
-  document.getElementById('var-list').classList.add('hidden');
-  document.getElementById('comp-list').classList.add('hidden');
-  allListEl.classList.remove('hidden');
-  setupDividerTracking('all-list');
   updateBrowserTabStates();
 }
 
@@ -2215,7 +2128,8 @@ function makeVarNode(v, cssClass, dataId) {
       '</button>'
     : '';
   var externalBadge = isExternal
-    ? '<span class="node-external-badge" data-tip="From external library — run Full scan to explore">Library</span>'
+    ? '<span class="tooltipButton lib-badge node-lib-badge" data-tip="From external library — run Full scan to explore">' +
+        '<svg width="12" height="12"><use href="#icon-library"/></svg></span>'
     : '';
   return '<div class="node graph-node ' + cssClass + (isExternal ? ' node-external' : '') + '"' + idAttr + externalAttr + '>' +
     '<div class="node-type-icon">' + varTypeIconHtml(v.resolvedType, 16) + '</div>' +
@@ -2398,13 +2312,6 @@ function renderComponents(components) {
 
 var _GRAPH_COL_IDS = ['gcol-2', 'gcol-3'];
 
-function _scrollColsToTop() {
-  for (var i = 0; i < _GRAPH_COL_IDS.length; i++) {
-    var col = document.getElementById(_GRAPH_COL_IDS[i]);
-    if (col) col.scrollTop = 0;
-  }
-}
-
 function _showAllGraphNodes() {
   // No-op: nodes are never display:none, dimming is CSS-only
 }
@@ -2543,45 +2450,6 @@ function scheduleDrawEdges() {
     drawEdges();
     drawCrossEdges();
   });
-}
-
-function alignColumnToSelection(selNode, connected) {
-  // For each column that has connected nodes, scroll it so the vertical
-  // midpoint of the connected-node group aligns with the selected node's midpoint.
-  var bodyEl = document.getElementById('graph-body');
-  if (!bodyEl) return;
-
-  var selRect = selNode.getBoundingClientRect();
-  var selMid  = selRect.top + selRect.height / 2; // viewport Y
-
-  var allColIds = _GRAPH_COL_IDS;
-  for (var c = 0; c < allColIds.length; c++) {
-    var cid   = allColIds[c];
-    var colEl = document.getElementById(cid);
-    if (!colEl) continue;
-
-    // Skip the column the selected node belongs to
-    if (selNode.closest('.graph-col') === colEl) continue;
-
-    var connMap = connected[cid];
-    if (!connMap) continue;
-
-    var nodes = Array.from(colEl.querySelectorAll('.graph-node:not(.more)'));
-    var connNodes = [];
-    for (var n = 0; n < nodes.length; n++) {
-      if (connMap[n] === true) connNodes.push(nodes[n]);
-    }
-    if (connNodes.length === 0) continue;
-
-    // Find the vertical midpoint of the connected group (in viewport coords)
-    var topRect = connNodes[0].getBoundingClientRect();
-    var botRect = connNodes[connNodes.length - 1].getBoundingClientRect();
-    var groupMid = (topRect.top + botRect.bottom) / 2;
-
-    // Adjust scrollTop so groupMid lands at selMid
-    var delta = groupMid - selMid;
-    colEl.scrollTop = colEl.scrollTop + delta;
-  }
 }
 
 function drawEdges(selColId, selNodeIdx, connected) {
@@ -3141,7 +3009,10 @@ function triggerFullRescan() {
     syncBrowserModeButtons('tokens');
   }
 
-  parent.postMessage({ pluginMessage: { type: 'init' } }, '*');
+  // force: a user-triggered rescan must re-read the file rather than replay the
+  // cache — otherwise renames made in an external library never show up, since
+  // this file's own signature is unchanged.
+  parent.postMessage({ pluginMessage: { type: 'init', force: true } }, '*');
 }
 
 // ─── Component browser ───────────────────────────────────────────────────────
@@ -3358,7 +3229,10 @@ function onCompItemClick(e) {
   if (!btn) return;
   var nodeId = btn.getAttribute('data-node-id');
   if (!nodeId) return;
-  clearSearchIfActive();
+  // The search survives selecting a result — it's the working set, and you may
+  // want to click through several matches. Only drilling out of the detail panel
+  // (navigateToComponent, drillIntoVar) clears it, since the target may sit
+  // outside the query. Matches the token list, which never cleared here.
 
   // Chevron on the already-selected component → no-op (never deselect, never
   // re-run the render), matching the token list.
@@ -3564,9 +3438,12 @@ function drillToTokenMode(varId) {
   if (findVar(varId)) {
     drillIntoVar(varId);
   } else {
+    // Drop the component we drilled out of. The local branch gets this via
+    // drillIntoVar; without it _selectedCompNodeId survives into token mode and
+    // drawCrossEdges hunts for a .comp-item inside #var-list, finds none, and
+    // clears every connector — the token renders with no lines to its components.
+    clearAllSelections();
     _selectedRemoteId  = varId;
-    _selectedId        = null;
-    _currentComponents = null;
     clearSearchIfActive(); // clear before DOM query so remote var-item is in the list
     var items = varList.querySelectorAll('.var-item');
     for (var i = 0; i < items.length; i++) {
@@ -3859,7 +3736,7 @@ function onCanvasScanError(message) {
   if (rescanBtn) rescanBtn.disabled = false;
   var progCont = document.getElementById('progress-container');
   if (progCont) progCont.innerHTML = '';
-  if (typeof showToast === 'function') showToast('Canvas scan failed: ' + message);
+  if (typeof showError === 'function') showError('Canvas scan failed: ' + message);
 }
 
 // ─── Error ────────────────────────────────────────────────────────────────────
@@ -3867,7 +3744,7 @@ function onCanvasScanError(message) {
 function onError(message) {
   var col3 = document.getElementById('gcol-3');
   if (col3) col3.innerHTML = '<div class="col-placeholder"><span>Error loading</span></div>';
-  if (typeof showToast === 'function') showToast('Error: ' + message);
+  if (typeof showError === 'function') showError('Error: ' + message);
 }
 
 // ─── Click handlers ───────────────────────────────────────────────────────────
@@ -4393,7 +4270,7 @@ document.getElementById('sb-export-btn').addEventListener('click', function () {
     document.execCommand('copy');
     showToast('Copied to clipboard');
   } catch (err) {
-    showToast('Copy failed — select text manually');
+    showError('Copy failed — select text manually');
   }
   document.body.removeChild(ta);
 });
@@ -4587,15 +4464,6 @@ function nodeTypeIcon(type) {
     case 'INSTANCE':    return '<svg width="16" height="16" style="flex-shrink:0"><use href="#icon-object-component"/></svg>';
     default:            return '<svg width="16" height="16"><use href="#icon-object-frame"/></svg>';
   }
-}
-
-function renderTypeBadge(type, hex) {
-  if (type === 'COLOR') {
-    if (hex) return '<div class="color-swatch" style="background:' + esc(hex) + '"></div>';
-    return '<div class="color-swatch-empty"></div>';
-  }
-  var label = type === 'FLOAT' ? 'NUM' : type === 'STRING' ? 'STR' : type === 'BOOLEAN' ? 'BOO' : type;
-  return '<span class="text-badge badge-' + esc(type) + '">' + label + '</span>';
 }
 
 function esc(str) {

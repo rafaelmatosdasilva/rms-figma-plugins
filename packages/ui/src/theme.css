@@ -19,9 +19,11 @@
     --radius-md:      12px;  /* cards (radii/card) */
     --radius-toast:   24px;  /* toasts (radii/toast = 24px, aliases radii/button) */
     --radius-tooltip:  8px;  /* tooltip (radii/tooltip) */
-    --radius-sm:       4px;  /* small decorative elements (radii/sm) */
 
     /* Border width */
+    --icon-xsmall: 1.2px;  /* icon/xsmall stroke */
+    --icon-small:  1.5px;  /* icon/small stroke */
+    --icon-large:  2px;    /* icon/large stroke */
     --thickness:   1.5px;  /* general/thickness */
 
     /* Modal animation */
@@ -44,7 +46,8 @@
     --neutral-1000: #ffffff;
 
     /* Spacing tokens — Figma DS (gap/*, padding/*, general/*) */
-    --min-height:  24px;  /* general/min-height */
+    --min-height:  60px;  /* general/min-height */
+    --button-min-height: 24px; /* button/min-height — the 24px control height (was --min-height before the DS split the two) */
     --gap-xs:      2px;
     --gap-s:       4px;
     --gap-m:       8px;
@@ -59,21 +62,22 @@
 
     /* Node component tokens — mode-aware via neutral ramp */
     --node-background-idle:           var(--neutral-1000); /* node/background/idle N1000 */
-    --node-background:                var(--neutral-900);  /* node/background/default L=N900 #f7f7f7, D→override */
+    --node-background-hover:                var(--neutral-900);  /* node/background/default L=N900 #f7f7f7, D→override */
     --node-background-selected:       var(--neutral-1000); /* node/background/selected N1000 */
     /* node/border/default removed — DS Idle state has no stroke; the resting .node border
        is transparent. Only hover/selected/unselected/disabled carry a border color. */
-    --node-border-hover:      var(--neutral-400);  /* node/border/hover N400 */
+    --node-border-hover:      var(--neutral-700);  /* node/border/hover N400 */
     --node-border-selected:   var(--neutral-100);  /* node/border/selected N100 */
     --node-border-disabled:   var(--neutral-700);  /* node/border/disabled L=N700, D=N600 */
     --node-label-selected:    var(--neutral-200);  /* node/label/selected L=N200, D→override */
     --node-label-disabled:    var(--neutral-400);  /* node/label/disabled N400 both modes */
     --node-icon-selected:   var(--neutral-400);  /* node/icon/selected/color L=N4, D→override */
     --node-icon-idle:       var(--neutral-600);  /* node/icon/idle L=N600 #adadad, D→override */
-    --node-icon-hover:      var(--neutral-600);  /* node/icon/hover → node/icon/idle → buttonList/iconPrimary → N600; D→override */
+    --node-icon-hover:      var(--neutral-400);  /* node/icon/hover/color → node/icon/selected/color (DS alias, both modes): L=N400 #595959, D→override N300. Read across all modes from 947:17057 on 2026-07-30 — it no longer chains to idle/N600 */
     --node-icon-disabled:   var(--neutral-600);  /* node/icon/disabled/color N600 both modes */
-    --node-border-unselected: var(--neutral-800); /* node/border/unselected/color L=N8, D→override */
+    --node-border-idle: var(--neutral-800); /* node/border/unselected/color L=N8, D→override */
     --node-label-idle:        var(--neutral-300); /* node/label/idle L=N300 #404040, D=N300 #b8b8b8 — same step both modes */
+    --node-label-hover:       var(--neutral-300); /* node/label/hover/color → node/label/idle → N300 both modes (L #404040, D #bfbfbf) */
 
     /* Base — mode-aware via neutral ramp */
     --bg: var(--neutral-900);           /* panel/background/color N900 */
@@ -96,6 +100,13 @@
     --semantic-positive:  var(--green);
     --semantic-warning:   var(--yellow);
     --semantic-negative:  var(--red);
+    /* Toast failure variant — DS component "state=error" (1860:439), added 2026-07-30.
+       Both values hold across Light and Dark with no override: the fill is the red
+       primitive in each mode, and title/icon are N1000, which inverts per mode
+       (#ffffff light, #171717 dark) exactly like the success toast. */
+    --toast-background-error: var(--semantic-negative); /* toast/background/error/color */
+    --toast-title-error:      var(--neutral-1000);      /* toast/title/error/color */
+    --toast-icon-error:       var(--neutral-1000);      /* toast/icon/error/color */
     /* Buttons */
     --buttonTertiary-background:          var(--neutral-800); /* buttonTertiary/background/default L=N800, D→N900 override */
     --buttonTertiary-text:        var(--neutral-100); /* buttonTertiary/iconText/default L=N100, D→N300 override */
@@ -155,10 +166,10 @@
     --modal-background: var(--neutral-1000);         /* modal/background N1000 */
     --modal-title: var(--neutral-100);       /* modal/title N100 */
     /* Tooltip */
-    --tooltip-background:     var(--neutral-1000);   /* tooltip/background/color N1000 — same primitive both modes */
-    --tooltip-border: var(--neutral-800);    /* tooltip/border/color N800 — same primitive both modes */
-    --tooltip-text:   var(--neutral-300);    /* tooltip/text/color N300 — same primitive both modes */
-    --tooltipButton-icon: var(--neutral-300); /* tooltipButton/icon/color → primitives/Neutral 300 (L #404040, D #b8b8b8) */
+    --tooltipPopover-background:     var(--neutral-1000);   /* tooltip/background/color N1000 — same primitive both modes */
+    --tooltipPopover-border: var(--neutral-800);    /* tooltip/border/color N800 — same primitive both modes */
+    --tooltipPopover-text:   var(--neutral-300);    /* tooltip/text/color N300 — same primitive both modes */
+    --tooltipButton-icon: var(--neutral-400); /* tooltipButton/icon/color — split alias: L=N400 #595959, D→N300 #bfbfbf (1810:27212) */
     --hex-sub-color: var(--neutral-300); /* input/value/empty secondary: N3 both modes */
     /* Overflow container */
     --overflow-background: var(--neutral-1000); /* overflow/background/color L=N1000, D→override */
@@ -195,6 +206,7 @@
     --statusbar-icon: var(--neutral-600); /* statusbar/icon/color L=N6, D→override */
     /* Empty state */
     --emptyState-title:          var(--neutral-100);       /* emptyState/title/color N1 both */
+    --emptyState-description:    var(--neutral-300);       /* emptyState/description/color N300 both modes (L #404040, D #bfbfbf) */
     --emptyState-icon-neutral:           var(--neutral-600);       /* emptyState/icon/neutral/color L=N6, D→override */
 
     /* Radio button (mode-aware) */
@@ -217,25 +229,25 @@
   @media (prefers-color-scheme: dark) {
     :root {
       /* Primitives — dark ramp (overrides light values in :root) */
-      --neutral-100: #ededed;
-      --neutral-200: #d4d4d4;
-      --neutral-300: #b8b8b8;
-      --neutral-400: #808080;
+      --neutral-100: #f5f5f5;
+      --neutral-200: #dbdbdb;
+      --neutral-300: #bfbfbf;
+      --neutral-400: #878787;
       --neutral-500: #5e5e5e;
-      --neutral-600: #3b3b3b;
+      --neutral-600: #454545;
       --neutral-700: #303030;
-      --neutral-800: #2c2c2c;
-      --neutral-900: #212121;
-      --neutral-1000: #121212;
+      --neutral-800: #262626;
+      --neutral-900: #1f1f1f;
+      --neutral-1000: #171717;
       /* Base — tokens with different primitives per mode */
       --bg-secondary: var(--neutral-900); /* dark hover surface = same as bg */
       --surface: var(--neutral-800);      /* input/background/filled Dark = N800 */
-      --border: var(--neutral-600);       /* dividerLine/border Dark = N600 */
+      --border: var(--neutral-700);       /* dividerLine/border Dark = N600 */
       --divider: var(--neutral-600);      /* dividerSection/divider Dark = N600 */
       --text-muted: var(--neutral-300);   /* semantic/text/secondary Dark = N300 */
       /* Buttons */
       --buttonTertiary-background: var(--neutral-900); /* D=N900 (#212121) — L uses N800, split alias */
-      --buttonTertiary-text: var(--neutral-300);       /* D=N300 (#b8b8b8) — L uses N100, split alias */
+      --buttonTertiary-text: var(--neutral-200);       /* D=N300 (#b8b8b8) — L uses N100, split alias */
       /* --buttonTertiary-background-active: N1000 both modes — var(--neutral-1000) in :root resolves correctly via primitive */
       --buttonTertiary-text-active: var(--neutral-100); /* D=N100 (#ededed) — L uses N200, split alias */
       --buttonQuaternary-text: var(--neutral-300); /* Dark = N300 (#b8b8b8); light uses N400 */
@@ -248,7 +260,6 @@
       --swatch-border-filled: var(--buttonSecondary-border); /* Dark → buttonSecondary/border (= N600) */
       --swatch-border-empty:  var(--buttonSecondary-border); /* Dark → buttonSecondary/border/default/color */
       --input-border:              var(--buttonSecondary-border); /* input/border/default D=N600 via buttonSecondary/border */
-      --input-border-focus:               var(--neutral-100);   /* input/border/focus D=N100 */
       --input-border-hover:               var(--neutral-400);   /* input/border/hover D=N400 */
       --input-value-empty:         var(--neutral-400);   /* input/value/empty D=N400 */
       --input-value-disabled:      var(--neutral-100);   /* input/value/disabled D=N100 */
@@ -260,9 +271,9 @@
       --overlay-bg: rgba(44,44,44,0.6);
       /* Node tokens — different primitives per mode */
       --node-background-idle:           var(--neutral-800);  /* Dark = N800 */
-      --node-background:                var(--neutral-800);  /* node/background/default Dark = N800 #2c2c2c */
+      --node-background-hover:                var(--neutral-800);  /* node/background/default Dark = N800 #2c2c2c */
       --node-background-selected:       var(--neutral-700);  /* Dark = N700 */
-      --node-border-hover:      var(--neutral-300);  /* Dark = N300 */
+      --node-border-hover:      var(--neutral-600);  /* Dark = N300 */
       --node-label-selected:    var(--neutral-100);  /* Dark = N100 */
       --node-border-disabled:   var(--neutral-600);  /* Dark = N600 */
       --segmentedControl-label-selected: var(--neutral-100); /* Dark = N100 */
@@ -290,17 +301,18 @@
       /* Input */
       --input-label: var(--neutral-300);  /* D=N3 */
       --input-icon:  var(--neutral-200);  /* D=N2 */
+      --tooltipButton-icon: var(--neutral-300); /* tooltipButton/icon Dark = N300 #bfbfbf (light uses N400 — split alias) */
       /* Node additional states */
-      --node-border-unselected: var(--neutral-600); /* D=N6 */
+      --node-border-idle: var(--neutral-600); /* D=N6 */
       --node-icon-selected:   var(--neutral-300);   /* D=N3 */
       --node-icon-idle:       var(--neutral-500);   /* Dark = N500 #5e5e5e (was N400; DS rebound via buttonList/iconPrimary) */
-      --node-icon-hover:      var(--neutral-500);   /* Dark = N500 #5e5e5e — same chain as idle */
+      --node-icon-hover:      var(--neutral-300);   /* Dark = N300 #b8b8b8 — same alias chain as selected (node/icon/hover → node/icon/selected → Neutral 300) */
       /* listItem */
       --listItem-description: var(--neutral-300); /* Dark = N300 */
 
       /* buttonList */
       --buttonList-background-hover:    var(--neutral-800); /* D=N8 */
-      --buttonList-background-selected: var(--neutral-600); /* D=N6 */
+      --buttonList-background-selected: var(--neutral-700); /* D=N6 */
       --buttonList-iconPrimary:   var(--neutral-500); /* D=N5 */
       --buttonList-iconSecondary: var(--neutral-200); /* D=N2 */
       --buttonList-text:          var(--neutral-300); /* D=N300 (#b8b8b8) */
@@ -334,7 +346,7 @@
   }
 
   button {
-    height: var(--min-height);
+    height: var(--button-min-height);
     padding-top: 0;
     padding-bottom: 0;
     box-sizing: border-box;
@@ -382,7 +394,7 @@
     background: var(--node-background-selected);
     color: var(--node-label-selected);
   }
-  .node:hover { border-color: var(--node-border-hover); background: var(--node-background); }
+  .node:hover { border-color: var(--node-border-hover); background: var(--node-background-hover); }
   .node.node-selected:hover { border-color: var(--node-border-selected-hover); }
   /* Disabled appearance — always token-driven, never opacity. Opacity would
      wash the tokens out to arbitrary values and break parity with the DS.
@@ -408,11 +420,22 @@
   }
   .node.node-unselected {
     background: transparent;
-    border-color: var(--node-border-unselected);
+    border-color: var(--node-border-idle);
     color: var(--node-label-idle);
   }
+  /* DS node State=Hover binds its own label colour (node/label/hover, added
+     2026-07-30). It resolves to the same N300 step as idle in both modes, so this
+     is a semantic binding, not a visual change — it keeps the hover state wired to
+     its own token if the DS ever moves them apart. */
+  .node:hover .var-name,
+  .node:hover .node-name { color: var(--node-label-hover); }
   .node svg { color: var(--node-icon-idle); flex-shrink: 0; }
-  .node:hover svg { color: var(--node-icon-hover); }  /* DS node State=Hover */
+  /* DS node State=Hover. Scoped to the type-icon wrappers on purpose: a bare
+     `.node:hover svg` is (0,2,1) and outguns `.node-focus-btn svg` (0,1,1), so it
+     repainted the action buttons with the muted icon colour and they read as
+     dimmed. Same scoping the disabled/receded states use below. */
+  .node:hover .node-type-icon svg,
+  .node:hover .var-type-icon svg { color: var(--node-icon-hover); }
   .node.node-selected svg { color: var(--node-icon-selected); }
   .node.node-unselected svg { color: var(--node-icon-idle); }
   /* State colour applies to the node's OWN type icon only. Action buttons
@@ -489,9 +512,9 @@
   /* ── Universal tooltip ── */
   #tt {
     position: fixed;
-    background: var(--tooltip-background);
-    border: var(--thickness) solid var(--tooltip-border);
-    color: var(--tooltip-text);
+    background: var(--tooltipPopover-background);
+    border: var(--thickness) solid var(--tooltipPopover-border);
+    color: var(--tooltipPopover-text);
     font-size: var(--s-size);
     font-weight: var(--s-weight);
     padding: var(--padding-xs) var(--padding-s);
@@ -536,7 +559,7 @@
   .buttonPrimary:has(svg):not(:has(span)),
   .buttonSecondary:has(svg):not(:has(span)),
   .buttonTertiary:has(svg):not(:has(span)),
-  .buttonQuaternary:has(svg):not(:has(span)) { width: 24px; padding: 0; }
+  .buttonQuaternary:has(svg):not(:has(span)) { width: var(--button-min-height); padding: 0; }
 
   /* ── Circular icon button ── */
   .buttonAddOutput svg { transition: transform 0.2s ease; }
@@ -544,8 +567,8 @@
 
   .buttonAddOutput {
     border-radius: 50%;
-    width: var(--min-height);
-    height: var(--min-height);
+    width: var(--button-min-height);
+    height: var(--button-min-height);
     padding: 0;
     margin-left: 0;
     position: relative;
@@ -555,7 +578,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: var(--min-height);
+    height: var(--button-min-height);
     padding: 0 var(--padding-xs);  /* padding/xs = 4px LR per DS component */
     gap: var(--gap-s);
     background: var(--buttonTertiary-background);
@@ -567,7 +590,7 @@
     font-size: var(--m-size);
     font-weight: var(--m-weight);
     white-space: nowrap;
-    line-height: var(--min-height);
+    line-height: var(--button-min-height);
     transition: background 0.15s ease, color 0.15s ease;
   }
   .buttonTertiary:hover {
@@ -600,7 +623,9 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px; height: 24px;
+    /* DS binds the shell to button/min-height (1810:27212), so take it from the
+       token rather than repeating 24px behind a hygiene exception. */
+    width: var(--button-min-height); height: var(--button-min-height);
     flex-shrink: 0;
     padding: 0;
     background: none;
@@ -614,7 +639,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: var(--min-height);
+    min-height: var(--button-min-height);
     padding: 0 var(--padding-xs);
     gap: var(--gap-s);
     background: transparent;
@@ -648,7 +673,7 @@
 
   /* ── Icon-only variant ── */
   .buttonUnpair {
-    width: 24px;
+    width: var(--button-min-height);
     padding: 0;
     font-size: 0;
   }
@@ -684,7 +709,7 @@
     gap: var(--gap-s);
     /* DS buttonPrimary is h=24 (structure-contract). Text-only buttons already
        landed there via padding; the explicit height keeps icon+label ones honest. */
-    height: var(--min-height);
+    height: var(--button-min-height);
     padding: 0 var(--padding-s);
     font-size: var(--m-size);
     color: var(--buttonPrimary-text);
@@ -715,8 +740,8 @@
   }
   #rescan-btn, .export-picker { margin-top: 0; align-self: center; }
   .buttonRescan {
-    width: var(--min-height);
-    height: var(--min-height);
+    width: var(--button-min-height);
+    height: var(--button-min-height);
     border-radius: 50%;
     padding: 0;
     display: flex;
@@ -732,7 +757,7 @@
     border: var(--thickness) solid var(--input-border); /* input/border/default */
     border-radius: var(--radius-full);
     padding: 0 var(--padding-s);  /* padding/s = 8px LR, symmetric per DS component */
-    height: var(--min-height); gap: var(--gap-s); min-width: var(--input-min-width);
+    height: var(--button-min-height); gap: var(--gap-s); min-width: var(--input-min-width);
     transition: border-color 0.15s ease;
   }
   .inputWrap:not(.inputWrap--readonly):hover { border-color: var(--input-border-hover); }
@@ -767,12 +792,6 @@
   .inputWrap.empty { background: transparent; }
   .inputWrap.no-value .inputField { display: none; }
 
-  /* ── Messages ── */
-  .error-msg {
-    background: color-mix(in srgb, var(--semantic-negative) 10%, transparent);
-    border: var(--thickness) solid color-mix(in srgb, var(--semantic-negative) 30%, transparent);
-    color: var(--semantic-negative); padding: 8px 10px; border-radius: var(--radius-sm); margin-bottom: 10px; font-size: var(--m-size);
-  }
   #progress-container {
     position: fixed; inset: 0; z-index: 9997;
     display: flex; align-items: center; justify-content: center;
@@ -786,7 +805,7 @@
   #progress-container .progress-msg { animation: none; }
   /* Feedback toasts — bottom-center, no overlay */
   #toast-container:not(:empty) {
-    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 9998;
+    position: fixed; bottom: var(--padding-xl); left: 50%; transform: translateX(-50%); z-index: 9998;
     display: flex; flex-direction: column; align-items: center; gap: 6px;
     pointer-events: none;
     white-space: nowrap;
@@ -860,7 +879,7 @@
     container-type: inline-size;
     gap: var(--gap-xs);            /* gap/xs between icon and label */
     padding: var(--padding-xxs) var(--padding-m); /* 2px T/B, 12px L/R */
-    height: 24px;
+    height: var(--button-min-height);
     background: transparent;
     border: var(--thickness) solid transparent; /* transparent border — selected replaces it */
     position: relative; z-index: 1; /* sit above the pill */
@@ -1165,6 +1184,11 @@
   .toast.toast-out { animation: toast-out 0.22s cubic-bezier(0.4, 0, 0.84, 0.16) forwards; }
   .toast-icon { color: var(--toast-icon-loading); display: inline-flex; flex-shrink: 0; }
   .toast .toast-icon { color: var(--toast-icon-success); }
+  /* Failure variant — DS "state=error". Same 32px shell, padding and radius as the
+     success toast; only the fill and the icon/label colour change. The icon has its
+     own token rather than inheriting the label colour. */
+  .toast.toast-error { background: var(--toast-background-error); color: var(--toast-title-error); }
+  .toast.toast-error .toast-icon { color: var(--toast-icon-error); }
   .toast-description {
     font-size: var(--m-size);
     color: var(--toast-description-loading);
@@ -1224,8 +1248,8 @@
 
   /* ── Swatch chip ── */
   .swatch {
-    width: var(--min-height);
-    height: var(--min-height);
+    width: var(--button-min-height);
+    height: var(--button-min-height);
     border-radius: var(--radius-swatch);
     border: var(--thickness) solid var(--swatch-border-filled);
     flex-shrink: 0;
@@ -1349,33 +1373,5 @@
     flex-shrink: 0;
   }
 
-  /* ── Button group ── */
-  /* Toolbar-style icon (or text) button row: square corners, border-left dividers.
-     Distinct from .segmented-control (pill, border-only selected state). */
-  .button-group {
-    display: flex;
-    flex-shrink: 0;
-    border: var(--thickness) solid var(--border);
-    border-radius: var(--radius-sm);
-  }
-  .button-group button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: background 0.1s, color 0.1s;
-    padding: 0;
-    font-family: inherit;
-  }
-  .button-group button + button { border-left: var(--thickness) solid var(--border); }
-  .button-group button.selected { background: var(--surface); color: var(--text); }
-  .button-group button:not(.selected):hover { background: var(--bg-secondary); color: var(--text); }
-  /* Text variant: auto-width with horizontal padding */
-  .button-group-label { width: auto; padding: 0 9px; font-size: var(--s-size); font-weight: var(--s-weight); letter-spacing: 0.2px; }
 
 }

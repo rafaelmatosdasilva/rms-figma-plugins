@@ -187,7 +187,7 @@
   .fork-item {
     display: flex;
     align-items: center;
-    height: 24px;
+    height: var(--button-min-height);
     width: 100%;
     position: relative;
   }
@@ -273,7 +273,7 @@
     background: var(--surface);
   }
 
-  .cmyk-spacer { width: 24px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+  .cmyk-spacer { width: var(--button-min-height); flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
   .cmyk-group.cmyk-readonly .cmyk-box-wrap { background: transparent; border-color: var(--input-auto-border); }
   .cmyk-box[readonly], .output-text-input[readonly] { pointer-events: none; opacity: 0.8; }
   /* Placement only — appearance comes from .tooltipButton in the base. */
@@ -344,7 +344,6 @@
 </head>
 <body>
 
-<div id="error-container"></div>
 <div id="progress-container"></div>
 
 <!-- Results -->
@@ -397,6 +396,20 @@
   parent.postMessage({ pluginMessage: { type: 'get-saved-height' } }, '*');
 
   let exportedCount = 0, exportTotal = 0, scanToastTimer = null;
+  // Per-frame export failures, reported as ONE toast when the batch ends —
+  // a toast per failed frame would stampede on a big selection.
+  let _exportFailures = [];
+
+  // One frame failing names it; several report the count, since the toast is a
+  // single line and a list of names would overflow it.
+  function reportExportFailures() {
+    if (!_exportFailures.length) return;
+    const f = _exportFailures;
+    showError(f.length === 1
+      ? `Failed to export ${f[0].name} — ${f[0].message}`
+      : `${f.length} of ${exportTotal} frames failed to export`);
+    _exportFailures = [];
+  }
   let _exportFmt = null, _exportLookup = null;
   let _exportCancelled = false;
   let _exportUsedFSA = false;   // true if at least one file was confirmed written via FSA
@@ -964,24 +977,6 @@
 
   // ── Pantone commit (kept for compat with inline-added rows) ──────────
 
-  function commitPantoneEdit(wrap) {
-    const input = wrap.querySelector(".pantone-input") || wrap.querySelector(".output-text-input");
-    if (!input) return;
-    const value = input.value.trim();
-    if (!value) return;
-    parent.postMessage({ pluginMessage: {
-      type: "update-pantone-variable",
-      colorVarId: wrap.dataset.colorVarId || null,
-      pantoneValue: value
-    }}, "*");
-  }
-
-  // Force a re-scan to restore UI state (e.g. cancel add)
-  function runScanRefresh() {
-    _startScanToastTimer();
-    parent.postMessage({ pluginMessage: { type: "request-scan" }}, "*");
-  }
-
   // ── Output type config ────────────────────────────────────────────────
 
   const OUTPUT_TYPES = [
@@ -1506,70 +1501,7 @@
   // Generates a valid PDF with a DeviceCMYK image, FlateDecode compressed.
   // Illustrator, Acrobat, and print RIPs see it as native CMYK.
 
-  async function buildCmykPdf(cmykData, pxWidth, pxHeight, pageWidth, pageHeight) {
-    const compressed = await deflateBuf(cmykData);
-    const objects = [];
-    function addObj(content, streamBytes) {
-      objects.push({ content, streamBytes: streamBytes || null });
-      return objects.length;
-    }
-
-    addObj("<< /Type /Catalog /Pages 2 0 R >>");
-    addObj("<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
-    addObj(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Contents 4 0 R /Resources << /XObject << /Img 5 0 R >> >> >>`);
-    const drawCmd = `q ${pageWidth} 0 0 ${pageHeight} 0 0 cm /Img Do Q`;
-    const drawBytes = new TextEncoder().encode(drawCmd);
-    addObj(`<< /Length ${drawBytes.length} >>`, drawBytes);
-    addObj(
-      `<< /Type /XObject /Subtype /Image /Width ${pxWidth} /Height ${pxHeight} /ColorSpace /DeviceCMYK /BitsPerComponent 8 /Filter /FlateDecode /Length ${compressed.length} >>`,
-      compressed
-    );
-
-    const enc = new TextEncoder();
-    const parts = [];
-    const offsets = [];
-
-    parts.push(enc.encode("%PDF-1.4\n%\xE2\xE3\xCF\xD3\n"));
-
-    for (let i = 0; i < objects.length; i++) {
-      const obj = objects[i];
-      const id = i + 1;
-      offsets.push(parts.reduce((s, p) => s + p.length, 0));
-      parts.push(enc.encode(`${id} 0 obj\n${obj.content}\n`));
-      if (obj.streamBytes) {
-        parts.push(enc.encode("stream\n"));
-        parts.push(obj.streamBytes);
-        parts.push(enc.encode("\nendstream\n"));
-      }
-      parts.push(enc.encode("endobj\n"));
-    }
-
-    const xrefOffset = parts.reduce((s, p) => s + p.length, 0);
-    let xref = `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-    for (const off of offsets) {
-      xref += off.toString().padStart(10, "0") + " 00000 n \n";
-    }
-    xref += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
-    parts.push(enc.encode(xref));
-
-    const total = parts.reduce((s, p) => s + p.length, 0);
-    const result = new Uint8Array(total);
-    let off = 0;
-    for (const p of parts) { result.set(p, off); off += p.length; }
-    return result;
-  }
-
   // ── Convert PNG to 4-channel CMYK (PDF — white bg for transparency) ──
-
-  async function convertImageToCmyk4(png, w, h, cl) {
-    const rgba = await loadPngToCanvas(png, w, h, true);
-    const out = new Uint8Array(w * h * 4);
-    for (let i = 0, j = 0; i < rgba.length; i += 4, j += 4) {
-      const c = rgbPixelToCmyk(rgba[i], rgba[i+1], rgba[i+2], cl);
-      out[j] = c[0]; out[j+1] = c[1]; out[j+2] = c[2]; out[j+3] = c[3];
-    }
-    return out;
-  }
 
   // ── TIFF: CMYK+Alpha 300 DPI ──────────────────────────────────────
 
@@ -1932,7 +1864,7 @@
       _clearScanToastTimer();
       setExportBusy(false);
       dismissProgress();
-      document.getElementById("error-container").innerHTML=`<div class="error-msg">${msg.message}</div>`;
+      showError(msg.message);
       return;
     }
 
@@ -2364,7 +2296,7 @@
     }
 
     if (msg.type === "export-batch-start") {
-      exportedCount = 0; exportTotal = msg.total; _exportFmt = msg.format;
+      exportedCount = 0; exportTotal = msg.total; _exportFmt = msg.format; _exportFailures = [];
       _exportLookup = null; _exportUsedFSA = false; _pendingFiles = [];
       // Don't reset _exportCancelled — user may have clicked Cancel during
       // the Preparing phase. If so, tell code.js to stop immediately.
@@ -2448,10 +2380,11 @@
         if (_exportCancelled) return;
         exportedCount++;
         parent.postMessage({ pluginMessage: { type: 'export-frame-ack', nextIndex: msg.index + 1 } }, '*');
-        document.getElementById("error-container").innerHTML += `<div class="error-msg">Failed: ${msg.frameName} — ${(err && err.message) || String(err)}</div>`;
+        _exportFailures.push({ name: msg.frameName, message: (err && err.message) || String(err) });
         if (exportedCount >= msg.total) {
           dismissProgress();
           setExportBusy(false);
+          reportExportFailures();
         }
       }
     }
@@ -2460,10 +2393,11 @@
       if (_exportCancelled) return;
       exportedCount++;
       parent.postMessage({ pluginMessage: { type: 'export-frame-ack', nextIndex: msg.index + 1 } }, '*');
-      document.getElementById("error-container").innerHTML += `<div class="error-msg">Failed: ${msg.frameName} — ${msg.message}</div>`;
+      _exportFailures.push({ name: msg.frameName, message: msg.message });
       if (exportedCount >= msg.total) {
         dismissProgress();
         setExportBusy(false);
+        reportExportFailures();
       }
     }
   };
@@ -2476,9 +2410,7 @@
     window._contentHeight = function () {
       let h = 0;
       const resultsUi  = document.getElementById('results-ui');
-      const errorCont  = document.getElementById('error-container');
       const progCont   = document.getElementById('progress-container');
-      if (errorCont && errorCont.offsetHeight) h += errorCont.offsetHeight;
       if (progCont  && progCont.offsetHeight)  h += progCont.offsetHeight;
       if (resultsUi && resultsUi.style.display !== 'none') {
         const bar   = document.getElementById('actionbar');

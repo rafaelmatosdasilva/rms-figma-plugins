@@ -80,6 +80,14 @@ describe.each(PLUGINS)('%s — UI wiring', (plugin) => {
     expect(used.filter((id) => !defined.includes(id))).toEqual([]);
   });
 
+  it('reports failures as a toast, never as an inline banner', () => {
+    // All three plugins used to disagree here: two rendered a red box into a bare
+    // #error-container that outlived the problem, one used a toast. The banner is
+    // gone — this keeps it from coming back one plugin at a time.
+    const ui = read(`apps/${plugin}/ui.src.html`);
+    expect(ui).not.toMatch(/error-msg|error-container/);
+  });
+
   it('ships a built UI that matches its source', () => {
     // The built ui.html is what Figma loads; a stale one means testing a ghost.
     const src = read(`apps/${plugin}/ui.src.html`);

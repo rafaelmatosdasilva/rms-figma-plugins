@@ -10,7 +10,6 @@
     --canvas-bg: #E6E6E6;
     --clipped-color: #DB0000;
     --clipped-text: #FFFFFF;
-    --hint-text: #FFFFFF;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -101,7 +100,7 @@
     font-size: var(--s-size);
     font-weight: 500;
     letter-spacing: 0.2px;
-    height: 24px;
+    height: var(--button-min-height);
     max-width: 200px;
     padding: 0 8px 0 6px;
     gap: 5px;
@@ -129,12 +128,15 @@
     position: absolute;
     bottom: 6px; left: 50%;
     transform: translateX(-50%);
-    background: rgba(0,0,0,0.45);
-    color: var(--hint-text);
-    font-size: calc(var(--s-size) - 0.5px);
-    font-weight: var(--m-weight);
-    padding: 3px 7px;
-    border-radius: var(--radius-sm);
+    /* DS tooltipPopover (821:72473): 4/8 padding, radii/tooltip, 1.5px border,
+       10px/700 label. Was a hand-rolled chip on a hardcoded translucent black. */
+    background: var(--tooltipPopover-background);
+    border: var(--thickness) solid var(--tooltipPopover-border);
+    color: var(--tooltipPopover-text);
+    font-size: var(--s-size);
+    font-weight: var(--s-weight);
+    padding: var(--padding-xs) var(--padding-s);
+    border-radius: var(--radius-tooltip);
     pointer-events: none;
     white-space: nowrap;
     opacity: 1;
@@ -376,7 +378,7 @@
   .issue-reason b { color: var(--text); font-weight: 500; }
   .issue-focus,
   .issue-preview-center {
-    width: 24px;
+    width: var(--button-min-height);
     padding: 0;
   }
 
@@ -408,7 +410,7 @@
 
   /* Vertically center all action bar items */
 
-  #gen-btn { justify-content: center; width: 24px; padding: 0; }
+  #gen-btn { justify-content: center; width: var(--button-min-height); padding: 0; }
   #gen-btn:disabled, #gen-btn:disabled:hover { opacity: 0.24; background: var(--buttonPrimary-background); color: var(--buttonPrimary-text); cursor: not-allowed; }
 
   /* Scale stepper */
@@ -418,7 +420,7 @@
   }
   .scale-step-btn:disabled { opacity: 0.24; cursor: not-allowed; }
   #scale-input {
-    width: 58px; height: 24px;
+    width: 58px; height: var(--button-min-height);
     text-align: center;
     border: 1.2px solid var(--border);
     border-radius: var(--radius-full);
@@ -442,7 +444,6 @@
 <!-- Shared icon definitions -->
 <!-- Icon sprite lives in packages/ui/src/ui-shared.js — no per-plugin symbols. -->
 
-<div id="error-container"></div>
 <div id="progress-container"></div>
 
 <!-- Empty state -->
@@ -737,7 +738,6 @@
 
     if (hasGenerated) showResults(); else showEmpty();
 
-    document.getElementById('error-container').innerHTML = '';
   }
 
   function handlePreview({ name, frameId, original, scaled, issues, scale: s, frameW: fw, frameH: fh }) {
@@ -881,8 +881,7 @@
 
   function handleError(msg) {
     setGenerating(false);
-    const errCont = document.getElementById('error-container');
-    errCont.innerHTML = `<div class="error-msg">⚠ ${escHtml(msg)}</div>`;
+    showError(escHtml(msg));
   }
 
   // ── Pan / Zoom for scaled preview ─────────────────────────────────────
@@ -1203,12 +1202,6 @@
     'TRUNCATE': 'Truncate',
   };
   function lbl(v) { return SIZING_LABEL[v] || v; }
-  function fmtPadding(p) {
-    if (!p) return '';
-    if (p.top === p.right && p.right === p.bottom && p.bottom === p.left) return p.top + 'px';
-    if (p.top === p.bottom && p.left === p.right) return p.top + ',' + p.right;
-    return p.top + ',' + p.right + ',' + p.bottom + ',' + p.left;
-  }
   function row(label, val) {
     return '<div class="details-row"><span class="label">' + escHtml(label) + '</span><span class="value">' + val + '</span></div>';
   }
