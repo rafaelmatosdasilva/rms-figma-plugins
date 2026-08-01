@@ -79,8 +79,12 @@ export function makeFigmaMock(scene = {}) {
     async loadAllPagesAsync() {},
 
     async getNodeByIdAsync(id) { return nodeById.get(id) || null; },
-    getNodeById(id) { return nodeById.get(id) || null; },
-    getStyleById: (id) => (scene.stylesById || {})[id] || null,
+    async getStyleByIdAsync(id) { return (scene.stylesById || {})[id] || null; },
+    // The manifests declare documentAccess:"dynamic-page", under which Figma REMOVES
+    // the synchronous by-id lookups — calling them throws. The mock mirrors that so a
+    // regression back to a sync call fails loudly instead of silently passing.
+    getNodeById() { throw new Error('In dynamic-page documents, use getNodeByIdAsync instead of getNodeById'); },
+    getStyleById() { throw new Error('In dynamic-page documents, use getStyleByIdAsync instead of getStyleById'); },
     async loadFontAsync() {},
 
     // ── Creation — recorded so tests can assert generated output ────────────
@@ -119,8 +123,9 @@ export function makeFigmaMock(scene = {}) {
       async getLocalVariableCollectionsAsync() { return collections; },
       async getVariableByIdAsync(id) { return byId.get(id) || null; },
       async getVariableCollectionByIdAsync(id) { return collById.get(id) || null; },
-      getVariableById(id) { return byId.get(id) || null; },
-      getVariableCollectionById(id) { return collById.get(id) || null; },
+      // Removed under dynamic-page (see getNodeById above) — throw to catch regressions.
+      getVariableById() { throw new Error('In dynamic-page documents, use getVariableByIdAsync instead of getVariableById'); },
+      getVariableCollectionById() { throw new Error('In dynamic-page documents, use getVariableCollectionByIdAsync instead of getVariableCollectionById'); },
       // Resolves a library variable into this file. Counted so tests can assert
       // callers don't re-import on every refresh. Throws on an unknown key, as
       // the real API does.

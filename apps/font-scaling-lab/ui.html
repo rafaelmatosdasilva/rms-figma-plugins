@@ -1133,19 +1133,6 @@
   }
 
   // ── Pinned-element details side panel ────────────────────────────────
-  const SIZING_LABEL = {
-    NONE: 'None',
-    HORIZONTAL: 'Horizontal', VERTICAL: 'Vertical',
-    FIXED: 'Fixed', HUG: 'Hug', FILL: 'Fill',
-    AUTO: 'Auto',
-    'WIDTH_AND_HEIGHT': 'Width and height',
-    'HEIGHT': 'Height',
-    'TRUNCATE': 'Truncate',
-  };
-  function lbl(v) { return SIZING_LABEL[v] || v; }
-  function row(label, val) {
-    return '<div class="details-row"><span class="label">' + escHtml(label) + '</span><span class="value">' + val + '</span></div>';
-  }
   // Map a fix title to a fitting icon from the sprite
   function fixIconHref(title) {
     var t = (title || '').toLowerCase();
@@ -1185,14 +1172,11 @@
     }
     var html = '';
 
-    // 1. Status badge + plain-English description + View on Canvas button
+    // 1. Status badge + plain-English description
     if (iss.description || iss.nodeId) {
       var statusHtml = '<div class="badge ' + (isTrunc ? 'truncated' : 'clipped') + '">' + escHtml(statusLabel) + '</div>';
       var descHtml = iss.description ? '<div class="details-description">' + escHtml(iss.description) + '</div>' : '';
-      var viewBtn = iss.nodeId
-        ? '<button class="buttonSecondary fix-action" data-nid="' + escHtml(iss.nodeId) + '"><span>View on Canvas</span><svg width="16" height="16"><use href="#icon-focus"/></svg></button>'
-        : '';
-      html += '<div class="details-section">' + statusHtml + descHtml + viewBtn + '</div>';
+      html += '<div class="details-section">' + statusHtml + descHtml + '</div>';
     }
 
     // 4. Suggested Fixes
@@ -1215,23 +1199,16 @@
            + '</div>';
     }
 
-    // 5. Bound variables
-    if (iss.bindings && iss.bindings.length) {
-      var bHtml = '';
-      for (var bi = 0; bi < iss.bindings.length; bi++) {
-        bHtml += row(iss.bindings[bi].property, escHtml(iss.bindings[bi].name));
-      }
-      html += '<div class="details-section"><h4>Variables</h4>' + bHtml + '</div>';
-    }
-
-    // 6. Scale comparison
-    if (iss.scale) {
-      var scHtml = '';
-      function pair(a, b, unit) { return escHtml(a + (unit || '')) + '<span class="arrow">→</span>' + escHtml(b + (unit || '')); }
-      if (iss.scale.fontSize) scHtml += row('Font size', pair(iss.scale.fontSize.original, iss.scale.fontSize.current, 'px'));
-      if (iss.scale.width)    scHtml += row('Width',     pair(iss.scale.width.original,    iss.scale.width.current));
-      if (iss.scale.height)   scHtml += row('Height',    pair(iss.scale.height.original,   iss.scale.height.current));
-      if (scHtml) html += '<div class="details-section details-scale"><h4>100% → ' + Math.round(scalePercent) + '%</h4>' + scHtml + '</div>';
+    // 5. View on Canvas — last, after the fixes: you read the problem and the fixes,
+    // then jump to the node you change. Focus targets the node the recommended fix
+    // acts on (the culprit — may be the parent), NOT the clipped object; the overlay
+    // already marks the clipped object, keeping "where it breaks" and "what to change" apart.
+    var recFix = iss.suggestedFixes && iss.suggestedFixes[0];
+    var focusNid = (recFix && recFix.nodeId) || iss.nodeId;
+    if (focusNid) {
+      html += '<div class="details-section">'
+           +   '<button class="buttonSecondary fix-action" data-nid="' + escHtml(focusNid) + '"><span>View on Canvas</span><svg width="16" height="16"><use href="#icon-focus"/></svg></button>'
+           + '</div>';
     }
 
     body.innerHTML = html;

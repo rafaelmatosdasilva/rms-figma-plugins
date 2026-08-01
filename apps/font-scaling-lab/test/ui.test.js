@@ -153,6 +153,33 @@ describe('font-scaling-lab UI — preview', () => {
 
     expect(ui.document.body.textContent).toContain('boom');
   });
+
+  it('focuses the node the recommended fix targets, not the clipped object', async () => {
+    // The clipped object is the text, but the fix acts on the parent — "View on
+    // Canvas" must take you to what you change (the parent), not to the symptom.
+    ui = loadUI(UI);
+    ui.receive({ type: 'selection', data: selection() });
+    ui.receive(previewResult({
+      issues: [{
+        type: 'clipped', severity: 'clipped', name: 'Value', chars: 'A long input value',
+        parentName: 'Input', bounds: { x: 0, y: 0, w: 100, h: 20 }, nodeId: 'text-1',
+        outOfBounds: false, reasons: [{ what: 'Fixed width', fix: 'Hug' }],
+        description: 'Value is clipped at 200% scale', kind: 'TEXT',
+        suggestedFixes: [
+          { title: 'Set parent width to Hug',  description: 'Container sizes to text', recommended: true, nodeId: 'parent-1' },
+          { title: 'Set parent width to Fill', description: 'Matches its own parent' },
+        ],
+      }],
+    }));
+    await new Promise((r) => setTimeout(r, 50)); // list is written on the next frame
+
+    ui.click('.issue-item');  // open the details panel for this issue
+    ui.click('.fix-action');  // View on Canvas
+
+    const focus = ui.sentOf('focus-node');
+    expect(focus.length).toBeGreaterThan(0);
+    expect(focus[focus.length - 1].nodeId).toBe('parent-1');
+  });
 });
 
 describe('font-scaling-lab UI — panel widths', () => {

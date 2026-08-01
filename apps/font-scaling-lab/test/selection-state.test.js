@@ -113,29 +113,43 @@ describe('font-scaling-lab — focus node', () => {
   });
 });
 
-describe('font-scaling-lab — orphan sweep breadth', () => {
-  it('sweeps clones from every page, however deep', async () => {
+describe('font-scaling-lab — orphan sweep', () => {
+  // Under documentAccess:"dynamic-page" only the current page can be walked, so the
+  // sweep runs on the current page at startup and again whenever the page changes.
+  it('clears clones on the current page at startup, however deep', async () => {
     const nested = makeNode('FRAME', { name: 'nested orphan' });
     nested.setPluginData('_scoutClone', '1');
     const holder = makeNode('FRAME', { name: 'holder' });
     holder.appendChild(nested);
-
-    const onPage2 = makeNode('FRAME', { name: 'page2 orphan' });
-    onPage2.setPluginData('_scoutClone', '1');
 
     // Same key, different value — this one is not a clone and must survive.
     const decoy = makeNode('FRAME', { name: 'decoy' });
     decoy.setPluginData('_scoutClone', '0');
 
     const p1 = makePage('Page 1'); p1.appendChild(holder); p1.appendChild(decoy);
-    const p2 = makePage('Page 2'); p2.appendChild(onPage2);
 
-    await loadPlugin(ENTRY, { pages: [p1, p2] });
+    await loadPlugin(ENTRY, { pages: [p1] });
 
     expect(nested.removed).toBe(true);
-    expect(onPage2.removed).toBe(true);
     expect(holder.children).toEqual([]);
     expect(p1.children).toContain(decoy);
     expect(decoy.removed).toBeFalsy();
+  });
+
+  it('sweeps another page only once it becomes current', async () => {
+    const onPage2 = makeNode('FRAME', { name: 'page2 orphan' });
+    onPage2.setPluginData('_scoutClone', '1');
+    const p1 = makePage('Page 1');
+    const p2 = makePage('Page 2'); p2.appendChild(onPage2);
+
+    const { figma } = await loadPlugin(ENTRY, { pages: [p1, p2] });
+
+    // Not the current page at startup, so it's left alone (can't walk an unloaded page).
+    expect(onPage2.removed).toBeFalsy();
+
+    // Visiting it triggers the sweep.
+    figma.currentPage = p2;
+    figma.emit('currentpagechange');
+    expect(onPage2.removed).toBe(true);
   });
 });

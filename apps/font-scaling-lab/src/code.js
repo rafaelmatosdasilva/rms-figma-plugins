@@ -4,19 +4,21 @@ figma.showUI(__html__, { width: 720, height: 860, title: 'Font Scaling Lab' });
 
 const handleResizeMsg = attachWindowResize(figma, { defaultW: 720, defaultH: 860, minW: 480, maxW: 1400, minH: 160, maxH: 900 });
 
-// Clean up any scout clones left over from a previous crash or force-quit
-(function sweepOrphanedClones() {
+// Clean up any scout clones left over from a previous crash or force-quit.
+// Under documentAccess:"dynamic-page", findAllWithCriteria throws on a page that
+// isn't loaded, so we can't walk figma.root.children. Clones are always created on
+// the current page anyway — sweep it now, and sweep each page as it's visited.
+function sweepCurrentPageClones() {
   try {
-    for (const page of figma.root.children) {
-      // Native prefilter to nodes that HAVE the key (fast), exact value check kept as post-filter —
-      // provably the same node set as findAll(n => n.getPluginData('_scoutClone') === '1').
-      page.findAllWithCriteria({ pluginData: { keys: ['_scoutClone'] } })
-        .filter(n => n.getPluginData('_scoutClone') === '1').forEach(n => {
-        try { n.remove(); } catch (_) {}
-      });
-    }
+    figma.currentPage.findAllWithCriteria({ pluginData: { keys: ['_scoutClone'] } })
+      // Native prefilter to nodes that HAVE the key (fast); exact value check kept as
+      // post-filter — provably the same set as findAll(n => getPluginData(...) === '1').
+      .filter(n => n.getPluginData('_scoutClone') === '1')
+      .forEach(n => { try { n.remove(); } catch (_) {} });
   } catch (_) {}
-})();
+}
+sweepCurrentPageClones();
+figma.on('currentpagechange', sweepCurrentPageClones);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -28,27 +30,29 @@ function getPageForNode(node) {
 
 // ─── Variable resolution ──────────────────────────────────────────────────────
 
-function resolveVarValue(variable, modeId, depth) {
+async function resolveVarValue(variable, modeId, depth) {
   if (depth > 10) return null;
   const raw = variable.valuesByMode[modeId];
   if (raw && typeof raw === 'object' && raw.type === 'VARIABLE_ALIAS') {
-    const next = figma.variables.getVariableById(raw.id);
+    const next = await figma.variables.getVariableByIdAsync(raw.id);
     if (!next) return null;
-    const coll = figma.variables.getVariableCollectionById(next.variableCollectionId);
+    const coll = await figma.variables.getVariableCollectionByIdAsync(next.variableCollectionId);
     return resolveVarValue(next, coll ? coll.defaultModeId : modeId, depth + 1);
   }
   return raw;
 }
 
-function getTextFontSizeSource(node) {
+// async: the manifest is documentAccess:"dynamic-page", so every by-id lookup
+// (variable, collection, style) must use the async API — the sync ones throw.
+async function getTextFontSizeSource(node) {
   // 1. Variable binding on fontSize
   const boundVar = node.boundVariables && node.boundVariables.fontSize;
   if (boundVar) {
     try {
-      const variable = figma.variables.getVariableById(boundVar.id);
+      const variable = await figma.variables.getVariableByIdAsync(boundVar.id);
       if (variable) {
-        const coll = figma.variables.getVariableCollectionById(variable.variableCollectionId);
-        const value = coll ? resolveVarValue(variable, coll.defaultModeId, 0) : null;
+        const coll = await figma.variables.getVariableCollectionByIdAsync(variable.variableCollectionId);
+        const value = coll ? await resolveVarValue(variable, coll.defaultModeId, 0) : null;
         return { source: 'variable', value: typeof value === 'number' ? value : null, name: variable.name };
       }
     } catch (_) {}
@@ -58,7 +62,7 @@ function getTextFontSizeSource(node) {
   const styleId = node.textStyleId;
   if (styleId && styleId !== figma.mixed && styleId !== '') {
     try {
-      const style = figma.getStyleById(styleId);
+      const style = await figma.getStyleByIdAsync(styleId);
       if (style) {
         const fs = node.fontSize;
         return { source: 'style', value: fs === figma.mixed ? null : fs, name: style.name };
@@ -222,30 +226,43 @@ async function createScaledClone(frame, scale) {
   const origAll = [frame, ...frame.findAll(() => true)];
 
   const clone = frame.clone();
-  clone.x = 99999;
-  clone.y = 99999;
-  try { clone.setPluginData('_scoutClone', '1'); } catch (_) {}
+  // Everything after clone() can throw (a font that won't load, a scale step). If it
+  // does, remove the clone before rethrowing so it never lingers off-screen at
+  // (99999,99999) — the caller only holds a reference once this resolves.
+  try {
+    clone.x = 99999;
+    clone.y = 99999;
+    try { clone.setPluginData('_scoutClone', '1'); } catch (_) {}
 
-  const all = [clone, ...clone.findAll(() => true)];
+    const all = [clone, ...clone.findAll(() => true)];
 
-  // Stamp each clone node with its corresponding original node ID
-  for (var i = 0; i < Math.min(origAll.length, all.length); i++) {
-    try { all[i].setPluginData('_origId', origAll[i].id); } catch (_) {}
+    // Stamp each clone node with its original id AND its original sizing mode.
+    // The sizing MUST come from the original: a FILL layer that is cloned off-canvas
+    // loses FILL (it needs an auto-layout parent) and silently becomes FIXED, so
+    // reading layoutSizing off the clone would mislabel a fill layer as fixed-width.
+    for (var i = 0; i < Math.min(origAll.length, all.length); i++) {
+      try { all[i].setPluginData('_origId', origAll[i].id); } catch (_) {}
+      try { var _osh = origAll[i].layoutSizingHorizontal; if (_osh) all[i].setPluginData('_origSizeH', _osh); } catch (_) {}
+      try { var _osv = origAll[i].layoutSizingVertical;   if (_osv) all[i].setPluginData('_origSizeV', _osv); } catch (_) {}
+    }
+
+    // Batch-load all unique fonts in parallel before touching any text node
+    const fontSet = new Set();
+    for (const n of all) { if (n.type === 'TEXT') collectFonts(n, fontSet); }
+    await Promise.all(Array.from(fontSet).map(function(f) { return figma.loadFontAsync(JSON.parse(f)); }));
+
+    // Scale spacing before text reflow so auto-layout recalculates correctly
+    for (const n of all) scaleSpacing(n, scale);
+
+    for (const n of all) {
+      if (n.type === 'TEXT') await scaleTextNode(n, scale);
+    }
+
+    return clone;
+  } catch (err) {
+    try { clone.remove(); } catch (_) {}
+    throw err;
   }
-
-  // Batch-load all unique fonts in parallel before touching any text node
-  const fontSet = new Set();
-  for (const n of all) { if (n.type === 'TEXT') collectFonts(n, fontSet); }
-  await Promise.all(Array.from(fontSet).map(function(f) { return figma.loadFontAsync(JSON.parse(f)); }));
-
-  // Scale spacing before text reflow so auto-layout recalculates correctly
-  for (const n of all) scaleSpacing(n, scale);
-
-  for (const n of all) {
-    if (n.type === 'TEXT') await scaleTextNode(n, scale);
-  }
-
-  return clone;
 }
 
 // ─── Issue detection ──────────────────────────────────────────────────────────
@@ -398,7 +415,7 @@ async function detectIssues(clone, refNode, scaleValue, isStale) {
         if ((node.type === 'FRAME' || node.type === 'COMPONENT'
           || node.type === 'INSTANCE' || node.type === 'COMPONENT_SET')
             && node.clipsContent === true) {
-          out.push({ what: 'Clip content: On', fix: 'Clipping hides the overflow — fix the sizing instead' });
+          out.push({ what: 'Clip content: On', fix: 'Clipping hides the overflow. Fix the sizing instead.' });
         }
       } catch (_) {}
 
@@ -420,208 +437,7 @@ async function detectIssues(clone, refNode, scaleValue, isStale) {
     return out;
   }
 
-  function fmtLength(v) {
-    if (!v || v === figma.mixed) return null;
-    if (v.unit === 'AUTO') return 'Auto';
-    if (typeof v.value !== 'number') return null;
-    if (v.unit === 'PERCENT') return Math.round(v.value * 10) / 10 + '%';
-    return Math.round(v.value * 10) / 10 + 'px';
-  }
-  function readTypography(node) {
-    if (node.type !== 'TEXT') return null;
-    const t = {};
-    try {
-      const fn = node.fontName;
-      if (fn === figma.mixed) { t.fontFamily = 'Mixed'; }
-      else if (fn) { t.fontFamily = fn.family; t.fontWeight = fn.style; }
-    } catch (_) {}
-    try {
-      const fi = getTextFontSizeSource(node);
-      t.fontSize = { value: fi.value, source: fi.source, name: fi.name || null };
-    } catch (_) {}
-    try { t.lineHeight    = fmtLength(node.lineHeight);    } catch (_) {}
-    try { t.letterSpacing = fmtLength(node.letterSpacing); } catch (_) {}
-    try {
-      const td = node.textDecoration;
-      if (td && td !== figma.mixed && td !== 'NONE') t.textDecoration = td;
-    } catch (_) {}
-    try {
-      const tc = node.textCase;
-      if (tc && tc !== figma.mixed && tc !== 'ORIGINAL') t.textCase = tc;
-    } catch (_) {}
-    return t;
-  }
-  function readSizing(node) {
-    const s = {};
-    try { if (node.type === 'TEXT') s.textAutoResize = node.textAutoResize; } catch (_) {}
-    try { if (node.layoutSizingHorizontal != null) s.layoutSizingHorizontal = node.layoutSizingHorizontal; } catch (_) {}
-    try { if (node.layoutSizingVertical   != null) s.layoutSizingVertical   = node.layoutSizingVertical;   } catch (_) {}
-    try { if (node.layoutMode) s.layoutMode = node.layoutMode; } catch (_) {}
-    try { if (node.primaryAxisSizingMode) s.primaryAxisSizingMode = node.primaryAxisSizingMode; } catch (_) {}
-    try { if (node.counterAxisSizingMode) s.counterAxisSizingMode = node.counterAxisSizingMode; } catch (_) {}
-    try { if (typeof node.itemSpacing === 'number') s.itemSpacing = node.itemSpacing; } catch (_) {}
-    try {
-      if (typeof node.paddingTop === 'number') {
-        s.padding = { top: node.paddingTop, right: node.paddingRight, bottom: node.paddingBottom, left: node.paddingLeft };
-      }
-    } catch (_) {}
-    return s;
-  }
-  function readBindings(node) {
-    const out = [];
-    try {
-      const bv = node.boundVariables;
-      if (!bv) return out;
-      for (const prop in bv) {
-        const val = bv[prop];
-        const aliases = Array.isArray(val) ? val : [val];
-        for (var i = 0; i < aliases.length; i++) {
-          const a = aliases[i];
-          if (!a || !a.id) continue;
-          var name = null;
-          try { const v = figma.variables.getVariableById(a.id); if (v) name = v.name; } catch (_) {}
-          if (name) out.push({ property: prop, name: name });
-        }
-      }
-    } catch (_) {}
-    return out;
-  }
-  function readParentCtx(node) {
-    try {
-      var p = node.parent;
-      if (!p || p === clone || p.type === 'PAGE') return null;
-      return {
-        name:                   clean(p.name) || p.type,
-        type:                   p.type,
-        layoutMode:             p.layoutMode || null,
-        layoutSizingHorizontal: p.layoutSizingHorizontal || null,
-        layoutSizingVertical:   p.layoutSizingVertical   || null,
-      };
-    } catch (_) { return null; }
-  }
-  function readScaleCompare(cloneNode) {
-    const origId = cloneNode.getPluginData('_origId');
-    if (!origId) return null;
-    var orig = null;
-    try { orig = figma.getNodeById(origId); } catch (_) {}
-    if (!orig) return null;
-    const out = {};
-    if (cloneNode.type === 'TEXT') {
-      try {
-        const co = getTextFontSizeSource(cloneNode);
-        const oo = getTextFontSizeSource(orig);
-        if (typeof co.value === 'number' && typeof oo.value === 'number') {
-          out.fontSize = { original: oo.value, current: co.value };
-        }
-      } catch (_) {}
-    }
-    try {
-      out.width  = { original: Math.round(orig.width),  current: Math.round(cloneNode.width)  };
-      out.height = { original: Math.round(orig.height), current: Math.round(cloneNode.height) };
-    } catch (_) {}
-    return out;
-  }
-
-  // ── Contextual recommendation ──
-  // Infer what kind of UI element this is (button, card, tab, input, etc.)
-  // from its name + ancestor names + structure, and produce a plain-English
-  // recommendation that explains WHAT failed, WHY it matters, and HOW to fix
-  // it — instead of dumping property names.  The technical reasons still
-  // appear alongside as supplementary detail.
-  function inferKind(node) {
-    function pathName() {
-      var names = [];
-      try {
-        names.push((node.name || '').toLowerCase());
-        var p = node.parent;
-        var depth = 0;
-        while (p && depth < 3 && p !== clone) {
-          names.push((p.name || '').toLowerCase());
-          p = p.parent;
-          depth++;
-        }
-      } catch (_) {}
-      return names.join(' | ');
-    }
-    const haystack = pathName();
-    if (/\b(button|btn|cta)\b/.test(haystack))           return 'button';
-    if (/\b(card|tile)\b/.test(haystack))                return 'card';
-    if (/\b(tab|pill|chip|badge|tag)\b/.test(haystack))  return 'tab';
-    if (/\b(input|field|textfield|textinput|search)\b/.test(haystack)) return 'input';
-    if (/\b(tooltip|toast|popover|alert|snackbar)\b/.test(haystack))   return 'tooltip';
-    if (/\b(list.?item|menu.?item|row)\b/.test(haystack))              return 'list-item';
-    if (/\b(header|navbar|appbar|nav.?bar|toolbar)\b/.test(haystack))  return 'header';
-    return null;
-  }
-  // Each kind has a per-axis tuned one-liner summary that names the offending
-  // property in plain English — e.g. "Label growth is blocked by a fixed-width
-  // button container." — plus a fix line.  The UI appends a scale-context
-  // sentence: "At 150% scale, content gets cut off."
-  const KIND_INFO = {
-    button: {
-      subject: 'button container',
-      fixedH: { summary: 'Label growth is blocked by a fixed-width button container.', fix: 'Set the button container width to Hug.' },
-      fixedV: { summary: 'Multi-line labels are clipped by a fixed-height button container.',  fix: 'Set the button container height to Hug.' },
-      clipped:{ summary: 'The label exceeds the button container.',                          fix: 'Allow the label or the button to Hug.' },
-    },
-    card: {
-      subject: 'card',
-      fixedH: { summary: 'Card width is locked and prevents content from flowing.',           fix: 'Set the card width to Fill container (or Hug).' },
-      fixedV: { summary: 'Card height is fixed and content can’t grow inside it.',            fix: 'Set the card height to Hug.' },
-      clipped:{ summary: 'Card content overflows the card at this scale.',                   fix: 'Set the card height (and any inner section) to Hug.' },
-    },
-    tab: {
-      subject: 'tab',
-      fixedH: { summary: 'Tab label can’t grow because the tab width is fixed.',              fix: 'Set the tab width to Hug.' },
-      fixedV: { summary: 'Tab height is fixed and can’t fit multi-line or scaled labels.',    fix: 'Set the tab height to Hug.' },
-      clipped:{ summary: 'Tab label exceeds the tab.',                                       fix: 'Allow the tab to Hug width.' },
-    },
-    input: {
-      subject: 'input field',
-      fixedH: { summary: 'Input field width is locked and breaks at smaller viewports.',      fix: 'Set the input width to Fill container.' },
-      fixedV: { summary: 'Input height is locked and can’t grow with larger font sizes.',     fix: 'Set the input height to Hug.' },
-      clipped:{ summary: 'Input content overflows the field.',                               fix: 'Hug the input height; Fill its width.' },
-    },
-    tooltip: {
-      subject: 'tooltip',
-      fixedH: { summary: 'Tooltip width is fixed and clips longer content.',                  fix: 'Hug the tooltip width; rely on an outer max-width if needed.' },
-      fixedV: { summary: 'Tooltip height is fixed and can’t fit multi-line content.',         fix: 'Set the tooltip height to Hug.' },
-      clipped:{ summary: 'Tooltip content exceeds its bounds.',                              fix: 'Let the tooltip Hug its content.' },
-    },
-    'list-item': {
-      subject: 'list item',
-      fixedH: { summary: 'Row width is locked and rows don’t align across the list.',         fix: 'Set the row width to Fill container.' },
-      fixedV: { summary: 'Row height is locked and can’t grow with multi-line content.',      fix: 'Set the row height to Hug.' },
-      clipped:{ summary: 'Row content overflows the row.',                                   fix: 'Hug the row height; Fill its width.' },
-    },
-    header: {
-      subject: 'header',
-      fixedH: { summary: 'Header width is fixed and won’t Fill the viewport.',                fix: 'Set the header width to Fill container.' },
-      fixedV: { summary: 'Header height is fixed and can’t grow with its content.',           fix: 'Set the header height to Hug.' },
-      clipped:{ summary: 'Header content overflows the header.',                             fix: 'Hug height; Fill width.' },
-    },
-  };
-  // Generic fallbacks when we couldn't infer a specific UI kind
-  const GENERIC_BY_AXIS = {
-    fixedH: { summary: 'This layer has a fixed width that prevents content from flowing.',     fix: 'Set the layer width to Hug or Fill container.' },
-    fixedV: { summary: 'This layer has a fixed height that prevents content from growing.',    fix: 'Set the layer height to Hug.' },
-    overflow:{ summary: 'Content extends past this layer at the current scale.',               fix: 'Allow the layer to adapt to its content (Hug / Auto layout).' },
-  };
-  function contextualRecommendation(node) {
-    try {
-      const kind  = inferKind(node);
-      const info  = kind ? KIND_INFO[kind] : null;
-      const f     = axisFixed(node);
-      const bank  = info || { fixedH: GENERIC_BY_AXIS.fixedH, fixedV: GENERIC_BY_AXIS.fixedV, overflow: GENERIC_BY_AXIS.overflow };
-      let t;
-      if (f.h)      t = bank.fixedH;
-      else if (f.v) t = bank.fixedV;
-      else          t = bank.clipped;
-      if (!t) return null;
-      return { kind: kind, subject: info ? info.subject : null, summary: t.summary, fix: t.fix };
-    } catch (_) { return null; }
-  }
-  function composeDescription(node, severity) {
+  function composeDescription(node, severity, overflowAxis) {
     const pct = typeof scaleValue === 'number' ? Math.round(scaleValue * 100) : null;
     const sevText = severity === 'truncation' ? 'gets cut off' : 'is clipped by its container';
     const scaleTail = pct && pct !== 100 ? ' at ' + pct + '% scale' : '';
@@ -629,11 +445,15 @@ async function detectIssues(clone, refNode, scaleValue, isStale) {
     try { w = Math.round(node.width); } catch (_) {}
     try { h = Math.round(node.height); } catch (_) {}
     const f = axisFixed(node);
-    if (f.h && w) {
-      return 'This layer has a fixed width of ' + w + 'px that prevents content from flowing, so content ' + sevText + scaleTail + '.';
-    }
-    if (f.v && h) {
-      return 'This layer has a fixed height of ' + h + 'px that prevents content from growing, so content ' + sevText + scaleTail + '.';
+    // Describe the axis that actually overflowed, so the message and the suggested
+    // fixes never disagree. Only call it "fixed" when that axis is genuinely fixed.
+    const fixedH = 'This layer has a fixed width of ' + w + 'px that prevents content from flowing, so content ' + sevText + scaleTail + '.';
+    const fixedV = 'This layer has a fixed height of ' + h + 'px that prevents content from growing, so content ' + sevText + scaleTail + '.';
+    if (overflowAxis === 'h' && f.h && w) return fixedH;
+    if (overflowAxis === 'v' && f.v && h) return fixedV;
+    if (!overflowAxis) {
+      if (f.h && w) return fixedH;
+      if (f.v && h) return fixedV;
     }
     return 'Content extends past this layer' + scaleTail + ' and ' + sevText + '.';
   }
@@ -655,7 +475,10 @@ async function detectIssues(clone, refNode, scaleValue, isStale) {
     ],
   };
 
-  function buildSuggestedFixes(node, severity, origId) {
+  // overflowAxis ('h' | 'v' | undefined): the axis that actually overflowed. When
+  // known it drives the recommendation, so a horizontal overflow never gets
+  // height-only advice. Falls back to the fixed-axis heuristic when unknown.
+  function buildSuggestedFixes(node, severity, origId, overflowAxis) {
     if (node.type === 'TEXT') {
       var ar = null, trunc = null, maxL = 0, clips = false;
       try { ar    = node.textAutoResize; }  catch (_) {}
@@ -703,13 +526,16 @@ async function detectIssues(clone, refNode, scaleValue, isStale) {
         try { pf = axisFixed(parentNode); } catch (_) {}
         try { parentOrigId = parentNode.getPluginData('_origId') || null; } catch (_) {}
       }
-      if (pf.h) {
+      // The axis that overflowed wins over which axis merely happens to be fixed.
+      var preferH = overflowAxis === 'h' || (overflowAxis == null && pf.h);
+      var preferV = overflowAxis === 'v' || (overflowAxis == null && pf.v);
+      if (preferH) {
         return [
           { title: 'Set parent width to Hug',  description: 'The container sizes to the text it holds.', recommended: true, nodeId: parentOrigId || origId },
           { title: 'Set parent width to Fill', description: 'The container matches its own parent’s width.' },
         ];
       }
-      if (pf.v) {
+      if (preferV) {
         return [
           { title: 'Set parent height to Hug',  description: 'The container sizes to the text it holds.', recommended: true, nodeId: parentOrigId || origId },
           { title: 'Set parent height to Fill', description: 'The container matches its own parent’s height.' },
@@ -720,11 +546,25 @@ async function detectIssues(clone, refNode, scaleValue, isStale) {
         { title: 'Set parent height to Hug',      description: 'The container sizes to the text it holds.' },
       ];
     }
+    // A max-width/height cap is a distinct root cause: Hug still respects the cap,
+    // so the fix is to raise or remove it — not to change the sizing mode.
+    var maxOnAxis = null;
+    try { maxOnAxis = overflowAxis === 'h' ? node.maxWidth : (overflowAxis === 'v' ? node.maxHeight : null); } catch (_) {}
+    if (maxOnAxis != null) {
+      var dim = overflowAxis === 'h' ? 'width' : 'height';
+      return [
+        { title: 'Raise or remove the max ' + dim, description: 'This max ' + dim + ' (' + Math.round(maxOnAxis) + ') caps the layer, so the content clips at this scale.', recommended: true, nodeId: origId },
+        { title: 'Set ' + dim + ' to Hug',         description: 'Sizes to content, within any remaining cap.' },
+      ];
+    }
     var f = { h: false, v: false };
     try { f = axisFixed(node); } catch (_) {}
-    // Neither axis is fixed → the generic overflow advice. ('clipped' was a typo:
-    // no such key in FIX_BANK, so this branch threw on .map of undefined.)
-    var axisKey = f.h ? 'fixedH' : (f.v ? 'fixedV' : 'overflow');
+    // Prefer the axis that overflowed; fall back to the fixed axis when unknown.
+    // ('overflow' is the generic both-axes-flexible advice.)
+    var axisKey;
+    if (overflowAxis === 'h')      axisKey = 'fixedH';
+    else if (overflowAxis === 'v') axisKey = 'fixedV';
+    else                           axisKey = f.h ? 'fixedH' : (f.v ? 'fixedV' : 'overflow');
     return FIX_BANK[axisKey].map(function (fix, i) {
       return i === 0
         ? { title: fix.title, description: fix.description, recommended: true, nodeId: origId }
@@ -732,15 +572,8 @@ async function detectIssues(clone, refNode, scaleValue, isStale) {
     });
   }
 
-  function push(type, node, outOfBounds) {
+  function push(type, node, outOfBounds, overflowAxis) {
     var c = ctx(node);
-    var fontInfo = null;
-    if (node.type === 'TEXT') {
-      try {
-        var fi = getTextFontSizeSource(node);
-        fontInfo = { source: fi.source, value: fi.value, tokenName: fi.name || null };
-      } catch (_) {}
-    }
     // If specific reasons couldn't be derived, surface a generic fallback so
     // the user always sees something actionable in the details panel.
     var reasons = diagnose(node);
@@ -775,27 +608,23 @@ async function detectIssues(clone, refNode, scaleValue, isStale) {
       bounds:      relativeBounds(node),
       nodeId:      origId,
       outOfBounds: outOfBounds || false,
-      fontInfo:    fontInfo,
       reasons:     reasons,
-      description: composeDescription(node, severity),
-      recommendation: contextualRecommendation(node),
-      // Rich details for the pinned side-panel
-      kind:        node.type,
-      typography:  readTypography(node),
-      sizing:      readSizing(node),
-      bindings:    readBindings(node),
-      parentCtx:   readParentCtx(node),
-      scale:       readScaleCompare(node),
-      suggestedFixes: buildSuggestedFixes(node, severity, origId),
+      description: composeDescription(node, severity, overflowAxis),
+      kind:        node.type, // drives the details-panel type icon
+      suggestedFixes: buildSuggestedFixes(node, severity, origId, overflowAxis),
     });
   }
 
   function axisFixed(n) {
     // Returns { h: bool, v: bool } — true if that axis is fixed (not Hug/Fill).
-    // Trust the modern unified layoutSizing* properties when they're set;
-    // only fall back to the legacy axis-sizing modes when the new API
-    // doesn't report a value.  These two APIs can disagree on older files —
-    // the new one is authoritative.
+    // Prefer the original sizing captured before cloning: the off-canvas clone
+    // loses FILL and reports FIXED, so its live layoutSizing lies. Fall back to the
+    // live values (and legacy axis modes) only when no stamp is present.
+    var osh = null, osv = null;
+    try { osh = n.getPluginData('_origSizeH'); } catch (_) {}
+    try { osv = n.getPluginData('_origSizeV'); } catch (_) {}
+    if (osh || osv) return { h: osh === 'FIXED', v: osv === 'FIXED' };
+
     var h = false, v = false;
     var hHas = false, vHas = false;
     try {
@@ -814,6 +643,41 @@ async function detectIssues(clone, refNode, scaleValue, isStale) {
       } catch (_) {}
     }
     return { h: h, v: v };
+  }
+  // Root-cause walker. Walks the WHOLE ancestor chain and returns the ancestor that
+  // most tightly caps `axis` ('h'|'v') — the binding bottleneck to change. A cap is a
+  // FIXED size on that axis OR a maxWidth/maxHeight. Hug/Fill containers in between
+  // just pass the constraint through, so they're skipped. Capacity = the ancestor's
+  // rendered size on the axis (already reflects the cap), clamped by any explicit max.
+  // Returns null when nothing on the chain caps the axis.
+  function tightestCapOnAxis(startNode, axis) {
+    var best = null, bestCap = Infinity;
+    var a;
+    try { a = startNode.parent; } catch (_) { return null; }
+    while (a) {
+      var isRoot = (a === clone);
+      var af = { h: false, v: false };
+      try { af = axisFixed(a); } catch (_) {}
+      var maxProp = null;
+      try { maxProp = axis === 'h' ? a.maxWidth : a.maxHeight; } catch (_) {}
+      // A cap is a genuinely FIXED size on the axis (read from the original sizing,
+      // so a FILL layer is never mistaken for fixed) or a maxWidth/maxHeight. The
+      // previewed root counts too, but only when it is truly fixed — a FILL root's
+      // width comes from its parent, outside this selection, so it isn't the cause.
+      var isCap = (axis === 'h' ? af.h : af.v) || (maxProp != null);
+      if (isCap) {
+        var cap = Infinity;
+        try {
+          var box = a.absoluteBoundingBox;
+          cap = box ? (axis === 'h' ? box.width : box.height) : (axis === 'h' ? a.width : a.height);
+        } catch (_) {}
+        if (maxProp != null && maxProp < cap) cap = maxProp;
+        if (cap < bestCap) { bestCap = cap; best = a; }
+      }
+      if (isRoot) break;
+      try { a = a.parent; } catch (_) { break; }
+    }
+    return best;
   }
   // Tracks containers flagged as the overflowing layer — descendants of these
   // are NOT individually flagged, because the issue is the container, not the
@@ -858,19 +722,42 @@ async function detectIssues(clone, refNode, scaleValue, isStale) {
         const nb = node.absoluteBoundingBox;
         if (nb) {
           var anc = node.parent;
-          while (anc && anc !== clone) {
+          // Include the previewed root frame (clone) as the final ancestor to test:
+          // when every container in between hugs, the content overflows only the root,
+          // and the root's own fixed size (or an instance size override) is the cause.
+          while (anc) {
+            var ancIsRoot = (anc === clone);
             const ab = anc.absoluteBoundingBox;
             if (ab) {
               if (nb.x + nb.width  > ab.x + ab.width  + 2 ||
                   nb.y + nb.height > ab.y + ab.height + 2 ||
                   nb.x < ab.x - 2 ||
                   nb.y < ab.y - 2) {
-                // Determine whether the text or its container is the real problem
+                // Which axis actually overflowed — the fix must target THIS, not
+                // whichever axis merely happens to be fixed. Larger escape wins; ties → width.
+                var hOver = Math.max((nb.x + nb.width) - (ab.x + ab.width), ab.x - nb.x);
+                var vOver = Math.max((nb.y + nb.height) - (ab.y + ab.height), ab.y - nb.y);
+                var overflowAxis = hOver >= vOver ? 'h' : 'v';
+                // Overflow against the previewed ROOT on a non-fixed axis is a preview
+                // artifact: off-canvas the root can't FILL its (absent) parent, so it
+                // renders fixed and the content appears to spill. Its real size comes
+                // from the parent, outside this selection, so don't flag it.
+                if (ancIsRoot) {
+                  var rf = axisFixed(clone);
+                  if (!(overflowAxis === 'h' ? rf.h : rf.v)) break;
+                }
+                // Only delegate to a container/root when the text can auto-resize
+                // (Height / Width&Height). A NONE/TRUNCATE text has a fixed box, so its
+                // own box is the constraint and it stays the culprit.
                 var textAr = null;
                 try { textAr = node.textAutoResize; } catch (_) {}
                 var textIsFlexible = textAr === 'HEIGHT' || textAr === 'WIDTH_AND_HEIGHT';
-                var ancFixed = axisFixed(anc);
-                var culprit = (textIsFlexible && (ancFixed.h || ancFixed.v)) ? anc : node;
+                // Root cause: the tightest cap on the overflow axis anywhere up the
+                // chain, including the previewed root frame (a FIXED size, a maxWidth,
+                // or an instance size override). Hug/Fill containers in between just
+                // pass the constraint on. Nothing caps it, the text box is the cause.
+                var rootCause = textIsFlexible ? tightestCapOnAxis(node, overflowAxis) : null;
+                var culprit = rootCause || node;
                 var tagKey = 'clipped-' + culprit.id;
                 if (tag(tagKey)) {
                   // Flag as invisible only when the node escapes the top-level clone
@@ -899,12 +786,13 @@ async function detectIssues(clone, refNode, scaleValue, isStale) {
                       outOfBoundsKind = hasIntersection ? 'partial' : 'full';
                     }
                   }
-                  push('clipped', culprit, outOfBoundsKind);
+                  push('clipped', culprit, outOfBoundsKind, overflowAxis);
                   flaggedContainers.add(culprit.id);
                 }
                 break;
               }
             }
+            if (ancIsRoot) break;
             anc = anc.parent;
           }
         }
@@ -920,7 +808,7 @@ async function detectIssues(clone, refNode, scaleValue, isStale) {
 
 // ─── Selection analysis ───────────────────────────────────────────────────────
 
-function scanSelection() {
+async function scanSelection() {
   const sel = figma.currentPage.selection;
   if (sel.length === 0) return { error: 'no-selection' };
   if (sel.length > 1)   return { error: 'multi-selection' };
@@ -931,8 +819,8 @@ function scanSelection() {
   }
 
   const textNodes = node.findAllWithCriteria({ types: ['TEXT'] }); // native type filter — same set as findAll(n => n.type === 'TEXT')
-  const analyzed  = textNodes.map(n => {
-    const info = getTextFontSizeSource(n);
+  const analyzed  = await Promise.all(textNodes.map(async n => {
+    const info = await getTextFontSizeSource(n);
     return {
       id:        n.id,
       name:      n.name,
@@ -941,7 +829,7 @@ function scanSelection() {
       value:     info.value,
       tokenName: info.name,
     };
-  });
+  }));
 
   const counts = { variable: 0, style: 0, override: 0 };
   for (const n of analyzed) counts[n.source] = (counts[n.source] || 0) + 1;
@@ -990,7 +878,7 @@ figma.ui.onmessage = async (msg) => {
   }
 
   if (msg.type === 'ready') {
-    figma.ui.postMessage({ type: 'selection', data: scanSelection() });
+    figma.ui.postMessage({ type: 'selection', data: await scanSelection() });
     figma.clientStorage.getAsync('panelWidth').then(w => {
       if (w) figma.ui.postMessage({ type: 'panel-width', width: w });
     });
@@ -1013,19 +901,21 @@ figma.ui.onmessage = async (msg) => {
     const isStale = () => myToken !== previewToken;
     const { scale, dpr = 2 } = msg;
 
-    // Prefer current canvas selection; fall back to locked node from last generate
-    const sel = figma.currentPage.selection;
-    let frame = null;
-    if (sel.length === 1 && ['FRAME', 'COMPONENT', 'COMPONENT_SET', 'INSTANCE', 'GROUP'].includes(sel[0].type)) {
-      frame = sel[0];
-    } else if (lockedNodeId) {
-      frame = figma.getNodeById(lockedNodeId);
-    }
-    if (!frame) return;
-
-    lockedNodeId = frame.id;
-
     try {
+      // Prefer current canvas selection; fall back to locked node from last generate.
+      // getNodeByIdAsync lives inside the try so a lookup failure surfaces as an
+      // error to the UI instead of throwing out of the whole handler.
+      const sel = figma.currentPage.selection;
+      let frame = null;
+      if (sel.length === 1 && ['FRAME', 'COMPONENT', 'COMPONENT_SET', 'INSTANCE', 'GROUP'].includes(sel[0].type)) {
+        frame = sel[0];
+      } else if (lockedNodeId) {
+        frame = await figma.getNodeByIdAsync(lockedNodeId);
+      }
+      if (!frame) return;
+
+      lockedNodeId = frame.id;
+
       let scaledBytes, issues, frameW, frameH;
 
       // useAbsoluteBounds:true makes the PNG cover the node's full rendered
@@ -1137,7 +1027,9 @@ figma.ui.onmessage = async (msg) => {
         scale,
         name:    frame.name,
         frameId: frame.id,
-        scaled:  Array.from(scaledBytes),
+        // Uint8Array travels over postMessage as-is; Array.from would 8× the memory
+        // and serialisation for large exports. The UI already does new Uint8Array(bytes).
+        scaled:  scaledBytes,
         issues:  issues,
         frameW:  frameW,
         frameH:  frameH,

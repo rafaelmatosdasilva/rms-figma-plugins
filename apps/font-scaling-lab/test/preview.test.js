@@ -39,8 +39,9 @@ describe('font-scaling-lab — preview', () => {
     expect(result.frameId).toBe(frame.id);
     expect(result.frameW).toBe(320);
     expect(result.frameH).toBe(200);
-    // Bytes travel as a plain array so they survive postMessage.
-    expect(Array.isArray(result.scaled)).toBe(true);
+    // Bytes travel as a Uint8Array (postMessage handles typed arrays) — no Array.from copy.
+    expect(result.scaled).toBeInstanceOf(Uint8Array);
+    expect(result.scaled.length).toBeGreaterThan(0);
     // Nothing is scaled, so there is nothing to report.
     expect(result.issues).toEqual([]);
   });
@@ -72,6 +73,21 @@ describe('font-scaling-lab — preview', () => {
     // No leftover marked clone anywhere on the page.
     const leftovers = page.findAll((n) => n.getPluginData('_scoutClone') === '1');
     expect(leftovers).toEqual([]);
+  });
+
+  it('leaves no clone behind when a font fails to load', async () => {
+    const { page } = previewScene();
+    const { figma, send, lastOf } = await loadPlugin(ENTRY, { pages: [page] });
+    figma.currentPage = page;
+    // A font that won't load must abort the clone cleanly, not orphan it off-screen.
+    figma.loadFontAsync = async () => { throw new Error('font unavailable'); };
+
+    await send({ type: 'preview', scale: 1.5, dpr: 2 });
+
+    const leftovers = page.findAll((n) => n.getPluginData('_scoutClone') === '1');
+    expect(leftovers).toEqual([]);
+    // The failure surfaces to the UI instead of dying silently.
+    expect(lastOf('error')).toBeDefined();
   });
 
   it('loads the fonts it needs before scaling text', async () => {
