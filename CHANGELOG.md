@@ -33,6 +33,12 @@ Published to Figma Community.
 - Disabled label and icon colours corrected against the DS.
 
 Landed since publishing, and going out with the next Community release:
+- Local variables are no longer mislabelled as coming from an external library.
+  Figma's local-variable listing occasionally omits a genuinely local variable;
+  when another local token aliased it, the plugin fetched it and marked it remote,
+  so a real local token (for example advanced/buttonPrimary/border/top) showed the
+  library icon and lost its canvas focus. It now trusts Figma's own remote flag
+  and treats these recovered variables as local.
 - Place affected components on canvas. From a token, one action drops live
   instances of every component it affects into a named, transparent Section on a
   plugin-owned "Impact Atlas Previews" page, so nothing lands on top of your work
@@ -107,6 +113,12 @@ Published to Figma Community.
 - Fixed minor UI issues and improved overall polish.
 
 Landed since publishing, and going out with the next Community release:
+- The plugin now finds the real cause of clipping instead of blaming the nearest
+  container. It follows the whole layer chain to the tightest constraint, whether
+  that's a fixed size, a max-width several levels up, or the selected frame itself,
+  and its suggestion matches the axis that actually overflowed. Font-size sources
+  (variable, style, or override) read correctly again, and "View on Canvas" now
+  jumps to the layer you need to change rather than the one that looks broken.
 - Failures are reported as a toast in the corner instead of a red bar wedged into
   the panel. The old bar stayed on screen after the problem had passed.
 - Dark mode colours updated against the design system — the greys shifted slightly
