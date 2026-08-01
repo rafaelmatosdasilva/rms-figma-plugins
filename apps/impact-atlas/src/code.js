@@ -849,12 +849,39 @@ async function discoverRemoteVarsFromAliases() {
   const remoteIds  = [...remoteIdToAliasers.keys()];
   const fetched    = await Promise.all(remoteIds.map(id => figma.variables.getVariableByIdAsync(id).catch(() => null)));
 
-  const collIds    = new Set();
+  const remoteCollIds = new Set();
+  const localCollIds  = new Set();
   const remoteVars = [];
+  const recoveredLocalVars = []; // genuinely-local vars getLocalVariablesAsync dropped
+  let recoveredEdges = false;
   for (const v of fetched) {
     if (!v) continue;
     _varById.set(v.id, v);
-    collIds.add(v.variableCollectionId);
+
+    // getVariableByIdAsync also returns LOCAL variables that getLocalVariablesAsync
+    // silently omitted (a known Figma quirk). Those are not library tokens: the
+    // authoritative signal is v.remote, never "absent from the local set". Treating
+    // them as remote put a library badge on real local tokens (e.g. a token that
+    // only appears here because another local var aliases it). Recover them instead.
+    if (!v.remote) {
+      _localVarIds.add(v.id);
+      _externalAliasMap.delete(v.id); // it was never an external target
+      // Register the alias edges buildAliasMaps skipped (it ran before this var was
+      // known), and clear the stale external mark on every local var that aliases it.
+      for (const aliaserId of remoteIdToAliasers.get(v.id) || new Set()) {
+        const edges = _aliasMap.get(aliaserId);
+        if (edges) edges.add(v.id);
+        if (!_reverseAliasMap.has(v.id)) _reverseAliasMap.set(v.id, new Set());
+        _reverseAliasMap.get(v.id).add(aliaserId);
+        if (_externalAliasMap.get(aliaserId) === v.id) _externalAliasMap.delete(aliaserId);
+        recoveredEdges = true;
+      }
+      localCollIds.add(v.variableCollectionId);
+      recoveredLocalVars.push(v);
+      continue;
+    }
+
+    remoteCollIds.add(v.variableCollectionId);
     remoteVars.push({
       id:                   v.id,
       libraryKey:           v.key || null,
@@ -867,13 +894,41 @@ async function discoverRemoteVarsFromAliases() {
     });
   }
 
-  const colls      = await Promise.all([...collIds].map(id => figma.variables.getVariableCollectionByIdAsync(id).catch(() => null)));
+  // New alias edges change who depends on whom, so the descendant counts are stale.
+  if (recoveredEdges) _descendantCounts = buildDescendantCountMap();
+
+  // Load every referenced collection into _collById so resolution works; only the
+  // ones backing real remote vars are reported back as remote collections.
+  const allCollIds = [...new Set([...remoteCollIds, ...localCollIds])];
+  const colls      = await Promise.all(allCollIds.map(id => figma.variables.getVariableCollectionByIdAsync(id).catch(() => null)));
   const remoteColls = [];
   for (const c of colls) {
-    if (c) { _collById.set(c.id, c); remoteColls.push({ id: c.id, key: c.key || null, name: c.name, modes: c.modes, isRemote: true }); }
+    if (!c) continue;
+    _collById.set(c.id, c);
+    if (remoteCollIds.has(c.id)) remoteColls.push({ id: c.id, key: c.key || null, name: c.name, modes: c.modes, isRemote: true });
   }
 
-  return { remoteVars, remoteColls };
+  const recovered = recoveredLocalVars.map(v => ({
+    id:                   v.id,
+    name:                 v.name,
+    resolvedType:         v.resolvedType,
+    variableCollectionId: v.variableCollectionId,
+    hex:                  v.resolvedType === 'COLOR' ? resolveHex(v.id) : null,
+    dependentCount:       _descendantCounts.get(v.id) || 0,
+    hasExternalAlias:     _externalAliasMap.has(v.id),
+  }));
+
+  return { remoteVars, remoteColls, recoveredLocalVars: recovered };
+}
+
+// Fold vars getLocalVariablesAsync missed (recovered during remote discovery) into
+// the local list, then refresh hasExternalAlias on every entry — discovery clears
+// the stale external marks that were recorded before the recovery. Mutates `variables`.
+function mergeRecoveredLocalVars(variables, recovered) {
+  if (!recovered || !recovered.length) return;
+  const known = new Set(variables.map(v => v.id));
+  for (const rv of recovered) if (!known.has(rv.id)) variables.push(rv);
+  for (const v of variables) v.hasExternalAlias = _externalAliasMap.has(v.id);
 }
 
 // Enumerates EVERY library variable available to this file (used or not).
@@ -1095,6 +1150,7 @@ async function reconcileCachedLibraryVars(cachedScan) {
 
   let discovered = null;
   try { discovered = await discoverRemoteVarsFromAliases(); } catch (_) {}
+  const recoveredLocalVars = [];
   if (discovered) {
     for (const fv of discovered.remoteVars) {
       const at = remoteVars.findIndex((rv) => rv.id === fv.id);
@@ -1102,6 +1158,7 @@ async function reconcileCachedLibraryVars(cachedScan) {
     }
     const collIds = new Set(remoteColls.map((c) => c.id));
     for (const fc of discovered.remoteColls) if (!collIds.has(fc.id)) remoteColls.push(fc);
+    if (discovered.recoveredLocalVars) recoveredLocalVars.push(...discovered.recoveredLocalVars);
   }
 
   const liveNames = new Map();
@@ -1110,7 +1167,7 @@ async function reconcileCachedLibraryVars(cachedScan) {
     for (const lv of lib.libVars) if (lv.libraryKey) liveNames.set(lv.libraryKey, lv.name);
   } catch (_) {}
 
-  return { remoteVars: dedupeRemoteVarsByKey(remoteVars, liveNames), remoteColls };
+  return { remoteVars: dedupeRemoteVarsByKey(remoteVars, liveNames), remoteColls, recoveredLocalVars };
 }
 
 async function handleInit(force) {
@@ -1202,8 +1259,9 @@ async function handleInit(force) {
     if (validCachedScan && validCachedScan.browserComponents) {
       _seedRemoteVarsFromCache(validCachedScan.remoteVars, validCachedScan.remoteColls);
       _populateIndexFromCache(validCachedScan.browserComponents);
-      const { remoteVars: _remoteVars, remoteColls: _remoteColls } =
+      const { remoteVars: _remoteVars, remoteColls: _remoteColls, recoveredLocalVars: _recovered } =
         await reconcileCachedLibraryVars(validCachedScan);
+      mergeRecoveredLocalVars(variables, _recovered);
       _componentIndexBuilt   = true;
       _componentBrowserCache = validCachedScan.browserComponents;
       // Recompute counts and impact scores from the live alias graph + freshly-populated
@@ -1733,6 +1791,7 @@ async function handleUsageScan(msg) {
         if (lv.libraryKey && seenKeys.has(lv.libraryKey)) continue;
         remoteVars.push(lv);
       }
+      mergeRecoveredLocalVars(refreshedVarPayload.variables, discovered.recoveredLocalVars);
       const seenCollKeys = new Set();
       for (const rc of discovered.remoteColls) {
         if (rc.key) seenCollKeys.add(rc.key);
