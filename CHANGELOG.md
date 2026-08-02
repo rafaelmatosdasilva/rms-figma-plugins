@@ -39,8 +39,7 @@ Landed since publishing, and going out with the next Community release:
   so a real local token (for example advanced/buttonPrimary/border/top) showed the
   library icon and lost its canvas focus. It now trusts Figma's own remote flag
   and treats these recovered variables as local.
-- New feature: Place all components affected by a token on the canvas for easier
-  review. From a token, one action drops live
+- Place affected components on canvas. From a token, one action drops live
   instances of every component it affects into a named, transparent Section on a
   plugin-owned "Impact Atlas Previews" page, so nothing lands on top of your work
   and no colour is added to your document. The Section is titled with the token and
