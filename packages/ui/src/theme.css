@@ -1135,7 +1135,7 @@
   .tableRow.selected:hover { background: var(--buttonList-background-selected); }
   .dividerLine {
     height: 1px;
-    background: var(--divider);
+    background: var(--border);   /* dividerLine/border/color = N700 both modes (L #d6d6d6, D #303030) */
     flex-shrink: 0;
     margin: 0;
   }
