@@ -95,7 +95,8 @@ describe('tokens-to-ink — export', () => {
 
     // The whole point of the export: mapped print values travel with the artwork.
     expect(lastOf('export-data').colorLookup).toBeTruthy();
-    expect(Array.isArray(lastOf('export-data').pdfBytes)).toBe(true);
+    // Bytes travel as a Uint8Array (postMessage handles typed arrays), not an Array.from copy.
+    expect(lastOf('export-data').pdfBytes).toBeInstanceOf(Uint8Array);
   });
 
   it('scales raster exports to 300 dpi', async () => {
@@ -133,6 +134,30 @@ describe('tokens-to-ink — export', () => {
     // The batch is still alive — the next frame exports fine.
     await send({ type: 'export-frame-ack', nextIndex: 1 });
     expect(lastOf('export-data')).toMatchObject({ frameName: 'Poster B' });
+  });
+
+  it('keeps a manual CMYK tag when a later colour resolves to the same hex', async () => {
+    // Two variables land on the same red. The first carries a manual [cmyk] tag
+    // deliberately different from red's computed CMYK; the second is untagged. The
+    // manual value must survive rather than being overwritten by the computed one.
+    const brand = makeVar('v-brand', 'brand/primary', { value: { r: 1, g: 0, b: 0 } });
+    brand.description = '[cmyk:5,95,90,2]';
+    const plain = makeVar('v-plain', 'accent/red', { value: { r: 1, g: 0, b: 0 } });
+
+    const one = makeNode('FRAME', { id: 'f1', name: 'Poster A', width: 100, height: 200, fills: [boundSolid('v-brand')] });
+    const two = makeNode('FRAME', { id: 'f2', name: 'Poster B', width: 100, height: 200, fills: [boundSolid('v-plain')] });
+    const page = makePage('Page 1');
+    page.appendChild(one); page.appendChild(two);
+    page.selection = [one, two];
+
+    const scene = { variables: [brand, plain], collections: [makeCollection('coll-1', 'Tokens')], pages: [page] };
+    const { figma, send, lastOf } = await loadPlugin(ENTRY, scene);
+    figma.currentPage = page;
+
+    await send({ type: 'export-request', format: 'pdf' });
+    await send({ type: 'export-frames' });
+
+    expect(lastOf('export-data').colorLookup['#FF0000']).toEqual({ c: 5, m: 95, y: 90, k: 2 });
   });
 
   it('ignores an acknowledgement when no export is running', async () => {

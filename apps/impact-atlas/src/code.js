@@ -1,4 +1,4 @@
-import { rgbToHex, yieldTick, attachWindowResize } from '@rms/core';
+import { rgbToHex, yieldTick, attachWindowResize, focusNode } from '@rms/core';
 
 figma.showUI(__html__, { width: 1000, height: 540, title: 'Impact Atlas' });
 
@@ -234,7 +234,10 @@ async function fetchExternalVarInfo(externalId) {
     _externalVarCache.set(externalId, info);
     return info;
   } catch (_) {
-    _externalVarCache.set(externalId, null);
+    // A THROW is transient (API hiccup, library briefly unreachable). Don't cache it:
+    // caching null here would make the ancestor vanish from every chain for the rest
+    // of the session, even after a forced rescan. Only a genuine null (line above,
+    // the var was deleted/unpublished) is worth remembering.
     return null;
   }
 }
@@ -609,10 +612,11 @@ async function buildComponentIndex() {
     const MC_BATCH = 50;
     let instScanned = 0;
     let instTotal = 0;
-    for (const page of pages) instTotal += page.findAllWithCriteria({ types: ['INSTANCE'] }).length;
+    for (const page of pages) { if (isBoardPage(page)) continue; instTotal += page.findAllWithCriteria({ types: ['INSTANCE'] }).length; }
 
     for (const page of pages) {
       if (_initCancelled) return;
+      if (isBoardPage(page)) continue; // audit artifact: don't rediscover the board's instances
       const instances = page.findAllWithCriteria({ types: ['INSTANCE'] });
       for (let bi = 0; bi < instances.length; bi += MC_BATCH) {
         if (_initCancelled) return;
@@ -1152,9 +1156,14 @@ async function reconcileCachedLibraryVars(cachedScan) {
   try { discovered = await discoverRemoteVarsFromAliases(); } catch (_) {}
   const recoveredLocalVars = [];
   if (discovered) {
+    // Index by id once (a Full-scan cache can hold thousands of library vars, so a
+    // findIndex per discovered var was O(n*m) on every cached open).
+    const idxById = new Map();
+    for (let i = 0; i < remoteVars.length; i++) idxById.set(remoteVars[i].id, i);
     for (const fv of discovered.remoteVars) {
-      const at = remoteVars.findIndex((rv) => rv.id === fv.id);
-      if (at === -1) remoteVars.push(fv); else remoteVars[at] = fv;
+      const at = idxById.has(fv.id) ? idxById.get(fv.id) : -1;
+      if (at === -1) { idxById.set(fv.id, remoteVars.length); remoteVars.push(fv); }
+      else remoteVars[at] = fv;
     }
     const collIds = new Set(remoteColls.map((c) => c.id));
     for (const fc of discovered.remoteColls) if (!collIds.has(fc.id)) remoteColls.push(fc);
@@ -1172,6 +1181,7 @@ async function reconcileCachedLibraryVars(cachedScan) {
 
 async function handleInit(force) {
   try {
+    _externalVarCache.clear(); // fresh open re-reads external vars (retry a transient failure)
     // ── Phase 1a: local variables + styles (0% → 20%) ────────────────────────
     // Variables + collections first: the cache key is derived from them when
     // figma.fileKey is unavailable (Professional seats — the same user may run
@@ -1280,7 +1290,8 @@ async function handleInit(force) {
         varComponentCounts:   freshComponentCounts,
         varImpactScores:      freshImpactScores,
         lastScanDepth:        validCachedScan.depth || null,
-        hasExternalLibraries: _remoteVars.length > 0,
+        // Same signal as the fresh path, so the flag doesn't flip between opens.
+        hasExternalLibraries: hasExternalLibraries || _remoteVars.length > 0,
         browserComponents:    validCachedScan.browserComponents,
         cachedScan:           validCachedScan,
       });
@@ -1458,37 +1469,20 @@ function fileSigFrom(vars, colls) {
     colls.map(c => c.name).sort().join(',');
   let h = 0;
   for (let i = 0; i < names.length; i++) h = ((h << 5) - h + names.charCodeAt(i)) | 0;
-  return figma.root.children.length + ':' + vars.length + ':' +
+  // Count only real pages: the plugin's own previews page comes and goes as boards are
+  // placed, and letting it into the signature made a scan invalidate its own cache.
+  const pageCount = figma.root.children.filter(p => !isBoardPage(p)).length;
+  return pageCount + ':' + vars.length + ':' +
     colls.length + ':' + (h >>> 0).toString(36);
 }
 
 async function handleFocusNode(nodeId, pageId) {
-  try {
-    // documentAccess: dynamic-page — getNodeByIdAsync returns null for a node on
-    // a page that isn't loaded. The UI sends the node's pageId; load that page
-    // first, or a valid LOCAL component silently fails to focus and looks like a
-    // library component with no canvas location.
-    if (pageId) {
-      // A page is a node — getNodeByIdAsync, not a getPageByIdAsync (that API
-      // does not exist; calling it threw and made every focus click fail).
-      const page = await figma.getNodeByIdAsync(pageId);
-      if (page && page.type === 'PAGE') await page.loadAsync();
-    }
-    const node = await figma.getNodeByIdAsync(nodeId);
-    if (!node) {
-      // Genuinely unreachable — the master lives in an external library, so it has
-      // no canvas location. Tell the user instead of doing nothing.
-      figma.ui.postMessage({ type: 'focus-unavailable', nodeId: nodeId });
-      return;
-    }
-    let p = node;
-    while (p && p.type !== 'PAGE') p = p.parent;
-    if (p && p !== figma.currentPage) await figma.setCurrentPageAsync(p);
-    figma.currentPage.selection = [node];
-    figma.viewport.scrollAndZoomIntoView([node]);
-  } catch (_) {
-    figma.ui.postMessage({ type: 'focus-unavailable', nodeId: nodeId });
-  }
+  // Shared focusNode loads the page first (dynamic-page safe) and selects the node.
+  // A failure here means the node is genuinely unreachable (its master lives in an
+  // external library, so it has no canvas location) — tell the user instead of doing
+  // nothing, exactly as before.
+  const r = await focusNode(figma, nodeId, pageId);
+  if (!r.ok) figma.ui.postMessage({ type: 'focus-unavailable', nodeId: nodeId });
 }
 
 // ─── Place affected components on canvas ──────────────────────────────────────
@@ -1502,6 +1496,14 @@ async function handleFocusNode(nodeId, pageId) {
 // working on, and repeat runs would pile up on each other.
 
 const BOARD_PAGE_KEY = 'impact-atlas-boards';
+
+// The plugin's own "Impact Atlas Previews" page is an audit artifact: its instances
+// are copies the plugin dropped there, so counting them would inflate a token's
+// reported usage and let a re-scan invalidate its own cache. Skip it everywhere the
+// canvas is walked for usage.
+function isBoardPage(page) {
+  try { return page.getPluginData(BOARD_PAGE_KEY) === '1'; } catch (_) { return false; }
+}
 const MAX_PLACE = 200; // components already arrive sorted most-bound-first
 
 const BOARD_PAGE_NAME = 'Impact Atlas Previews';
@@ -1742,20 +1744,16 @@ async function refreshLocalVariablePayload() {
 // actually used (so impact and component links survive) and take the name from the
 // live library when it is known.
 function dedupeRemoteVarsByKey(remoteVars, liveNameByKey) {
-  const byKey = new Map();
+  const byKey = new Map();  // libraryKey → index in `out` (index, not object, so no indexOf)
   const out   = [];
+  // Prefer whichever entry has real usage; that id is the one components reference.
+  const usage = (v) => (v.aliasCount || 0) + (v.dependentCount || 0) +
+    (_componentsByVarId.has(v.id) ? _componentsByVarId.get(v.id).size : 0);
   for (const rv of remoteVars) {
     if (!rv.libraryKey) { out.push(rv); continue; }   // no key — nothing to match on
-    const seen = byKey.get(rv.libraryKey);
-    if (!seen) { byKey.set(rv.libraryKey, rv); out.push(rv); continue; }
-    // Prefer whichever entry has real usage; that id is the one components reference.
-    const usage = (v) => (v.aliasCount || 0) + (v.dependentCount || 0) +
-      (_componentsByVarId.has(v.id) ? _componentsByVarId.get(v.id).size : 0);
-    if (usage(rv) > usage(seen)) {
-      const at = out.indexOf(seen);
-      if (at !== -1) out[at] = rv;
-      byKey.set(rv.libraryKey, rv);
-    }
+    const at = byKey.get(rv.libraryKey);
+    if (at === undefined) { byKey.set(rv.libraryKey, out.length); out.push(rv); continue; }
+    if (usage(rv) > usage(out[at])) out[at] = rv;
   }
   // The library is the authority on the current name.
   for (const rv of out) {
@@ -1767,6 +1765,7 @@ function dedupeRemoteVarsByKey(remoteVars, liveNameByKey) {
 async function handleUsageScan(msg) {
   const depth = (msg && msg.depth >= 2) ? msg.depth : 3;
   try {
+    _externalVarCache.clear(); // re-fetch external vars: pick up renames, retry transient failures
     // Refresh the variable list + alias maps first so this scan reflects the current
     // file (added / renamed / deleted variables), not the stale set captured at init.
     const refreshedVarPayload = await refreshLocalVariablePayload();
@@ -1821,6 +1820,7 @@ async function handleUsageScan(msg) {
     for (let pi = 0; pi < pages.length; pi++) {
       figma.ui.postMessage({ type: 'usage-scan-progress', pct: Math.round(((pi + 1) / pages.length) * 15) });
       await yieldTick();
+      if (isBoardPage(pages[pi])) continue; // must match the Pass 1 skip below, or progress never reaches 100%
       total += pages[pi].findAllWithCriteria({ types: ['INSTANCE'] }).length;
     }
 
@@ -1921,6 +1921,7 @@ async function handleUsageScan(msg) {
 
     const MC_BATCH = 50;
     for (const page of pages) {
+      if (isBoardPage(page)) continue; // audit artifact: its instances aren't real usage
       // ── Pass 1: instances ────────────────────────────────────────────────
       // getMainComponentAsync is an IPC round-trip per instance; batching with
       // Promise.all pipelines them instead of paying latency sequentially.

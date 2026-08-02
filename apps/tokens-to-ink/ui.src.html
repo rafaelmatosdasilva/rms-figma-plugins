@@ -249,7 +249,9 @@
   .cmyk-spacer { width: var(--button-min-height); flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
   .cmyk-group.cmyk-readonly .cmyk-box-wrap { background: transparent; border-color: var(--input-auto-border); }
   .cmyk-box[readonly], .output-text-input[readonly] { pointer-events: none; opacity: 0.8; }
-  /* Placement only — appearance comes from .tooltipButton in the base. */
+  /* Placement only — appearance comes from .tooltipButton in the base. This is a TABLE
+     row (.td-variable), not a buttonList, so the DS buttonList flush-tooltip rule does
+     not apply here; the small margin keeps it legible next to the variable name. */
   .lib-info { vertical-align: middle; margin-left: var(--gap-s); }
 
   /* ── Output cell (CMYK + optional outputs stacked) ── */
@@ -1855,7 +1857,7 @@
 
       if (hasSource) {
           chipsEl.innerHTML = msg.sourceNodes.map(n =>
-          `<button class="buttonTertiary source-focus-btn" data-node-id="${n.id}" data-tip="Focus in canvas"><span>${n.name}</span>${focusIcon}</button>`
+          `<button class="buttonTertiary source-focus-btn" data-node-id="${esc(n.id)}" data-tip="Focus in canvas"><span>${esc(n.name)}</span>${focusIcon}</button>`
         ).join('');
         chipsEl.querySelectorAll('.source-focus-btn').forEach(btn => {
           btn.addEventListener('click', () => {
@@ -2008,7 +2010,7 @@
           const swatchCls = `swatch color-swatch output-swatch output-swatch-${typeKey}${resolvedHex ? '' : ' empty'}`;
           const swatchStyle = resolvedHex ? ` style="background:${resolvedHex}"` : '';
           const removeBtn = readOnly ? `<span class="cmyk-spacer"></span>` : `<button class="buttonQuaternary buttonUnpair buttonUnpair-output" data-output-type="${typeKey}" data-color-var-id="${r.colorVarId || ''}" data-tip="Remove ${t.label}">${removeIcon}</button>`;
-          extraRows += `<div class="output-row"><div class="${swatchCls}"${swatchStyle}></div><div class="inputWrap output-text-wrap${readOnly ? ' output-readonly' : ''}" data-output-type="${typeKey}" data-color-var-id="${r.colorVarId || ''}" data-idx="${idx}"><span class="inputLabel output-lbl lbl-${typeKey}">${t.label}</span><input class="inputField output-text-input" type="text" value="${val}"${readOnly ? ' readonly' : ''} /></div>${removeBtn}</div>`;
+          extraRows += `<div class="output-row"><div class="${swatchCls}"${swatchStyle}></div><div class="inputWrap output-text-wrap${readOnly ? ' output-readonly' : ''}" data-output-type="${typeKey}" data-color-var-id="${r.colorVarId || ''}" data-idx="${idx}"><span class="inputLabel output-lbl lbl-${typeKey}">${t.label}</span><input class="inputField output-text-input" type="text" value="${esc(val)}"${readOnly ? ' readonly' : ''} /></div>${removeBtn}</div>`;
         });
 
         // Determine which types are still available to add (hidden in read-only)
@@ -2030,7 +2032,7 @@
           <td><div class="td-variable">
             <div class="swatch color-swatch" style="background:${r.hex}"></div>
             <div class="var-info">
-              <div class="var-name-row"><span class="var-name" data-tip="${name.replace(/\//g, ' /\n')}">${name}</span>${infoBtn}</div>
+              <div class="var-name-row"><span class="var-name" data-tip="${esc(name.replace(/\//g, ' /\n'))}">${esc(name)}</span>${infoBtn}</div>
               <div class="var-hex-sub">${r.hex}</div>
             </div>
           </div></td>
@@ -2336,7 +2338,7 @@
           showProgress(`Exporting ${exportedCount} / ${msg.total} ${msg.format.toUpperCase()} files…`);
           parent.postMessage({ pluginMessage: { type: 'export-frame-ack', nextIndex: msg.index + 1 } }, '*');
         } else {
-          const _count = exportedCount, _fmt = msg.format.toUpperCase();
+          const _fmt = msg.format.toUpperCase();
           dismissProgress();
           setExportBusy(false);
 
@@ -2345,6 +2347,10 @@
             _pendingFiles = [];
             downloadFile(zipBytes, `CMYK_Export_${_fmt}.zip`, 'application/zip');
           }
+          // A batch that ends on a SUCCESS must still report any earlier failures,
+          // otherwise a frame that failed mid-batch is dropped from the print output
+          // with no warning.
+          reportExportFailures();
         }
       } catch (err) {
         if (_exportCancelled) return;

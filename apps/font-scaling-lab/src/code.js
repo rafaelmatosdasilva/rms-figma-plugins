@@ -1,4 +1,4 @@
-import { attachWindowResize } from '@rms/core';
+import { attachWindowResize, focusNode } from '@rms/core';
 
 figma.showUI(__html__, { width: 720, height: 860, title: 'Font Scaling Lab' });
 
@@ -21,12 +21,6 @@ sweepCurrentPageClones();
 figma.on('currentpagechange', sweepCurrentPageClones);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function getPageForNode(node) {
-  let p = node;
-  while (p && p.type !== 'PAGE') p = p.parent;
-  return p && p.type === 'PAGE' ? p : null;
-}
 
 // ─── Variable resolution ──────────────────────────────────────────────────────
 
@@ -878,7 +872,12 @@ figma.ui.onmessage = async (msg) => {
   }
 
   if (msg.type === 'ready') {
-    figma.ui.postMessage({ type: 'selection', data: await scanSelection() });
+    // The UI hides the empty state until this first report, so a failure here must
+    // still answer — otherwise the panel would sit blank forever. Fall back to the
+    // "select something" state, which is the safe thing to show when we can't tell.
+    let firstSel;
+    try { firstSel = await scanSelection(); } catch (_) { firstSel = { error: 'no-selection' }; }
+    figma.ui.postMessage({ type: 'selection', data: firstSel });
     figma.clientStorage.getAsync('panelWidth').then(w => {
       if (w) figma.ui.postMessage({ type: 'panel-width', width: w });
     });
@@ -1040,17 +1039,8 @@ figma.ui.onmessage = async (msg) => {
   }
 
   if (msg.type === 'focus-node') {
-    try {
-      const node = await figma.getNodeByIdAsync(msg.nodeId);
-      if (node) {
-        const page = getPageForNode(node);
-        if (page && page !== figma.currentPage) await figma.setCurrentPageAsync(page);
-        figma.currentPage.selection = [node];
-        figma.viewport.scrollAndZoomIntoView([node]);
-      }
-    } catch (err) {
-      figma.ui.postMessage({ type: 'error', message: 'Focus error: ' + err.message });
-    }
+    const r = await focusNode(figma, msg.nodeId);
+    if (r.error) figma.ui.postMessage({ type: 'error', message: 'Focus error: ' + r.error.message });
     return;
   }
 };

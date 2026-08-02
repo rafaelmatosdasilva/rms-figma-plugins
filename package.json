@@ -17,6 +17,7 @@
     "sync:preview": "node scripts/sync-preview.mjs"
   },
   "devDependencies": {
+    "@rms/core": "workspace:*",
     "@rms/test-utils": "workspace:*",
     "esbuild": "^0.21.0",
     "jsdom": "^30.0.0",

@@ -34,7 +34,11 @@ export function parseCmykString(str) {
   if (!str || typeof str !== "string") return null;
   const parts = str.replace(/[CMYK:]/gi, "").trim().split(/[\s,]+/).map(Number);
   if (parts.length === 4 && parts.every((n) => !isNaN(n))) {
-    return { c: parts[0], m: parts[1], y: parts[2], k: parts[3] };
+    // Tags live in the variable description and can be hand-edited, so a channel may
+    // be out of range (negative or >100). Clamp to 0-100 so the export never ships
+    // invalid ink values. In-range values are untouched.
+    const clamp = (n) => Math.max(0, Math.min(100, n));
+    return { c: clamp(parts[0]), m: clamp(parts[1]), y: clamp(parts[2]), k: clamp(parts[3]) };
   }
   return null;
 }

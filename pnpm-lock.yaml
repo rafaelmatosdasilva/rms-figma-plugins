@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@rms/core':
+        specifier: workspace:*
+        version: link:packages/core
       '@rms/test-utils':
         specifier: workspace:*
         version: link:packages/test-utils

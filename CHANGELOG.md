@@ -1,7 +1,7 @@
 # Changelog
 
 Each plugin is versioned independently and matches the version published to the
-Figma Community, which Figma assigns. Numbers don't line up between plugins —
+Figma Community, which Figma assigns. Numbers don't line up between plugins;
 each only moves when that plugin is published.
 
 Shared design-system work sometimes lands here between Community releases. It's
@@ -14,7 +14,7 @@ scheme was retired on 22 July 2026.)
 
 ## Impact Atlas
 
-### v5 — 22 July 2026
+### v5 · 22 July 2026
 Published to Figma Community.
 - Scan-depth radio rings are slightly heavier, matching the connector line.
 - Scan-depth radio dots now line up with their labels.
@@ -39,7 +39,8 @@ Landed since publishing, and going out with the next Community release:
   so a real local token (for example advanced/buttonPrimary/border/top) showed the
   library icon and lost its canvas focus. It now trusts Figma's own remote flag
   and treats these recovered variables as local.
-- Place affected components on canvas. From a token, one action drops live
+- New feature: Place all components affected by a token on the canvas for easier
+  review. From a token, one action drops live
   instances of every component it affects into a named, transparent Section on a
   plugin-owned "Impact Atlas Previews" page, so nothing lands on top of your work
   and no colour is added to your document. The Section is titled with the token and
@@ -51,13 +52,13 @@ Landed since publishing, and going out with the next Community release:
   their master lives in another file).
 - Renaming a variable in a library file no longer makes it show up twice. Library
   variables live in another file, so the plugin had no way of knowing when one was
-  renamed, deleted or republished there — its cached copy still looked current. It
+  renamed, deleted or republished there, so its cached copy still looked current. It
   now re-checks each cached library variable against the live library, takes the new
   name, and drops any that were deleted. If the library can't be reached it keeps
   what it had rather than clearing your results.
 - Failures are reported as a toast in the corner instead of a red bar wedged into
   the panel. The old bar stayed on screen after the problem had passed.
-- The search field's border was too dim in dark mode — it was using the divider
+- The search field's border was too dim in dark mode: it was using the divider
   line colour rather than the input colour. The two are identical in light mode,
   which is why it only ever looked wrong in dark.
 - The action bar now uses its own design-system colours and gains a bottom rule,
@@ -68,12 +69,23 @@ Landed since publishing, and going out with the next Community release:
   near-copy at its own size, so it is taller now and its divider is the right
   colour.
 - Spacing throughout was snapped onto the design system's scale. A lot of it had
-  been typed as loose numbers — 6px, 10px, 7px — that exist nowhere in the system,
+  been typed as loose numbers (6px, 10px, 7px) that exist nowhere in the system,
   so gaps and paddings now line up with the rest of the plugin.
 - The level and priority dots take their size from a new design-system value
   instead of a fixed one, so they follow the system if it changes.
+- Deleted components are no longer shown as coming from an external library. A
+  component deleted while its instances stayed on the canvas still resolved through
+  those instances, so it appeared with the library icon; it is now recognised as
+  gone rather than remote.
+- The library icon on component and token rows is no longer dimmed. Inside a list
+  row it was picking up the row's muted icon colour instead of its own, so it read
+  darker than it should.
+- The "Place on canvas" button sits next to the "Affected components" heading
+  instead of at the far right of the row, matching the design system.
+- The info and library icons were redrawn in the design system; the plugin now
+  matches (the info icon is a solid mark rather than an outline).
 
-### v4 — 17 July 2026
+### v4 · 17 July 2026
 Published to Figma Community.
 
 ---
@@ -88,16 +100,15 @@ Published to Figma Community.
 - Scanning after that stays manual, and the scan button now names its target
   next to its icon: "Scan selection" when something is selected, "Scan file"
   otherwise.
-- The output column now grows with the window, so long Pantone and vinyl names
-  stay readable instead of being cut off.
+- The output column now expands when the window is resized to fit longer values.
 - Failures are reported as a toast in the corner instead of a red bar wedged into
   the panel, and an error toast stays up longer than a confirmation.
-- Dark mode colours updated against the design system — the greys shifted slightly
+- Dark mode colours updated against the design system. The greys shifted slightly
   across the whole ramp, so panels, borders and text all move together.
 - Spacing snapped onto the design system's scale, replacing loose numbers that
   matched nothing in the system.
 
-### v4 — 17 July 2026
+### v4 · 17 July 2026
 Published to Figma Community. Later shared design-system work landed here without
 a new Community release, since none of it changed how the plugin works:
 - Node and empty-state colours corrected against the design system.
@@ -107,7 +118,7 @@ a new Community release, since none of it changed how the plugin works:
 
 ## Font Scaling Lab
 
-### v6 — 22 July 2026
+### v6 · 22 July 2026
 Published to Figma Community.
 - Added tooltips for objects outside the visible area.
 - Fixed minor UI issues and improved overall polish.
@@ -119,9 +130,10 @@ Landed since publishing, and going out with the next Community release:
   and its suggestion matches the axis that actually overflowed. Font-size sources
   (variable, style, or override) read correctly again, and "View on Canvas" now
   jumps to the layer you need to change rather than the one that looks broken.
+- Layers outside the selected frame are now flagged in the list.
 - Failures are reported as a toast in the corner instead of a red bar wedged into
   the panel. The old bar stayed on screen after the problem had passed.
-- Dark mode colours updated against the design system — the greys shifted slightly
+- Dark mode colours updated against the design system. The greys shifted slightly
   across the whole ramp, so panels, borders and text all move together.
 - The scale field's border was too dim in dark mode and slightly too thin, and its
   focus ring used a text colour instead of the design system's focus colour.
@@ -129,14 +141,20 @@ Landed since publishing, and going out with the next Community release:
   system's scale, replacing loose numbers that matched nothing in the system.
 - Loading spinners are a pixel larger, matching the size of the design system's
   spinner rather than the shape drawn inside it.
+- The info button on an issue row sits flush against its title instead of a step
+  away, matching the design system.
+- The "Suggested Fixes" heading uses the design system's secondary text colour and
+  size — it had been the brighter primary colour and a step too large.
+- The info icon was redrawn in the design system (a solid mark rather than an
+  outline); the plugin now matches.
 
-### v5.2 — 22 July 2026
-Repo only — not republished to the Community.
+### v5.2 · 22 July 2026
+Repo only, not republished to the Community.
 - Section dividers are 2px taller, matching a spacing change in the design system.
 
-### v5.1 — 22 July 2026
-Repo only — not republished to the Community.
+### v5.1 · 22 July 2026
+Repo only, not republished to the Community.
 - Picks up the shared design-system fixes (node and empty-state colours).
 
-### v5 — 4 June 2026
+### v5 · 4 June 2026
 Published to Figma Community.

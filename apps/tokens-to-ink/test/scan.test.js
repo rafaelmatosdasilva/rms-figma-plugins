@@ -161,6 +161,86 @@ describe('tokens-to-ink — output value tags', () => {
   });
 });
 
+describe('tokens-to-ink — external library resolution', () => {
+  /** Selection whose only fill is bound to a library (remote) variable. */
+  function externalScene() {
+    const ext = makeVar('v-ext', 'library/blue', { remote: true, collectionId: 'lib-coll' });
+    const bound = makeNode('RECTANGLE', { name: 'Bound', fills: [boundSolid('v-ext')] });
+    const frame = makeNode('FRAME', { name: 'Artwork', fills: [], children: [bound] });
+    const page = makePage('Page 1', [frame]);
+    page.selection = [frame];
+    return {
+      scene: {
+        variables: [],
+        remoteVars: [ext],
+        collections: [],
+        remoteColls: [makeCollection('lib-coll', 'Library', { remote: true })],
+        pages: [page],
+        libraryCollections: [], // teamLibrary present, but reports no linked libraries
+      },
+      page,
+    };
+  }
+
+  it('resolves a library name once and reuses it on a re-scan', async () => {
+    const ext = makeVar('v-ext', 'library/blue', { remote: true, collectionId: 'lib-coll' });
+    const bound = makeNode('RECTANGLE', { name: 'Bound', fills: [boundSolid('v-ext')] });
+    const frame = makeNode('FRAME', { name: 'Artwork', fills: [], children: [bound] });
+    const page = makePage('Page 1', [frame]);
+    page.selection = [frame];
+    const s = {
+      variables: [],
+      remoteVars: [ext],
+      collections: [],
+      remoteColls: [makeCollection('lib-coll', 'Library', { remote: true })],
+      pages: [page],
+      // teamLibrary reports a collection whose key matches the remote collection.
+      libraryCollections: [{ key: 'ckey-lib-coll', libraryName: 'Brand Library', name: 'Library' }],
+    };
+    const { figma, send, postedOf } = await loadPlugin(ENTRY, s);
+    figma.currentPage = page;
+
+    let collLookups = 0;
+    const realColl = figma.variables.getVariableCollectionByIdAsync.bind(figma.variables);
+    figma.variables.getVariableCollectionByIdAsync = async (id) => {
+      if (id === 'lib-coll') collLookups++;
+      return realColl(id);
+    };
+
+    const n0 = postedOf('external-vars-resolved').length;
+    await send({ type: 'request-scan' });
+    await waitFor(() => postedOf('external-vars-resolved').length > n0, { label: 'first resolve' });
+    const afterFirst = collLookups;
+
+    const n1 = postedOf('external-vars-resolved').length;
+    await send({ type: 'request-scan' });
+    await waitFor(() => postedOf('external-vars-resolved').length > n1, { label: 'second resolve' });
+
+    // The second scan reused the cached name: no fresh collection lookup for lib-coll.
+    expect(collLookups).toBe(afterFirst);
+    // ...and the name still comes through correctly.
+    expect(Object.values(postedOf('external-vars-resolved').at(-1).libraries)).toContain('Brand Library');
+  });
+
+  it('still answers the UI when library-name resolution fails, so tooltips stop waiting', async () => {
+    const { scene: s, page } = externalScene();
+    const { figma, send, lastOf } = await loadPlugin(ENTRY, s);
+    figma.currentPage = page;
+    // The library lookup is unreachable (no access / network).
+    figma.teamLibrary.getAvailableLibraryVariableCollectionsAsync = async () => {
+      throw new Error('no team-library access');
+    };
+
+    await send({ type: 'request-scan' });
+    await waitFor(() => lastOf('scan-results'), { label: 'scan-results' });
+    const resolved = await waitFor(() => lastOf('external-vars-resolved'), { label: 'external-vars-resolved' });
+
+    // A failure must not leave the tooltip pending forever: the UI gets an empty map
+    // and settles on the generic "external" label.
+    expect(resolved.libraries).toEqual({});
+  });
+});
+
 describe('tokens-to-ink — selection tracking', () => {
   it('reports the selection count when the selection changes', async () => {
     const { scene: s, page } = scene();

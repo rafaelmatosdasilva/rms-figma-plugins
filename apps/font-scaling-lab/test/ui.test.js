@@ -24,10 +24,14 @@ const selection = (over = {}) => ({
 });
 
 describe('font-scaling-lab UI — boot', () => {
-  it('loads and shows the empty state', () => {
+  it('waits for the first selection report before showing anything, so nothing flashes', () => {
+    // The empty state used to be visible by default, which flashed on top when the
+    // plugin opened with something already selected. It now starts hidden.
     ui = loadUI(UI);
     expect(ui.$('#empty-state')).toBeTruthy();
     expect(ui.$('#scan-btn')).toBeTruthy();
+    expect(ui.$('#empty-state').style.display).toBe('none');
+    expect(ui.$('#results-ui').style.display).toBe('none');
   });
 
   it('cannot scan until something is selected', () => {
@@ -43,6 +47,25 @@ describe('font-scaling-lab UI — selection', () => {
 
     expect(ui.text('#frame-name')).toBe('Card');
     expect(ui.$('#scan-btn').disabled).toBe(false);
+  });
+
+  it('renders straight away when a frame is already selected on open, skipping the empty state', () => {
+    // Nothing left to ask for — the user already picked a frame before opening the
+    // plugin, so it goes to the results view and requests a preview on its own.
+    ui = loadUI(UI);
+    ui.receive({ type: 'selection', data: selection() });
+
+    expect(ui.$('#empty-state').style.display).toBe('none');
+    expect(ui.$('#results-ui').style.display).toBe('flex');
+    expect(ui.sentOf('preview').length).toBe(1);
+  });
+
+  it('still shows the empty state when there is no valid selection on open', () => {
+    ui = loadUI(UI);
+    ui.receive({ type: 'selection', data: { error: 'no-selection' } });
+
+    expect(ui.$('#empty-state').style.display).not.toBe('none');
+    expect(ui.sentOf('preview')).toEqual([]);
   });
 
   it('explains what to select when nothing is', () => {

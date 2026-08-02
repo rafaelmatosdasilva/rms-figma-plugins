@@ -203,3 +203,60 @@ describe('tokens-to-ink UI — export', () => {
     expect(ui.document.body.textContent).toMatch(/3/);
   });
 });
+
+describe('tokens-to-ink UI — toast safety (shared base)', () => {
+  it('escapes HTML in a toast, so a document name cannot run code', () => {
+    ui = loadUI(UI);
+    const evil = '<img src=x onerror="globalThis.__xss=1">';
+    ui.window.showToast(evil, { error: true });
+
+    const container = ui.$('#toast-container');
+    // The message is shown as text, never parsed into a live element.
+    expect(container.querySelector('img')).toBeNull();
+    expect(container.textContent).toContain(evil);
+    expect(ui.window.__xss).toBeUndefined();
+  });
+});
+
+describe('tokens-to-ink UI — export failure reporting', () => {
+  it('reports earlier failures even when the batch ends on a success', async () => {
+    ui = loadUI(UI);
+    // Avoid the real PDF conversion and the browser download in jsdom.
+    ui.window.convertPdfToCmyk = async () => new Uint8Array([1, 2, 3]);
+    ui.window.downloadFile = () => {};
+
+    // A batch of two: frame 0 fails, frame 1 succeeds and is the last one.
+    ui.receive({ type: 'export-batch-start', total: 2, format: 'pdf' });
+    ui.receive({ type: 'export-item-error', frameName: 'Poster A', message: 'too big', index: 0, total: 2 });
+    await ui.receive({
+      type: 'export-data', format: 'pdf', pdfBytes: new Uint8Array([1]),
+      colorLookup: {}, frameName: 'Poster B', index: 1, total: 2,
+    });
+    await painted();
+
+    // A batch that finishes on a success must still surface the frame that failed.
+    expect(ui.$('#toast-container').textContent).toContain('Poster A');
+  });
+});
+
+describe('tokens-to-ink UI — XSS in the results table', () => {
+  it('escapes a malicious layer name and token name', async () => {
+    ui = loadUI(UI);
+    const evil = '<img src=x onerror="globalThis.__xss2=1">';
+    ui.receive({
+      type: 'scan-results',
+      data: [colour({ name: evil })],   // token name from the document
+      sourceNodes: [{ id: 'f1', name: evil }], // layer name from the document
+      hasExternalVars: false, externalLibrary: null,
+      summary: { totalColors: 1, withCmykPairs: 0 },
+    });
+    await painted();
+
+    // No live element was created from either name.
+    expect(ui.document.querySelector('#color-body img')).toBeNull();
+    expect(ui.document.querySelector('#source-chips img')).toBeNull();
+    expect(ui.window.__xss2).toBeUndefined();
+    // The names still show, as literal text.
+    expect(ui.$('#color-body').textContent).toContain(evil);
+  });
+});

@@ -16,7 +16,11 @@ export function parseDescTag(desc, tag) {
  */
 export function setDescTag(desc, tag, value) {
   const base = desc || "";
-  const newTag = `[${tag}:${value}]`;
+  // The value sits inside [tag:...]; a "[" or "]" in it would break the delimiters and
+  // leave junk that removeDescTag can't clean. Strip brackets so the tag stays
+  // parseable and removable. Values without brackets are unaffected.
+  const safe = String(value == null ? "" : value).replace(/[[\]]/g, "");
+  const newTag = `[${tag}:${safe}]`;
   const replaced = base.replace(new RegExp(`\\[${tag}:[^\\]]*\\]`, "gi"), newTag);
   if (replaced !== base) return replaced;
   const t = base.trim();

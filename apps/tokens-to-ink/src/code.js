@@ -8,7 +8,7 @@ import {
   rgbToHex, rgbToCmyk, parseCmykString,
   parseDescTag, setDescTag, removeDescTag,
   collectNodeColors, collectVarIds,
-  attachWindowResize,
+  attachWindowResize, focusNode, getPageForNode,
 } from '@rms/core';
 
 figma.showUI(__html__, { width: 600, height: 600 });
@@ -67,13 +67,29 @@ async function resolveColorValue(variable, allVariablesById, depth = 0) {
 
 async function buildColorLookup(colorVariables, allVariablesById) {
   const lookup = {};
-  for (const cv of colorVariables) {
-    const colorValue = await resolveColorValue(cv, allVariablesById);
+  // Resolve every colour in parallel — each resolveColorValue is an async alias walk,
+  // so a file with many tokens paid one round-trip after another before this.
+  const resolved = await Promise.all(
+    colorVariables.map((cv) => resolveColorValue(cv, allVariablesById))
+  );
+  // Write in the original order. When two variables resolve to the same hex, a
+  // manually-tagged [cmyk:...] value is authoritative and must not be overwritten by
+  // a later variable that lands on the same colour but only has a computed value.
+  // Between two manual tags for one hex, the later one still wins.
+  const hasManual = new Set();
+  for (let i = 0; i < colorVariables.length; i++) {
+    const colorValue = resolved[i];
     if (!colorValue) continue;
+    const cv = colorVariables[i];
     const hex = rgbToHex(colorValue.r, colorValue.g, colorValue.b);
     const cmykStr = parseDescTag(cv.description, "cmyk");
     const manual = cmykStr ? parseCmykString(cmykStr) : null;
-    lookup[hex] = manual || rgbToCmyk(colorValue.r, colorValue.g, colorValue.b);
+    if (manual) {
+      lookup[hex] = manual;
+      hasManual.add(hex);
+    } else if (!hasManual.has(hex)) {
+      lookup[hex] = rgbToCmyk(colorValue.r, colorValue.g, colorValue.b);
+    }
   }
   return lookup;
 }
@@ -111,11 +127,6 @@ async function buildVariableEntry(variable, allVariablesById) {
 
 // ─── Node helpers ────────────────────────────────────────────────────
 
-function getPageForNode(node) {
-  let p = node;
-  while (p && p.type !== "PAGE") p = p.parent;
-  return p && p.type === "PAGE" ? p : null;
-}
 
 // ─── Scan current selection ──────────────────────────────────────────
 
@@ -232,6 +243,13 @@ async function _runScan(fromAuto, seq) {
 // reuse it — only an explicit scan goes back to the library.
 let _libColorVarsCache = null;
 
+// collectionId → libraryName, resolved once per session. A collection's owning
+// library is stable while the file is open, so repeat scans reuse it instead of
+// paying a getVariableCollectionByIdAsync round-trip per unique collection every
+// time. Only successful resolutions are cached, so a library linked mid-session
+// still resolves on the next scan.
+const _collLibNameCache = new Map();
+
 async function _collectLibraryColorVariables(fromAuto) {
   if (fromAuto && _libColorVarsCache) return _libColorVarsCache;
   try {
@@ -308,9 +326,12 @@ function postScanResults(seq, results, sourceNodes) {
         const libraries = {};             // varId → libraryName
 
         for (const collId of new Set(externalResults.map(r => r.collectionId))) {
+          if (_collLibNameCache.has(collId)) { collectionToLib.set(collId, _collLibNameCache.get(collId)); continue; }
           const coll = await figma.variables.getVariableCollectionByIdAsync(collId).catch(() => null);
           const match = coll ? libCollections.find(lc => lc.key === coll.key) : null;
-          collectionToLib.set(collId, match ? match.libraryName : null);
+          const libName = match ? match.libraryName : null;
+          collectionToLib.set(collId, libName);
+          if (libName) _collLibNameCache.set(collId, libName); // cache positive hits for the session
         }
         for (const r of externalResults) {
           const libName = collectionToLib.get(r.collectionId);
@@ -318,7 +339,12 @@ function postScanResults(seq, results, sourceNodes) {
         }
 
         figma.ui.postMessage({ type: 'external-vars-resolved', libraries });
-      } catch (_) {}
+      } catch (_) {
+        // Library-name resolution failed (no teamLibrary access, network hiccup).
+        // Still answer, so the UI stops waiting and settles on the generic external
+        // tooltip instead of a permanently-pending one.
+        figma.ui.postMessage({ type: 'external-vars-resolved', libraries: {} });
+      }
     })();
   }
 }
@@ -353,8 +379,11 @@ async function _exportOneFrame(i) {
       const pdfBytes = await node.exportAsync({ format: "PDF" });
       if (_exportCancelled) return;
       figma.ui.postMessage({
+        // Uint8Array travels over postMessage as-is; Array.from would 8x the memory
+        // and serialisation for a multi-MB export. The UI already wraps it in new
+        // Uint8Array(...) on receipt.
         type: "export-data", format: "pdf",
-        pdfBytes: Array.from(pdfBytes),
+        pdfBytes: pdfBytes,
         colorLookup, frameName: node.name, index: i, total: selection.length,
       });
     } else {
@@ -365,7 +394,7 @@ async function _exportOneFrame(i) {
       if (_exportCancelled) return;
       figma.ui.postMessage({
         type: "export-data", format: "tiff",
-        pngBytes: Array.from(pngBytes),
+        pngBytes: pngBytes,
         width: Math.round(node.width * dpiScale),
         height: Math.round(node.height * dpiScale),
         colorLookup, frameName: node.name, index: i, total: selection.length,
@@ -518,17 +547,8 @@ figma.ui.onmessage = async (msg) => {
   }
 
   if (msg.type === "focus-node") {
-    try {
-      const node = await figma.getNodeByIdAsync(msg.nodeId);
-      if (node) {
-        const page = getPageForNode(node);
-        if (page && page !== figma.currentPage) await figma.setCurrentPageAsync(page);
-        figma.currentPage.selection = [node];
-        figma.viewport.scrollAndZoomIntoView([node]);
-      }
-    } catch (err) {
-      figma.ui.postMessage({ type: "error", message: "Focus error: " + err.message });
-    }
+    const r = await focusNode(figma, msg.nodeId);
+    if (r.error) figma.ui.postMessage({ type: "error", message: "Focus error: " + r.error.message });
     return;
   }
 
