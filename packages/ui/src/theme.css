@@ -86,8 +86,7 @@
     --bg-secondary: var(--neutral-800); /* hover/secondary surface N800 */
     --surface: var(--neutral-1000);     /* input/background/filled L=N1000, D→override */
     --border: var(--neutral-700);       /* dividerLine/border L=N700, D→override */
-    --divider: var(--neutral-700);      /* dividerSection/divider L=N700, D→override */
-    --divider-border: 1px solid var(--divider);
+    --panel-border: var(--border);      /* panel/border/color → dividerLine/border (N700 both modes) */
     --text: var(--neutral-100);         /* semantic/text/primary N100 */
     --text-secondary: var(--neutral-300); /* semantic/text/secondary/color N300 — same primitive both modes, no dark override */
     --text-muted: var(--neutral-400);   /* input/label L=N400 = segmentedControl/label/default */
@@ -249,7 +248,6 @@
       --bg-secondary: var(--neutral-900); /* dark hover surface = same as bg */
       --surface: var(--neutral-800);      /* input/background/filled Dark = N800 */
       --border: var(--neutral-700);       /* dividerLine/border Dark = N700 #303030 */
-      --divider: var(--neutral-600);      /* dividerSection/divider Dark = N600 */
       --text-muted: var(--neutral-300);   /* semantic/text/secondary Dark = N300 */
       /* Buttons */
       --buttonTertiary-background: var(--neutral-900); /* D=N900 (#212121) — L uses N800, split alias */
@@ -1310,8 +1308,8 @@
     flex-direction: column;
   }
   .sidePanel.resizing { transition: none; }
-  .sidePanel--left  { border-right: var(--divider-border); }
-  .sidePanel--right { border-left:  var(--divider-border); }
+  .sidePanel--left  { border-right: var(--thickness) solid var(--panel-border); }
+  .sidePanel--right { border-left:  var(--thickness) solid var(--panel-border); }
 
   .sidePanelResize {
     position: absolute;

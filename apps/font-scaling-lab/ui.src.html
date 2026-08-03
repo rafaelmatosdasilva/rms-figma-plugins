@@ -254,7 +254,7 @@
     gap: var(--gap-m);
     padding: var(--padding-m) 0;
     border-top: none;
-    background-image: linear-gradient(var(--divider), var(--divider));
+    background-image: linear-gradient(var(--border), var(--border));  /* dividerLine (N700 both modes) — horizontal row separator */
     background-size: 24px var(--thickness);
     background-repeat: no-repeat;
     background-position: 24px 0;
@@ -291,7 +291,7 @@
   .issues-list { display: flex; flex-direction: column; }
 
   .issue-group { display: flex; flex-direction: column; }
-  .issue-group + .issue-group { border-top: var(--divider-border); }
+  .issue-group + .issue-group { border-top: var(--thickness) solid var(--border); }  /* dividerLine (N700 both modes) */
   .issue-group-header {
     display: flex; align-items: center; gap: var(--gap-m);
     padding: var(--padding-s) 0 var(--padding-s);
