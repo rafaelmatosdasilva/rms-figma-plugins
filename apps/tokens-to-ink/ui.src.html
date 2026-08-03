@@ -31,7 +31,7 @@
   .color-table td:last-child  { padding-right: var(--padding-l); }
 
   .color-table tr:not(:last-child) {
-    background-image: linear-gradient(var(--divider), var(--divider));
+    background-image: linear-gradient(var(--border), var(--border));  /* dividerLine (N700 both modes) — horizontal row separator */
     background-size: calc(100% - 32px) 1.2px;
     background-position: 16px bottom;
     background-repeat: no-repeat;
@@ -371,16 +371,32 @@
   // Per-frame export failures, reported as ONE toast when the batch ends —
   // a toast per failed frame would stampede on a big selection.
   let _exportFailures = [];
+  // Raster images that couldn't be converted to CMYK across the batch (kept as RGB).
+  // Surfaced at batch end so a non-CMYK image never ships silently in a print file.
+  let _exportRgbImages = 0;
+  // Set by convertPdfToCmyk after each frame; read by the export handler.
+  let _lastPdfImagesUnconverted = 0;
 
   // One frame failing names it; several report the count, since the toast is a
-  // single line and a list of names would overflow it.
+  // single line and a list of names would overflow it. A failure takes priority over
+  // the RGB-image warning (only one toast shows at a time); otherwise, if some images
+  // stayed RGB, warn about that.
   function reportExportFailures() {
-    if (!_exportFailures.length) return;
-    const f = _exportFailures;
-    showError(f.length === 1
-      ? `Failed to export ${f[0].name} — ${f[0].message}`
-      : `${f.length} of ${exportTotal} frames failed to export`);
-    _exportFailures = [];
+    if (_exportFailures.length) {
+      const f = _exportFailures;
+      showError(f.length === 1
+        ? `Failed to export ${f[0].name} — ${f[0].message}`
+        : `${f.length} of ${exportTotal} frames failed to export`);
+      _exportFailures = [];
+      _exportRgbImages = 0;
+      return;
+    }
+    if (_exportRgbImages > 0) {
+      showError(_exportRgbImages === 1
+        ? `1 image couldn't be converted to CMYK — it was left as RGB`
+        : `${_exportRgbImages} images couldn't be converted to CMYK — they were left as RGB`);
+      _exportRgbImages = 0;
+    }
   }
   let _exportFmt = null, _exportLookup = null;
   let _exportCancelled = false;
@@ -1003,6 +1019,32 @@
     });
   }
 
+  // Decode an encoded image (JPEG/PNG/…) to RGBA via the browser, sized to w×h.
+  // The PDF CMYK converter uses this to turn Figma's DCTDecode images into pixels.
+  // Kept as a named global so headless tests can stub it (jsdom has no real canvas).
+  function decodeImageToRgba(bytes, w, h, mime) {
+    return new Promise((resolve, reject) => {
+      try {
+        const blob = new Blob([new Uint8Array(bytes)], { type: mime || "image/jpeg" });
+        const url = URL.createObjectURL(blob);
+        const im = new Image();
+        im.onload = () => {
+          try {
+            const cv = document.getElementById("convert-canvas");
+            cv.width = w; cv.height = h;
+            const ctx = cv.getContext("2d");
+            ctx.clearRect(0, 0, w, h);
+            ctx.drawImage(im, 0, 0, w, h);
+            URL.revokeObjectURL(url);
+            resolve(ctx.getImageData(0, 0, w, h).data);
+          } catch (e) { reject(e); }
+        };
+        im.onerror = () => { URL.revokeObjectURL(url); reject(new Error("image decode failed")); };
+        im.src = url;
+      } catch (e) { reject(e); }
+    });
+  }
+
   // ── Compress with deflate ──────────────────────────────────────────
 
   async function deflateBuf(raw) {
@@ -1033,6 +1075,79 @@
     const k=1-Math.max(r,g,b);
     const c=(1-r-k)/(1-k),m=(1-g-k)/(1-k),y=(1-b-k)/(1-k);
     return[c<=0.012?0:c,m<=0.012?0:m,y<=0.012?0:y,k];
+  }
+
+  // Classify every image XObject in a parsed PDF (see convertPdfToCmyk). Returns:
+  //   allImg    — all image object numbers; their binary streams are never content
+  //               and must never be run through the colour-op converter.
+  //   imgNums   — RGB images to convert to CMYK. Figma writes an image's colour
+  //               space as an INDIRECT ref (/ColorSpace n 0 R → [ /ICCBased m 0 R ]),
+  //               never a literal /DeviceRGB, so resolve one hop to decide RGB-ness.
+  //   imgCsRefs — objects used as an image's /ColorSpace; the ICC-strip pass must
+  //               leave these intact, or the image's colour space stops matching its
+  //               data (this was the "images vanish" bug: [ /ICCBased 6 0 R ] → /DeviceGray).
+  function classifyImages(objs, iccRgb) {
+    const allImg = new Set(), imgNums = new Set(), imgCsRefs = new Set();
+    function isRgb(dict) {
+      if (/\/ColorSpace\s*\/DeviceRGB/.test(dict)) return true;
+      let m = dict.match(/\/ColorSpace\s*\[\s*\/ICCBased\s+(\d+)\s+0\s+R/);
+      if (m && iccRgb.has(+m[1])) return true;
+      m = dict.match(/\/ColorSpace\s+(\d+)\s+0\s+R/);
+      if (m) {
+        imgCsRefs.add(+m[1]);
+        const co = objs[+m[1]], cb = co ? (co.type === 'plain' ? (co.body || '') : co.dict) : '';
+        if (/\/DeviceRGB/.test(cb)) return true;
+        const im = cb.match(/\/ICCBased\s+(\d+)\s+0\s+R/);
+        if (im && iccRgb.has(+im[1])) return true;
+      }
+      for (const i of iccRgb) if (dict.includes(i + ' 0 R')) return true;
+      return false;
+    }
+    for (const [n, o] of Object.entries(objs))
+      if (o.type === 'stream' && /\/Subtype\s*\/Image/.test(o.dict)) {
+        allImg.add(+n);
+        if (isRgb(o.dict)) imgNums.add(+n);
+      }
+    return { allImg, imgNums, imgCsRefs };
+  }
+
+  // Convert each RGB image XObject to a FlateDecode /DeviceCMYK image, preserving its
+  // /SMask. Figma embeds photos as DCTDecode (JPEG), so decode via the browser (it
+  // handles JPEG and PNG alike) rather than assuming raw FlateDecode pixels. If an
+  // image can't be decoded it is left untouched — it still renders (in RGB) rather
+  // than being dropped or corrupted. Returns the count of images that could NOT be
+  // converted, so the caller can WARN the user (an RGB image in a "CMYK" print file
+  // must never pass silently).
+  async function convertRgbImagesToCmyk(objs, imgNums, colorLookup) {
+    let unconverted = 0;
+    for (const n of imgNums) {
+      const obj = objs[n]; if (!obj || obj.type !== 'stream') { unconverted++; continue; }
+      const wm = obj.dict.match(/\/Width\s+(\d+)/), hm = obj.dict.match(/\/Height\s+(\d+)/);
+      if (!wm || !hm) { unconverted++; continue; }
+      const w = parseInt(wm[1]), h = parseInt(hm[1]); if (!w || !h) { unconverted++; continue; }
+      let rgba = null;
+      try {
+        if (/\/DCTDecode\b/.test(obj.dict)) rgba = await decodeImageToRgba(obj.streamRaw, w, h, 'image/jpeg');
+        else if (obj.isFlate) {
+          const d = await inflateBuf(obj.streamRaw);
+          if (d.length === w * h * 4) rgba = d;
+          else if (d.length === w * h * 3) { rgba = new Uint8Array(w * h * 4); for (let i = 0, j = 0; i < d.length; i += 3, j += 4) { rgba[j] = d[i]; rgba[j+1] = d[i+1]; rgba[j+2] = d[i+2]; rgba[j+3] = 255; } }
+        }
+      } catch (e) { rgba = null; }
+      if (!rgba) { unconverted++; continue; } // undecodable → left intact (RGB); warn the user
+      const cmyk = new Uint8Array(w * h * 4);
+      for (let p = 0, q = 0; p < w * h * 4; p += 4, q += 4) {
+        const c = rgbPixelToCmyk(rgba[p], rgba[p+1], rgba[p+2], colorLookup);
+        cmyk[q] = c[0]; cmyk[q+1] = c[1]; cmyk[q+2] = c[2]; cmyk[q+3] = c[3];
+      }
+      obj.streamRaw = await deflateBuf(cmyk);
+      obj.dict = obj.dict.replace(/\/ColorSpace\s*(\/\w+|\[[^\]]*\]|\d+\s+0\s+R)/, '/ColorSpace /DeviceCMYK');
+      obj.dict = obj.dict.replace(/\/Filter\s*(\/\w+|\[[^\]]*\])/, '/Filter /FlateDecode');
+      obj.dict = obj.dict.replace(/\/DecodeParms\s*(<<[\s\S]*?>>|\[[^\]]*\]|\d+\s+0\s+R)/, '');
+      obj.dict = obj.dict.replace(/\/Decode\s*\[[^\]]*\]/, '');
+      obj.dict = obj.dict.replace(/\/Length\s+\d+(\s+0\s+R)?/, '/Length ' + obj.streamRaw.length);
+    }
+    return unconverted;
   }
 
   // ── Vector PDF RGB → CMYK converter ────────────────────────────────
@@ -1106,17 +1221,10 @@
     }
 
     // ── Classify objects ──
-    const iccRgb=new Set(),imgNums=new Set();
+    const iccRgb=new Set();
     for(const[n,o]of Object.entries(objs))
       if(o.type==='stream'&&/\/N\s+3\b/.test(o.dict))iccRgb.add(+n);
-    for(const[n,o]of Object.entries(objs)){
-      if(o.type==='stream'&&/\/Subtype\s*\/Image/.test(o.dict)){
-        let rgb=false;
-        for(const i of iccRgb)if(o.dict.includes(i+' 0 R'))rgb=true;
-        if(/\/ColorSpace\s*\/DeviceRGB/.test(o.dict))rgb=true;
-        if(rgb)imgNums.add(+n);
-      }
-    }
+    const {allImg,imgNums,imgCsRefs}=classifyImages(objs,iccRgb);
 
     // ── Collect SMask Form XObject refs ──
     // Mask XObjects referenced by /SMask << /G N 0 R >> must be kept intact:
@@ -1290,7 +1398,7 @@
     for(const[nS,obj]of Object.entries(objs)){
       if(obj.type!=='stream')continue;
       const n=+nS;
-      if(iccRgb.has(n)||imgNums.has(n)||smaskNums.has(n))continue;
+      if(iccRgb.has(n)||allImg.has(n)||smaskNums.has(n))continue;
       // Pick the right Resources text for this stream:
       //  - Form XObject → its own /Resources (inline or indirect)
       //  - Page content stream → the parent Page's /Resources (pre-mapped)
@@ -1327,7 +1435,7 @@
     for(const[nS,obj]of Object.entries(objs)){
       if(obj.type!=='stream')continue;
       const n=+nS;
-      if(iccRgb.has(n)||imgNums.has(n)||smaskNums.has(n))continue;
+      if(iccRgb.has(n)||allImg.has(n)||smaskNums.has(n))continue;
       if(!/\/Subtype\s*\/Form/.test(obj.dict))continue;
       if(!/\/Group\s*<<[^>]*\/S\s*\/Transparency/.test(obj.dict))continue;
       const bbm=obj.dict.match(/\/BBox\s*\[\s*([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s*\]/);
@@ -1363,7 +1471,7 @@
     // (Only the dict is touched here — stream content is left intact for mask XObjects.)
     for(const[nS,obj]of Object.entries(objs)){
       const n=+nS;
-      if(imgNums.has(n)||iccRgb.has(n))continue;
+      if(allImg.has(n)||imgCsRefs.has(n)||iccRgb.has(n))continue;
       const k=obj.type==='stream'?'dict':'body';
       for(const i of iccRgb){
         obj[k]=obj[k].replace(new RegExp('\\[\\s*/ICCBased\\s+'+i+'\\s+0\\s+R\\s*\\]','g'),'/DeviceGray');
@@ -1398,7 +1506,7 @@
 
     for(const[nS,obj]of Object.entries(objs)){
       const n=+nS;
-      if(obj.type!=='stream'||imgNums.has(n)||iccRgb.has(n)||smaskNums.has(n))continue;
+      if(obj.type!=='stream'||allImg.has(n)||iccRgb.has(n)||smaskNums.has(n))continue;
       let txt;
       try{txt=obj.isFlate?b2s(await inflateBuf(obj.streamRaw)):b2s(obj.streamRaw);}catch(e){continue;}
       if(!/(scn|SCN|rg|RG)\b/.test(txt)&&!/[\d.]+\s+[gG]\b/.test(txt)&&!/\/C\d+\s+[cC][sS]\b/.test(txt))continue;
@@ -1408,29 +1516,8 @@
       obj.dict=obj.dict.replace(/\/Length\s+\d+(\s+0\s+R)?/,'/Length '+obj.streamRaw.length);
     }
 
-    // ── Convert RGB image data → CMYK ──
-    // Only image XObject dicts are modified (targeted, not blanket)
-    for(const n of imgNums){
-      const obj=objs[n];if(!obj||obj.type!=='stream'||!obj.isFlate)continue;
-      let imgD;try{imgD=await inflateBuf(obj.streamRaw);}catch(e){continue;}
-      const wm=obj.dict.match(/\/Width\s+(\d+)/),hm=obj.dict.match(/\/Height\s+(\d+)/);
-      if(!wm||!hm)continue;
-      const w=parseInt(wm[1]),h=parseInt(hm[1]);
-      if(imgD.length!==w*h*3)continue;
-      const cmyk=new Uint8Array(w*h*4);
-      for(let i=0,j=0;i<imgD.length;i+=3,j+=4){
-        const c=rgbPixelToCmyk(imgD[i],imgD[i+1],imgD[i+2],colorLookup);
-        cmyk[j]=c[0];cmyk[j+1]=c[1];cmyk[j+2]=c[2];cmyk[j+3]=c[3];
-      }
-      obj.streamRaw=await deflateBuf(cmyk);
-      // Only change ColorSpace on this specific image object
-      for(const i of iccRgb){
-        obj.dict=obj.dict.replace(new RegExp('\\[\\s*/ICCBased\\s+'+i+'\\s+0\\s+R\\s*\\]'),'/DeviceCMYK');
-        obj.dict=obj.dict.replace(new RegExp(i+'\\s+0\\s+R'),'/DeviceCMYK');
-      }
-      obj.dict=obj.dict.replace(/\/DeviceRGB/,'/DeviceCMYK');
-      obj.dict=obj.dict.replace(/\/Length\s+\d+(\s+0\s+R)?/,'/Length '+obj.streamRaw.length);
-    }
+    // ── Convert RGB raster images → DeviceCMYK ──
+    _lastPdfImagesUnconverted = await convertRgbImagesToCmyk(objs,imgNums,colorLookup);
 
     // ── Rebuild PDF ──
     const parts=[],newOff={};
@@ -2268,7 +2355,7 @@
     }
 
     if (msg.type === "export-batch-start") {
-      exportedCount = 0; exportTotal = msg.total; _exportFmt = msg.format; _exportFailures = [];
+      exportedCount = 0; exportTotal = msg.total; _exportFmt = msg.format; _exportFailures = []; _exportRgbImages = 0;
       _exportLookup = null; _exportUsedFSA = false; _pendingFiles = [];
       // Don't reset _exportCancelled — user may have clicked Cancel during
       // the Preparing phase. If so, tell code.js to stop immediately.
@@ -2303,6 +2390,7 @@
         let fileBytes, fileName, fileMime;
         if (msg.format === "pdf") {
           fileBytes = await convertPdfToCmyk(msg.pdfBytes, _exportLookup);
+          _exportRgbImages += _lastPdfImagesUnconverted;
           fileName = `${safe}_CMYK.pdf`; fileMime = "application/pdf";
         } else {
           const cmyka = await convertImageToCmyka(msg.pngBytes, msg.width, msg.height, _exportLookup);
