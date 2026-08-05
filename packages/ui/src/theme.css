@@ -954,6 +954,9 @@
     color: var(--segmentedControl-icon-selected); /* segmentedControl/icon/selected */
   }
   .segmented-control button.no-icon svg { display: none; }
+  /* Full-width variant: segments share the row equally (constrained panels / modals). */
+  .segmented-control.full-width { width: 100%; }
+  .segmented-control.full-width button { flex: 1 1 0; min-width: 0; width: 0; }
   .seg-status {
     width: var(--dividerSection-height); height: var(--dividerSection-height);
     border-radius: var(--radius-full);
@@ -1219,6 +1222,38 @@
   @keyframes modal-out    { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(var(--modal-offset)); } }
   @keyframes modal-bg-in  { from { opacity: 0; } to { opacity: 1; } }
   @keyframes modal-bg-out { from { opacity: 1; } to { opacity: 0; } }
+
+  /* ── Modal — slotted dialog (DS 672:141311): title → slot → footer. The slot
+     content is supplied by each consumer; the shell (overlay, card, title, footer)
+     is the design system's. ── */
+  .modal { display: none; position: fixed; inset: 0; align-items: center; justify-content: center; z-index: 10000; }
+  .modal.is-open { display: flex; }
+  .modal-overlay {
+    position: absolute; inset: 0;
+    background: var(--overlay-bg);
+    backdrop-filter: blur(4px);
+    animation: modal-bg-in var(--modal-duration) var(--modal-easing) both;
+  }
+  .modal.is-closing .modal-overlay { animation: modal-bg-out var(--modal-duration-out) var(--modal-easing-out) both; }
+  .modal-card {
+    position: relative; z-index: 10001;
+    display: flex; flex-direction: column;
+    gap: var(--gap-xl);                          /* DS itemSpacing = 16 */
+    padding: var(--padding-l);                   /* DS padding = 16 */
+    background: var(--modal-background);
+    border-radius: var(--radius-modal);
+    max-width: calc(100% - 2 * var(--padding-l));
+    animation: modal-in var(--modal-duration) var(--modal-easing) both;
+  }
+  .modal.is-closing .modal-card { animation: modal-out var(--modal-duration-out) var(--modal-easing-out) both; }
+  .modal-card h2, .modal-title {
+    margin: 0;
+    font-size: var(--l-size); font-weight: var(--m-weight);   /* DS title 13px Semi Bold */
+    color: var(--modal-title);
+  }
+  .modal-slot { display: flex; flex-direction: column; gap: var(--gap-m); width: 100%; }
+  .modal-footer { display: flex; flex-direction: row; gap: var(--gap-m); width: 100%; }   /* DS footer gap = 8 */
+  .modal-footer button { flex: 1; justify-content: center; }   /* centre the label when stretched */
 
   /* ── Toast/progress overlay ── */
   #toast-overlay {

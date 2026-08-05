@@ -83,6 +83,10 @@ Landed since publishing, and going out with the next Community release:
   instead of at the far right of the row, matching the design system.
 - The info and library icons were redrawn in the design system; the plugin now
   matches (the info icon is a solid mark rather than an outline).
+- The scan-type dialog now uses the design system's shared modal shell (overlay,
+  card, title, footer and the open/close animation), supplying only its own scan
+  options as the slot content. The shell moved out of the plugin into the design
+  system so every plugin renders the same modal; nothing changed on screen.
 
 ### v4 · 17 July 2026
 Published to Figma Community.

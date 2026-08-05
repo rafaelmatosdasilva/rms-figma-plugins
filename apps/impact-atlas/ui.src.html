@@ -302,10 +302,7 @@ body.browser-empty .right-panel {
 }
 
 /* segmented-control tab-empty state moved to theme.css (base-first) */
-/* full-width segmented control (browser mode toggle) */
-.segmented-control.full-width { width: 100%; }
-/* Each segment takes equal share — content changes (label show/hide) never shift widths */
-.segmented-control.full-width button { flex: 1 1 0; min-width: 0; width: 0; }
+/* .segmented-control + its .full-width variant now live in the base DS. */
 /* View-mode toggle: equal fixed width, icon stays centred — gap must stay 0 */
 #view-mode-toggle button,
 #view-mode-toggle button.selected { width: 52px; flex-shrink: 0; justify-content: center; gap: 0; }
@@ -789,68 +786,16 @@ body.browser-empty .right-panel {
 #toast-container { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 9999; }
 .tt { position: fixed; z-index: 9998; pointer-events: none; }
 
-/* ─── Modal ──────────────────────────────────────────────────────────────── */
-.modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-}
-.modal.is-open {
-  display: flex;
-}
-.modal-overlay {
-  position: absolute;
-  inset: 0;
-  background: var(--overlay-bg);
-  backdrop-filter: blur(4px);
-}
-.modal-card {
-  position: relative;
-  background: var(--modal-background);
-  border-radius: var(--radius-modal);
-  z-index: 10001;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: var(--padding-l);
-  gap: var(--gap-s);
-  width: 288px;
-  animation: modal-in var(--modal-duration) var(--modal-easing) both;
-}
-.modal.is-closing .modal-card    { animation: modal-out var(--modal-duration-out) var(--modal-easing-out) both; }
-.modal-overlay                   { animation: modal-bg-in var(--modal-duration) var(--modal-easing) both; }
-.modal.is-closing .modal-overlay { animation: modal-bg-out var(--modal-duration-out) var(--modal-easing-out) both; }.modal-card h2 {
-  font-size: var(--l-size);
-  font-weight: var(--m-weight);
-  margin: 0;
-  color: var(--modal-title);
-}.modal-footer {
-  display: flex;
-  flex-direction: row;
-  gap: var(--gap-m);
-  width: 100%;
-  margin-top: var(--gap-l);
-}
-.modal-footer button {
-  flex: 1;
-  height: var(--button-min-height);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+/* ─── Modal ── The shell (.modal / .modal-overlay / .modal-card / h2 / .modal-footer)
+   now lives in the base design system. Only impact-atlas-specific bits remain here. ── */
 #modal-confirm-btn:disabled { opacity: 0.24; pointer-events: none; }
 
 /* ─── Depth selector modal ───────────────────────────────────────────────── */
-#deep-scan-modal .modal-card {
-  width: 320px;
-  align-items: flex-start;
-  text-align: left;
-  gap: 0;
-}#deep-scan-modal h2 { font-size: var(--l-size); margin-bottom: var(--padding-xl); }
+/* This dialog keeps its own DS spacing (title→options = padding/xl, options→footer =
+   gap/l) rather than the generic modal's uniform gap. */
+#deep-scan-modal .modal-card { width: 320px; gap: 0; }
+#deep-scan-modal h2 { margin-bottom: var(--padding-xl); }
+#deep-scan-modal .modal-footer { margin-top: var(--gap-l); }
 .depth-options {
   /* Single source for the label's line box — the circle column and the connector
      both derive their vertical geometry from it. */
@@ -1224,8 +1169,9 @@ body.browser-empty .right-panel {
 <div id="deep-scan-modal" class="modal">
   <div class="modal-overlay"></div>
   <div class="modal-card">
-    <h2>Choose scan type</h2>
+    <h2 class="modal-title">Choose scan type</h2>
 
+    <div class="modal-slot">
     <div class="depth-options">
 
       <!-- Level 1: always done — status only, not a radio -->
@@ -1265,6 +1211,7 @@ body.browser-empty .right-panel {
         </label>
       </div>
 
+    </div>
     </div>
 
     <div class="modal-footer">
