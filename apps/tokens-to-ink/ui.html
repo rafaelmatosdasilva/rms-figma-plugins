@@ -374,6 +374,22 @@
   parent.postMessage({ pluginMessage: { type: 'get-saved-height' } }, '*');
 
   let exportedCount = 0, exportTotal = 0, scanToastTimer = null;
+  // Output filenames used so far this batch. Two selected items can share a name
+  // (filenames come from the frame name), so without this the second write would
+  // overwrite the first on disk / collide in the ZIP — only one file would survive.
+  let _usedNames = new Set();
+  // Give a filename a numeric suffix (Logo_CMYK.pdf → Logo-2_CMYK.pdf) if its name
+  // is already taken this batch, so every exported item lands as its own file.
+  function uniqueName(name) {
+    if (!_usedNames.has(name)) { _usedNames.add(name); return name; }
+    const dot = name.lastIndexOf('.');
+    const base = dot > 0 ? name.slice(0, dot) : name;
+    const ext  = dot > 0 ? name.slice(dot)   : '';
+    let i = 2, cand;
+    do { cand = `${base}-${i}${ext}`; i++; } while (_usedNames.has(cand));
+    _usedNames.add(cand);
+    return cand;
+  }
   // Per-frame export failures, reported as ONE toast when the batch ends —
   // a toast per failed frame would stampede on a big selection.
   let _exportFailures = [];
@@ -2362,7 +2378,7 @@
 
     if (msg.type === "export-batch-start") {
       exportedCount = 0; exportTotal = msg.total; _exportFmt = msg.format; _exportFailures = []; _exportRgbImages = 0;
-      _exportLookup = null; _exportUsedFSA = false; _pendingFiles = [];
+      _exportLookup = null; _exportUsedFSA = false; _pendingFiles = []; _usedNames = new Set();
       // Don't reset _exportCancelled — user may have clicked Cancel during
       // the Preparing phase. If so, tell code.js to stop immediately.
       if (_exportCancelled) {
@@ -2403,6 +2419,9 @@
           fileBytes = buildCmykaTiff(cmyka, msg.width, msg.height);
           fileName = `${safe}_CMYK.tiff`; fileMime = "image/tiff";
         }
+        // Disambiguate against earlier files this batch so same-named items don't
+        // overwrite each other (folder export) or collide in the ZIP.
+        fileName = uniqueName(fileName);
 
         if (_exportCancelled) return;
 

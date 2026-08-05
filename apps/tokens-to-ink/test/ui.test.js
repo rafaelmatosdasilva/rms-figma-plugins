@@ -239,6 +239,38 @@ describe('tokens-to-ink UI — export failure reporting', () => {
   });
 });
 
+describe('tokens-to-ink UI — export filename collisions', () => {
+  // A multi-file batch with no folder handle collects files for a ZIP, so stubbing
+  // _buildZip lets us read the exact filenames each item was written under.
+  async function exportNames(names) {
+    ui = loadUI(UI);
+    ui.window.convertPdfToCmyk = async () => new Uint8Array([1]);
+    ui.window.downloadFile = () => {};
+    let captured = null;
+    ui.window._buildZip = (files) => { captured = files.map((f) => f.name); return new Uint8Array([0]); };
+
+    ui.receive({ type: 'export-batch-start', total: names.length, format: 'pdf' });
+    for (let i = 0; i < names.length; i++) {
+      await ui.receive({
+        type: 'export-data', format: 'pdf', pdfBytes: new Uint8Array([1]),
+        colorLookup: {}, frameName: names[i], index: i, total: names.length,
+      });
+    }
+    await painted();
+    return captured;
+  }
+
+  it('gives same-named items distinct filenames instead of overwriting', async () => {
+    expect(await exportNames(['Logo', 'Logo', 'Logo'])).toEqual([
+      'Logo_CMYK.pdf', 'Logo_CMYK-2.pdf', 'Logo_CMYK-3.pdf',
+    ]);
+  });
+
+  it('leaves distinct names untouched', async () => {
+    expect(await exportNames(['Alpha', 'Beta'])).toEqual(['Alpha_CMYK.pdf', 'Beta_CMYK.pdf']);
+  });
+});
+
 describe('tokens-to-ink UI — XSS in the results table', () => {
   it('escapes a malicious layer name and token name', async () => {
     ui = loadUI(UI);
