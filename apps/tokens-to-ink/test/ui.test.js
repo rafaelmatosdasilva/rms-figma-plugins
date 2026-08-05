@@ -176,8 +176,8 @@ describe('tokens-to-ink UI — export', () => {
     ui.receive(scanResults());
     await painted();
 
-    ui.click('#export-btn');      // opens the format picker
-    ui.click('#export-pdf-btn');  // chooses PDF
+    ui.click('#export-btn');          // opens the export modal
+    ui.click('#export-confirm-btn');  // PDF is the default format
 
     expect(ui.sentOf('export-request')[0]).toMatchObject({ format: 'pdf' });
   });
@@ -187,8 +187,9 @@ describe('tokens-to-ink UI — export', () => {
     ui.receive(scanResults());
     await painted();
 
-    ui.click('#export-btn');
-    ui.click('#export-tiff-btn');
+    ui.click('#export-btn');          // opens the export modal
+    ui.click('#format-tiff');         // switch the format to TIFF
+    ui.click('#export-confirm-btn');
 
     expect(ui.sentOf('export-request')[0]).toMatchObject({ format: 'tiff' });
   });
@@ -268,6 +269,53 @@ describe('tokens-to-ink UI — export filename collisions', () => {
 
   it('leaves distinct names untouched', async () => {
     expect(await exportNames(['Alpha', 'Beta'])).toEqual(['Alpha_CMYK.pdf', 'Beta_CMYK.pdf']);
+  });
+});
+
+describe('tokens-to-ink UI — crop marks option', () => {
+  it('is off by default and passes crop-marks + bleed to the PDF converter when enabled', async () => {
+    ui = loadUI(UI);
+    let captured = null;
+    ui.window.convertPdfToCmyk = async (_pdf, _lookup, opts) => { captured = opts; return new Uint8Array([1]); };
+    ui.window.downloadFile = () => {};
+
+    const toggle = ui.$('#cropmarks-toggle');
+    expect(toggle.checked).toBe(false); // off by default
+
+    toggle.checked = true;
+    toggle.dispatchEvent(new ui.window.Event('change'));
+    const bleed = ui.$('#bleed-input');
+    bleed.value = '5';
+    bleed.dispatchEvent(new ui.window.Event('input'));
+
+    ui.receive({ type: 'export-batch-start', total: 1, format: 'pdf' });
+    await ui.receive({
+      type: 'export-data', format: 'pdf', pdfBytes: new Uint8Array([1]),
+      colorLookup: {}, frameName: 'Card', index: 0, total: 1,
+    });
+    await painted();
+
+    expect(captured).toBeTruthy();
+    expect(captured.cropMarks).toBe(true);
+    expect(captured.bleedPt).toBeCloseTo(5 * 72 / 25.4, 3); // 5 mm → points
+  });
+
+  it('disables crop marks for TIFF (they only apply to the vector PDF)', async () => {
+    ui = loadUI(UI);
+    ui.receive(scanResults());
+    await painted();
+
+    const toggle = ui.$('#cropmarks-toggle');
+    const bleed = ui.$('#bleed-input');
+    expect(toggle.disabled).toBe(false); // PDF is the default format
+    expect(bleed.disabled).toBe(false);  // bleed is usable independently of crop marks
+
+    ui.click('#export-btn');
+    ui.click('#format-tiff');            // switch to the raster format
+
+    expect(toggle.disabled).toBe(true);
+    expect(bleed.disabled).toBe(true);
+    expect(ui.$('#export-print').classList.contains('is-disabled')).toBe(true);
   });
 });
 

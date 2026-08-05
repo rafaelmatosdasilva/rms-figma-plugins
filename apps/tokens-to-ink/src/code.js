@@ -368,6 +368,18 @@ function scheduleRescan() {
 // This keeps code.js from awaiting inside the onmessage handler (which would
 // prevent Figma from delivering subsequent messages).
 
+// The exported PDF's page box (MediaBox) is the frame's RENDER bounds — it grows to
+// include anything spilling outside the frame. Crop marks must sit at the frame's own
+// box (the trim/cut line), so return that rect in PDF coordinates (origin bottom-left,
+// y-up). Returns null when bounds aren't available (caller falls back to the page box).
+function frameTrimBox(node) {
+  const abb = node.absoluteBoundingBox, arb = node.absoluteRenderBounds;
+  if (!abb || !arb) return null;
+  const x0 = abb.x - arb.x;                 // offset from the content's left edge
+  const y1 = arb.height - (abb.y - arb.y);  // frame top, flipped into PDF y-up
+  return { x0, y0: y1 - abb.height, x1: x0 + abb.width, y1 };
+}
+
 async function _exportOneFrame(i) {
   if (!_exportState || _exportCancelled) return;
   const { selection, format, colorLookup } = _exportState;
@@ -384,6 +396,7 @@ async function _exportOneFrame(i) {
         // Uint8Array(...) on receipt.
         type: "export-data", format: "pdf",
         pdfBytes: pdfBytes,
+        trimBox: frameTrimBox(node),
         colorLookup, frameName: node.name, index: i, total: selection.length,
       });
     } else {
@@ -420,6 +433,26 @@ figma.ui.onmessage = async (msg) => {
     if (savedSize && savedSize.h) {
       figma.ui.postMessage({ type: 'restore-height', height: savedSize.h });
     }
+    return;
+  }
+
+  if (msg.type === "get-settings") {
+    const s = await figma.clientStorage.getAsync('exportSettings');
+    if (s) {
+      figma.ui.postMessage({
+        type: 'settings',
+        cropMarks: !!s.cropMarks,
+        bleedMm: typeof s.bleedMm === 'number' ? s.bleedMm : 3,
+      });
+    }
+    return;
+  }
+
+  if (msg.type === "save-settings") {
+    await figma.clientStorage.setAsync('exportSettings', {
+      cropMarks: !!msg.cropMarks,
+      bleedMm: typeof msg.bleedMm === 'number' ? msg.bleedMm : 3,
+    });
     return;
   }
 
