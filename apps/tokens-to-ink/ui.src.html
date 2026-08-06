@@ -298,12 +298,8 @@
     margin-left: auto;
   }
   /* ── Export modal fields (in the shared DS modal slot) ── */
-  .export-modal-card { width: 248px; }
+  .export-modal-card { width: 300px; }
   .export-field { display: flex; flex-direction: column; gap: var(--gap-s); width: 100%; }
-  .export-field-label {
-    font-size: var(--s-size); font-weight: var(--s-weight);
-    color: var(--input-label);
-  }
   .export-format-desc {
     font-size: var(--s-size); font-weight: var(--s-weight);
     color: var(--text-secondary);
@@ -323,7 +319,7 @@
   }
   /* Both apply to the vector PDF only — dimmed and inert for TIFF. */
   .export-print.is-disabled { opacity: 0.4; pointer-events: none; }
-  .export-bleed-row { display: flex; align-items: center; justify-content: space-between; gap: var(--gap-s); }
+  .export-bleed-row { display: flex; align-items: center; gap: var(--gap-m); }
   /* DS input (.inputWrap + .inputField), sized to content. Only the compact width,
      right-aligned value, and spinner removal are added here. */
   .cropmarks-bleed { min-width: 0; gap: var(--gap-xs); flex: none; }
@@ -387,10 +383,9 @@
 <div id="export-modal" class="modal">
   <div class="modal-overlay"></div>
   <div class="modal-card export-modal-card">
-    <h2 class="modal-title">Export artwork</h2>
+    <h2 class="modal-title">Choose export settings:</h2>
     <div class="modal-slot">
       <div class="export-field">
-        <span class="export-field-label">Format</span>
         <div class="segmented-control full-width" id="export-format">
           <button type="button" id="format-pdf" class="selected"><span class="tab-label">PDF</span></button>
           <button type="button" id="format-tiff"><span class="tab-label">TIFF</span></button>
@@ -401,20 +396,29 @@
         <label class="checkbox">
           <input type="checkbox" id="cropmarks-toggle" class="checkbox-input">
           <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16"><use href="#icon-check"/></svg></span>
-          <span class="checkbox-text">Crop marks</span>
+          <span class="checkbox-text">Add crop marks</span>
         </label>
         <div class="export-bleed-row">
-          <span class="export-field-label">Bleed</span>
+          <label class="checkbox">
+            <input type="checkbox" id="bleed-toggle" class="checkbox-input">
+            <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16"><use href="#icon-check"/></svg></span>
+            <span class="checkbox-text">Bleed</span>
+          </label>
           <div class="inputWrap cropmarks-bleed" id="bleed-wrap">
             <input type="number" id="bleed-input" class="inputField cropmarks-bleed-input" min="0" max="20" step="0.5" value="3" aria-label="Bleed in millimetres">
             <span class="cropmarks-unit">mm</span>
           </div>
         </div>
+        <label class="checkbox">
+          <input type="checkbox" id="downsample-toggle" class="checkbox-input">
+          <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16"><use href="#icon-check"/></svg></span>
+          <span class="checkbox-text">Downsample images to 300 DPI</span>
+        </label>
       </div>
     </div>
     <div class="modal-footer">
       <button class="buttonSecondary" id="export-cancel-btn"><span>Cancel</span></button>
-      <button class="buttonPrimary" id="export-confirm-btn"><span>Export</span></button>
+      <button class="buttonPrimary" id="export-confirm-btn"><span id="export-confirm-label">Export PDF</span></button>
     </div>
   </div>
 </div>
@@ -488,7 +492,9 @@
   let _singleFileHandle = null; // one-shot handle from showSaveFilePicker (single file)
   let _pendingFiles = [];       // accumulates files for ZIP when FSA is unavailable (multi-file)
   let _cropMarks = false;       // add crop/trim marks to the CMYK PDF (print) — off by default
-  let _bleedMm = 3;             // configurable bleed / mark offset, in millimetres
+  let _bleedOn = false;         // add a bleed margin around the trim — off by default
+  let _bleedMm = 3;             // configurable bleed amount, in millimetres (used only when _bleedOn)
+  let _downsample = false;      // downsample embedded images to 300 DPI on PDF export — off by default
 
   // ── Minimal ZIP builder (store/no-compression) for multi-file fallback ──
   function _buildZip(files) {
@@ -1857,38 +1863,50 @@
     const fmtPdf  = document.getElementById("format-pdf");
     const fmtTiff = document.getElementById("format-tiff");
     const desc    = document.getElementById("export-format-desc");
+    const confirmLabel = document.getElementById("export-confirm-label");
     const printField = document.getElementById("export-print");
     const toggle  = document.getElementById("cropmarks-toggle");
+    const bleedOn = document.getElementById("bleed-toggle");
     const bleed   = document.getElementById("bleed-input");
     const wrap    = document.getElementById("bleed-wrap");
-    if (!modal || !openBtn || !confirm || !toggle || !bleed) return;
+    const downsample = document.getElementById("downsample-toggle");
+    if (!modal || !openBtn || !confirm || !toggle || !bleedOn || !bleed || !downsample) return;
 
     let _exportFormat = "pdf";
     let closeTimer = null;
     const DESCS = { pdf: "Vector artwork, CMYK colour.", tiff: "Flattened raster, 300 DPI CMYK." };
+    const LABELS = { pdf: "Export PDF", tiff: "Export TIFF" };
 
-    // Crop marks and bleed are INDEPENDENT (marks with no bleed, or bleed with no marks).
-    // Both apply to the vector PDF only — dimmed and inert for TIFF.
-    const syncCrop = () => {
+    // The print options apply to the vector PDF only — dimmed and inert for TIFF. Crop
+    // marks, bleed and downsampling are independent; the bleed amount is editable only
+    // once its own checkbox is on.
+    const syncPrint = () => {
       const isPdf = _exportFormat === "pdf";
       printField.classList.toggle("is-disabled", !isPdf);
       toggle.disabled = !isPdf;
-      bleed.disabled  = !isPdf;
-      wrap.classList.toggle("inputWrap--disabled", !isPdf);
+      bleedOn.disabled = !isPdf;
+      downsample.disabled = !isPdf;
+      const bleedEditable = isPdf && _bleedOn;
+      bleed.disabled = !bleedEditable;
+      wrap.classList.toggle("inputWrap--disabled", !bleedEditable);
     };
     const selectFormat = (fmt) => {
       _exportFormat = fmt;
       fmtPdf.classList.toggle("selected",  fmt === "pdf");
       fmtTiff.classList.toggle("selected", fmt === "tiff");
       desc.textContent = DESCS[fmt];
-      syncCrop();
+      confirmLabel.textContent = LABELS[fmt];
+      syncPrint();
     };
-    const persist = () => parent.postMessage(
-      { pluginMessage: { type: "save-settings", cropMarks: _cropMarks, bleedMm: _bleedMm } }, "*");
+    const persist = () => parent.postMessage({ pluginMessage: {
+      type: "save-settings", cropMarks: _cropMarks, bleedOn: _bleedOn, bleedMm: _bleedMm, downsample: _downsample,
+    } }, "*");
 
     fmtPdf.addEventListener("click", () => selectFormat("pdf"));
     fmtTiff.addEventListener("click", () => selectFormat("tiff"));
-    toggle.addEventListener("change", () => { _cropMarks = toggle.checked; syncCrop(); persist(); });
+    toggle.addEventListener("change", () => { _cropMarks = toggle.checked; persist(); });
+    bleedOn.addEventListener("change", () => { _bleedOn = bleedOn.checked; syncPrint(); persist(); });
+    downsample.addEventListener("change", () => { _downsample = downsample.checked; persist(); });
     bleed.addEventListener("input", () => {
       const v = parseFloat(bleed.value);
       if (isNaN(v)) return;
@@ -1897,12 +1915,17 @@
     });
     bleed.addEventListener("blur", () => { bleed.value = String(_bleedMm); });
     // Called when code.js sends back the persisted settings.
-    window.__applyCropMarkSettings = (cm, mm) => {
-      _cropMarks = !!cm;
-      if (typeof mm === "number" && mm >= 0) _bleedMm = mm;
+    window.__applyExportSettings = (s) => {
+      s = s || {};
+      _cropMarks = !!s.cropMarks;
+      _bleedOn = !!s.bleedOn;
+      _downsample = !!s.downsample;
+      if (typeof s.bleedMm === "number" && s.bleedMm >= 0) _bleedMm = s.bleedMm;
       toggle.checked = _cropMarks;
+      bleedOn.checked = _bleedOn;
+      downsample.checked = _downsample;
       bleed.value = String(_bleedMm);
-      syncCrop();
+      syncPrint();
     };
 
     const openModal = () => {
@@ -2097,7 +2120,7 @@
     if (!msg) return;
 
     if (msg.type === "settings") {
-      if (window.__applyCropMarkSettings) window.__applyCropMarkSettings(msg.cropMarks, msg.bleedMm);
+      if (window.__applyExportSettings) window.__applyExportSettings(msg);
       return;
     }
 
@@ -2605,7 +2628,8 @@
         let fileBytes, fileName, fileMime;
         if (msg.format === "pdf") {
           fileBytes = await convertPdfToCmyk(msg.pdfBytes, _exportLookup,
-            { cropMarks: _cropMarks, bleedPt: _bleedMm * 72 / 25.4, trimBox: msg.trimBox });
+            { cropMarks: _cropMarks, bleedPt: _bleedOn ? _bleedMm * 72 / 25.4 : 0,
+              downsample: _downsample, trimBox: msg.trimBox });
           _exportRgbImages += window._lastPdfImagesUnconverted;
           if (window._lastPdfImagesUnconverted > 0) _exportRgbFrames.push(msg.frameName);
           fileName = `${safe}_CMYK.pdf`; fileMime = "application/pdf";

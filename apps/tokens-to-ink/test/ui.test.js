@@ -303,20 +303,26 @@ describe('tokens-to-ink UI — export filename collisions', () => {
 });
 
 describe('tokens-to-ink UI — crop marks option', () => {
-  it('is off by default and passes crop-marks + bleed to the PDF converter when enabled', async () => {
+  it('is off by default and passes crop-marks, bleed and downsample to the PDF converter', async () => {
     ui = loadUI(UI);
     let captured = null;
     ui.window.convertPdfToCmyk = async (_pdf, _lookup, opts) => { captured = opts; return new Uint8Array([1]); };
     ui.window.downloadFile = () => {};
 
-    const toggle = ui.$('#cropmarks-toggle');
-    expect(toggle.checked).toBe(false); // off by default
-
-    toggle.checked = true;
-    toggle.dispatchEvent(new ui.window.Event('change'));
+    const marks = ui.$('#cropmarks-toggle');
+    const bleedOn = ui.$('#bleed-toggle');
+    const down = ui.$('#downsample-toggle');
     const bleed = ui.$('#bleed-input');
-    bleed.value = '5';
-    bleed.dispatchEvent(new ui.window.Event('input'));
+    expect(marks.checked).toBe(false);   // every print option off by default
+    expect(bleedOn.checked).toBe(false);
+    expect(down.checked).toBe(false);
+    expect(bleed.disabled).toBe(true);   // the amount is inert until Bleed is turned on
+
+    marks.checked = true; marks.dispatchEvent(new ui.window.Event('change'));
+    bleedOn.checked = true; bleedOn.dispatchEvent(new ui.window.Event('change'));
+    expect(bleed.disabled).toBe(false);  // turning Bleed on enables its amount field
+    bleed.value = '5'; bleed.dispatchEvent(new ui.window.Event('input'));
+    down.checked = true; down.dispatchEvent(new ui.window.Event('change'));
 
     ui.receive({ type: 'export-batch-start', total: 1, format: 'pdf' });
     await ui.receive({
@@ -328,23 +334,62 @@ describe('tokens-to-ink UI — crop marks option', () => {
     expect(captured).toBeTruthy();
     expect(captured.cropMarks).toBe(true);
     expect(captured.bleedPt).toBeCloseTo(5 * 72 / 25.4, 3); // 5 mm → points
+    expect(captured.downsample).toBe(true);
   });
 
-  it('disables crop marks for TIFF (they only apply to the vector PDF)', async () => {
+  it('sends no bleed when the Bleed checkbox is off, even with an amount typed', async () => {
+    ui = loadUI(UI);
+    let captured = null;
+    ui.window.convertPdfToCmyk = async (_pdf, _lookup, opts) => { captured = opts; return new Uint8Array([1]); };
+    ui.window.downloadFile = () => {};
+
+    const marks = ui.$('#cropmarks-toggle');
+    marks.checked = true; marks.dispatchEvent(new ui.window.Event('change'));
+    const bleed = ui.$('#bleed-input');           // amount present, but Bleed left off
+    bleed.value = '4'; bleed.dispatchEvent(new ui.window.Event('input'));
+
+    ui.receive({ type: 'export-batch-start', total: 1, format: 'pdf' });
+    await ui.receive({
+      type: 'export-data', format: 'pdf', pdfBytes: new Uint8Array([1]),
+      colorLookup: {}, frameName: 'Card', index: 0, total: 1,
+    });
+    await painted();
+
+    expect(captured.cropMarks).toBe(true);
+    expect(captured.bleedPt).toBe(0); // Bleed checkbox off → no bleed margin
+  });
+
+  it('names the confirm button after the chosen format', async () => {
+    ui = loadUI(UI);
+    ui.receive(scanResults());
+    await painted();
+    ui.click('#export-btn');
+
+    expect(ui.$('#export-confirm-label').textContent).toBe('Export PDF');
+    ui.click('#format-tiff');
+    expect(ui.$('#export-confirm-label').textContent).toBe('Export TIFF');
+    ui.click('#format-pdf');
+    expect(ui.$('#export-confirm-label').textContent).toBe('Export PDF');
+  });
+
+  it('disables the print options for TIFF (they only apply to the vector PDF)', async () => {
     ui = loadUI(UI);
     ui.receive(scanResults());
     await painted();
 
-    const toggle = ui.$('#cropmarks-toggle');
-    const bleed = ui.$('#bleed-input');
-    expect(toggle.disabled).toBe(false); // PDF is the default format
-    expect(bleed.disabled).toBe(false);  // bleed is usable independently of crop marks
+    const marks = ui.$('#cropmarks-toggle');
+    const bleedOn = ui.$('#bleed-toggle');
+    const down = ui.$('#downsample-toggle');
+    expect(marks.disabled).toBe(false); // PDF is the default format
+    expect(bleedOn.disabled).toBe(false);
+    expect(down.disabled).toBe(false);
 
     ui.click('#export-btn');
     ui.click('#format-tiff');            // switch to the raster format
 
-    expect(toggle.disabled).toBe(true);
-    expect(bleed.disabled).toBe(true);
+    expect(marks.disabled).toBe(true);
+    expect(bleedOn.disabled).toBe(true);
+    expect(down.disabled).toBe(true);
     expect(ui.$('#export-print').classList.contains('is-disabled')).toBe(true);
   });
 });

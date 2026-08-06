@@ -442,7 +442,9 @@ figma.ui.onmessage = async (msg) => {
       figma.ui.postMessage({
         type: 'settings',
         cropMarks: !!s.cropMarks,
+        bleedOn: !!s.bleedOn,
         bleedMm: typeof s.bleedMm === 'number' ? s.bleedMm : 3,
+        downsample: !!s.downsample,
       });
     }
     return;
@@ -451,7 +453,9 @@ figma.ui.onmessage = async (msg) => {
   if (msg.type === "save-settings") {
     await figma.clientStorage.setAsync('exportSettings', {
       cropMarks: !!msg.cropMarks,
+      bleedOn: !!msg.bleedOn,
       bleedMm: typeof msg.bleedMm === 'number' ? msg.bleedMm : 3,
+      downsample: !!msg.downsample,
     });
     return;
   }
