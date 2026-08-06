@@ -238,6 +238,36 @@ describe('tokens-to-ink UI — export failure reporting', () => {
     // A batch that finishes on a success must still surface the frame that failed.
     expect(ui.$('#toast-container').textContent).toContain('Poster A');
   });
+
+  it('names the frames whose images stayed RGB, not just a count', async () => {
+    ui = loadUI(UI);
+    ui.window.downloadFile = () => {};
+
+    // Stand in for the real PDF conversion, reporting per-frame how many images
+    // it couldn't convert (the count the export handler reads after each frame).
+    const unconverted = { Logo: 2, Banner: 0, Hero: 1 };
+    const order = ['Logo', 'Banner', 'Hero'];
+    let call = 0;
+    ui.window.convertPdfToCmyk = async () => {
+      ui.window._lastPdfImagesUnconverted = unconverted[order[call++]] ?? 0;
+      return new Uint8Array([1]);
+    };
+
+    ui.receive({ type: 'export-batch-start', total: order.length, format: 'pdf' });
+    for (let i = 0; i < order.length; i++) {
+      await ui.receive({
+        type: 'export-data', format: 'pdf', pdfBytes: new Uint8Array([1]),
+        colorLookup: {}, frameName: order[i], index: i, total: order.length,
+      });
+    }
+    await painted();
+
+    const toast = ui.$('#toast-container').textContent;
+    expect(toast).toContain('Logo');       // 2 images couldn't convert
+    expect(toast).toContain('Hero');       // 1 image couldn't convert
+    expect(toast).not.toContain('Banner'); // clean frame is never named
+    expect(toast).toContain('3 images');   // 2 + 1 across the batch
+  });
 });
 
 describe('tokens-to-ink UI — export filename collisions', () => {

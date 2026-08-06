@@ -448,8 +448,11 @@
   // Raster images that couldn't be converted to CMYK across the batch (kept as RGB).
   // Surfaced at batch end so a non-CMYK image never ships silently in a print file.
   let _exportRgbImages = 0;
+  // The frames that shipped at least one such image, so the warning can name the
+  // artwork the user has to look at — a bare count leaves them hunting.
+  let _exportRgbFrames = [];
   // Set by convertPdfToCmyk after each frame; read by the export handler.
-  let _lastPdfImagesUnconverted = 0;
+  window._lastPdfImagesUnconverted = 0;
 
   // One frame failing names it; several report the count, since the toast is a
   // single line and a list of names would overflow it. A failure takes priority over
@@ -463,13 +466,19 @@
         : `${f.length} of ${exportTotal} frames failed to export`);
       _exportFailures = [];
       _exportRgbImages = 0;
+      _exportRgbFrames = [];
       return;
     }
     if (_exportRgbImages > 0) {
-      showError(_exportRgbImages === 1
-        ? `1 image couldn't be converted to CMYK — it was left as RGB`
-        : `${_exportRgbImages} images couldn't be converted to CMYK — they were left as RGB`);
+      const imgWord = _exportRgbImages === 1 ? `1 image` : `${_exportRgbImages} images`;
+      const names = _exportRgbFrames.map(n => `"${n}"`);
+      let where;
+      if (names.length === 1)      where = ` in ${names[0]}`;
+      else if (names.length <= 3)  where = ` across ${names.length} frames (${names.join(', ')})`;
+      else                         where = ` across ${names.length} frames (${names.slice(0, 3).join(', ')}, +${names.length - 3} more)`;
+      showError(`${imgWord}${where} couldn't be converted to CMYK — left as RGB`);
       _exportRgbImages = 0;
+      _exportRgbFrames = [];
     }
   }
   let _exportFmt = null, _exportLookup = null;
@@ -1657,7 +1666,7 @@
     }
 
     // ── Convert RGB raster images → DeviceCMYK ──
-    _lastPdfImagesUnconverted = await convertRgbImagesToCmyk(objs,imgNums,colorLookup);
+    window._lastPdfImagesUnconverted = await convertRgbImagesToCmyk(objs,imgNums,colorLookup);
 
     // ── Crop / trim marks (print) — added last so they emit as clean DeviceCMYK ──
     if(opts&&(opts.cropMarks||opts.bleedPt>0))addPrintMarks(objs,nums,opts.bleedPt,opts.trimBox,opts.cropMarks);
@@ -2561,7 +2570,7 @@
     }
 
     if (msg.type === "export-batch-start") {
-      exportedCount = 0; exportTotal = msg.total; _exportFmt = msg.format; _exportFailures = []; _exportRgbImages = 0;
+      exportedCount = 0; exportTotal = msg.total; _exportFmt = msg.format; _exportFailures = []; _exportRgbImages = 0; _exportRgbFrames = [];
       _exportLookup = null; _exportUsedFSA = false; _pendingFiles = []; _usedNames = new Set();
       // Don't reset _exportCancelled — user may have clicked Cancel during
       // the Preparing phase. If so, tell code.js to stop immediately.
@@ -2597,7 +2606,8 @@
         if (msg.format === "pdf") {
           fileBytes = await convertPdfToCmyk(msg.pdfBytes, _exportLookup,
             { cropMarks: _cropMarks, bleedPt: _bleedMm * 72 / 25.4, trimBox: msg.trimBox });
-          _exportRgbImages += _lastPdfImagesUnconverted;
+          _exportRgbImages += window._lastPdfImagesUnconverted;
+          if (window._lastPdfImagesUnconverted > 0) _exportRgbFrames.push(msg.frameName);
           fileName = `${safe}_CMYK.pdf`; fileMime = "application/pdf";
         } else {
           const cmyka = await convertImageToCmyka(msg.pngBytes, msg.width, msg.height, _exportLookup);
