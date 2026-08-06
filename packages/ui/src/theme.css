@@ -217,15 +217,23 @@
     --radioButton-background:             var(--neutral-1000); /* radioButton/background/default N1000 both */
     --radioButton-border:         var(--neutral-600);  /* radioButton/border/default L=N6, D→override */
     --radioButton-border-selected: var(--neutral-100); /* radioButton/border/selected N100 both */
-    --radioButton-text:           var(--neutral-200);  /* radioButton/text/default N2 both */
+    --radioButton-text:           var(--neutral-300);  /* radioButton/text/default L=N3, D→override */
     --radioButton-text-current:   var(--neutral-100);  /* radioButton/text/current N100 both */
     --radioButton-description:    var(--neutral-400);  /* radioButton/description L=N4, D→override */
     /* radioButton state variants — dedicated vars for every bound Figma token */
     --radioButton-background-selected: var(--toast-background-loading); /* radioButton/background/selected → toast/background/loading/color → N1000 both */
     --radioButton-border-current:      var(--neutral-100);  /* radioButton/border/current N100 both */
     --radioButton-border-unselected:   var(--neutral-100);  /* radioButton/border/unselected N100 both */
-    --radioButton-text-selected:       var(--neutral-200);  /* radioButton/text/selected N200 both */
+    --radioButton-text-selected:       var(--neutral-100);  /* radioButton/text/selected N100 both */
     --radioButton-text-unselected:     var(--neutral-200);  /* radioButton/text/unselected N200 both */
+    /* Checkbox */
+    --checkbox-background:          var(--toast-background-loading); /* checkbox/background/default → N1000 both */
+    --checkbox-border:              var(--neutral-600);  /* checkbox/border/default L=N6, D→override */
+    --checkbox-background-selected: var(--neutral-100);  /* checkbox/background/selected N100 both */
+    --checkbox-border-selected:     var(--neutral-100);  /* checkbox/border/selected N100 both */
+    --checkbox-icon-selected:       var(--toast-background-loading); /* checkbox/icon/selected → N1000 both */
+    --checkbox-text:                var(--neutral-300);  /* checkbox/text/default L=N3, D→override */
+    --checkbox-text-selected:       var(--neutral-100);  /* checkbox/text/selected N100 both */
     /* listItem component — title and description vars removed with their last consumers
        (library-atlas, then the retired Font Scaling Lab details rows). Both DS tokens are
        in COVERED; declare a var again when a plugin actually renders a listItem. */
@@ -266,6 +274,9 @@
       --input-border:              var(--buttonSecondary-border); /* input/border/default D=N600 via buttonSecondary/border */
       --input-border-hover:               var(--neutral-400);   /* input/border/hover D=N400 */
       --input-value-empty:         var(--neutral-400);   /* input/value/empty D=N400 */
+      --radioButton-text: var(--neutral-200);  /* radioButton/text/default Dark = N200 */
+      --checkbox-border: var(--neutral-400);   /* checkbox/border/default Dark = N400 */
+      --checkbox-text:   var(--neutral-200);   /* checkbox/text/default Dark = N200 */
       --input-value-disabled:      var(--neutral-100);   /* input/value/disabled D=N100 */
       --input-background-disabled: var(--neutral-900);   /* input/background/disabled D=N900 */
       --input-auto-border: rgba(255,255,255,0.08);
@@ -957,6 +968,35 @@
   /* Full-width variant: segments share the row equally (constrained panels / modals). */
   .segmented-control.full-width { width: 100%; }
   .segmented-control.full-width button { flex: 1 1 0; min-width: 0; width: 0; }
+
+  /* ── Checkbox (DS 1963:43561): a 16px box + label; the box fills and shows a tick when
+     checked. Wrap a hidden native input so it stays keyboard- and form-accessible. ── */
+  .checkbox { display: inline-flex; align-items: center; gap: var(--gap-m); cursor: pointer; user-select: none; }
+  .checkbox-input { position: absolute; width: 1px; height: 1px; opacity: 0; margin: 0; pointer-events: none; }
+  .checkbox-box {
+    flex-shrink: 0;
+    width: 16px; height: 16px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--checkbox-background);
+    border: var(--thickness) solid var(--checkbox-border);
+    border-radius: 2px;
+    transition: background 0.12s ease, border-color 0.12s ease, border-radius 0.12s ease;
+  }
+  .checkbox-check {
+    width: 12px; height: 12px;
+    color: var(--checkbox-icon-selected);
+    opacity: 0; transform: scale(0.5);
+    transition: opacity 0.12s ease, transform 0.12s ease;
+  }
+  .checkbox-input:checked + .checkbox-box {
+    background: var(--checkbox-background-selected);
+    border-color: var(--checkbox-border-selected);
+    border-radius: 4px;
+  }
+  .checkbox-input:checked + .checkbox-box .checkbox-check { opacity: 1; transform: scale(1); }
+  .checkbox-text { font-size: var(--m-size); color: var(--checkbox-text); }
+  .checkbox-input:checked ~ .checkbox-text { color: var(--checkbox-text-selected); }
+  .checkbox-input:focus-visible + .checkbox-box { outline: var(--thickness) solid var(--input-border-focus); outline-offset: 1px; }
   .seg-status {
     width: var(--dividerSection-height); height: var(--dividerSection-height);
     border-radius: var(--radius-full);

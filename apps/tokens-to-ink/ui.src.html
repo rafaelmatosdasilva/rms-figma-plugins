@@ -324,14 +324,6 @@
   /* Both apply to the vector PDF only — dimmed and inert for TIFF. */
   .export-print.is-disabled { opacity: 0.4; pointer-events: none; }
   .export-bleed-row { display: flex; align-items: center; justify-content: space-between; gap: var(--gap-s); }
-  .cropmarks-check-label {
-    display: flex;
-    align-items: center;
-    gap: var(--gap-s);
-    flex: 1;
-    cursor: pointer;
-  }
-  .cropmarks-check { margin: 0; cursor: pointer; accent-color: var(--text); }
   /* DS input (.inputWrap + .inputField), sized to content. Only the compact width,
      right-aligned value, and spinner removal are added here. */
   .cropmarks-bleed { min-width: 0; gap: var(--gap-xs); flex: none; }
@@ -406,9 +398,10 @@
         <span class="export-format-desc" id="export-format-desc"></span>
       </div>
       <div class="export-print" id="export-print">
-        <label class="cropmarks-check-label">
-          <input type="checkbox" id="cropmarks-toggle" class="cropmarks-check">
-          <span class="cropmarks-label">Crop marks</span>
+        <label class="checkbox">
+          <input type="checkbox" id="cropmarks-toggle" class="checkbox-input">
+          <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16"><use href="#icon-check"/></svg></span>
+          <span class="checkbox-text">Crop marks</span>
         </label>
         <div class="export-bleed-row">
           <span class="export-field-label">Bleed</span>
@@ -1280,9 +1273,11 @@
         if (arr) body = body.replace(/\/Contents\s*\[([^\]]*)\]/, `/Contents [${arr[1]} ${newNum} 0 R ]`);
         else if (single) body = body.replace(/\/Contents\s+\d+\s+0\s+R/, `/Contents [ ${single[1]} 0 R ${newNum} 0 R ]`);
       }
-      // ── Page box grows to fit marks + bleed and keep any overflow; declare Trim/BleedBox ──
-      const nx0 = Math.min(mx0, t.x0 - M), ny0 = Math.min(my0, t.y0 - M);
-      const nx1 = Math.max(mx1, t.x1 + M), ny1 = Math.max(my1, t.y1 + M);
+      // ── Page box = the crop-marks extent (trim ± bleed ± mark length), NOT the artwork.
+      // Art spilling beyond the marks is clipped by the page box, so the file size follows
+      // the cut/bleed sheet rather than however far the design overflows. ──
+      const nx0 = t.x0 - M, ny0 = t.y0 - M;
+      const nx1 = t.x1 + M, ny1 = t.y1 + M;
       body = body.replace(/\/MediaBox\s*\[[^\]]*\]/,
         `/MediaBox [ ${f(nx0)} ${f(ny0)} ${f(nx1)} ${f(ny1)} ]`);
       if (!/\/TrimBox/.test(body))
