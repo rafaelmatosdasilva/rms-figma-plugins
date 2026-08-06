@@ -982,8 +982,10 @@
     border-radius: 2px;
     transition: background 0.12s ease, border-color 0.12s ease, border-radius 0.12s ease;
   }
+  /* The tick fills the 16px box so its DS-native 2pt stroke renders at 2px (a 12px svg
+     would shrink it). Stroke colour comes from `color` via currentColor. */
   .checkbox-check {
-    width: 12px; height: 12px;
+    width: 16px; height: 16px;
     color: var(--checkbox-icon-selected);
     opacity: 0; transform: scale(0.5);
     transition: opacity 0.12s ease, transform 0.12s ease;
@@ -994,7 +996,9 @@
     border-radius: 4px;
   }
   .checkbox-input:checked + .checkbox-box .checkbox-check { opacity: 1; transform: scale(1); }
-  .checkbox-text { font-size: var(--m-size); color: var(--checkbox-text); }
+  /* Own weight/line-height so the label matches the DS text style (Inter SemiBold 600,
+     11px) instead of inheriting a heavier weight from a surrounding container. */
+  .checkbox-text { font-size: var(--m-size); font-weight: var(--m-weight); line-height: var(--m-lh); color: var(--checkbox-text); }
   .checkbox-input:checked ~ .checkbox-text { color: var(--checkbox-text-selected); }
   .checkbox-input:focus-visible + .checkbox-box { outline: var(--thickness) solid var(--input-border-focus); outline-offset: 1px; }
   .seg-status {
@@ -1291,7 +1295,7 @@
     font-size: var(--l-size); font-weight: var(--m-weight);   /* DS title 13px Semi Bold */
     color: var(--modal-title);
   }
-  .modal-slot { display: flex; flex-direction: column; gap: var(--gap-m); width: 100%; }
+  .modal-slot { display: flex; flex-direction: column; gap: var(--gap-l); width: 100%; }   /* DS Slot itemSpacing = 12 */
   .modal-footer { display: flex; flex-direction: row; gap: var(--gap-m); width: 100%; }   /* DS footer gap = 8 */
   .modal-footer button { flex: 1; justify-content: center; }   /* centre the label when stretched */
 
