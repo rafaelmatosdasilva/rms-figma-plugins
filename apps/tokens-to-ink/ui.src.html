@@ -1270,27 +1270,44 @@
       const mx0 = +mb[1], my0 = +mb[2], mx1 = +mb[3], my1 = +mb[4];
       const t = (trimBox && isFinite(trimBox.x0)) ? trimBox : { x0: mx0, y0: my0, x1: mx1, y1: my1 };
       let body = obj.body;
-      // ── Crop marks (optional): 8 corner lines, offset out from the trim by the bleed ──
-      if (cropMarks) {
-        const seg = [];
-        const h = (xa, xb, y) => seg.push(`${f(xa)} ${f(y)} m ${f(xb)} ${f(y)} l`); // horizontal
-        const v = (x, ya, yb) => seg.push(`${f(x)} ${f(ya)} m ${f(x)} ${f(yb)} l`); // vertical
-        h(t.x0 - b, t.x0 - b - LEN, t.y0); h(t.x0 - b, t.x0 - b - LEN, t.y1);  // left of BL / TL
-        h(t.x1 + b, t.x1 + b + LEN, t.y0); h(t.x1 + b, t.x1 + b + LEN, t.y1);  // right of BR / TR
-        v(t.x0, t.y0 - b, t.y0 - b - LEN); v(t.x1, t.y0 - b, t.y0 - b - LEN);  // below BL / BR
-        v(t.x0, t.y1 + b, t.y1 + b + LEN); v(t.x1, t.y1 + b, t.y1 + b + LEN);  // above TL / TR
-        const streamRaw = toBytes(`q 1 1 1 1 K ${f(WGT)} w\n${seg.join('\n')}\nS Q\n`);
-        const newNum = Math.max(...nums) + 1;
-        objs[newNum] = { type: 'stream', dict: `<< /Length ${streamRaw.length} >>`, streamRaw };
-        nums.push(newNum);
-        const arr = body.match(/\/Contents\s*\[([^\]]*)\]/);
-        const single = body.match(/\/Contents\s+(\d+)\s+0\s+R/);
-        if (arr) body = body.replace(/\/Contents\s*\[([^\]]*)\]/, `/Contents [${arr[1]} ${newNum} 0 R ]`);
-        else if (single) body = body.replace(/\/Contents\s+\d+\s+0\s+R/, `/Contents [ ${single[1]} 0 R ${newNum} 0 R ]`);
+      // ── Clip the page content to the bleed box (trim ± bleed; when there is no bleed this
+      // is the frame's own bounding box). Overflow beyond the bleed is dropped from the
+      // export — Figma may not clip the frame's own overflow, so we do it here — which both
+      // makes the output represent the selected frame (not the whole spilling artwork) and
+      // keeps the crop-mark margin clean, so registration marks stay visible over dark art.
+      // The marks are drawn OUTSIDE this clip so they are never clipped away themselves. ──
+      const bx0 = t.x0 - b, by0 = t.y0 - b, bw = (t.x1 - t.x0) + 2 * b, bh = (t.y1 - t.y0) + 2 * b;
+      const arr = body.match(/\/Contents\s*\[([^\]]*)\]/);
+      const single = body.match(/\/Contents\s+(\d+)\s+0\s+R/);
+      const origRefs = arr ? arr[1].trim() : (single ? `${single[1]} 0 R` : null);
+      if (origRefs !== null) {
+        const base = Math.max(...nums);
+        const clipRaw = toBytes(`q ${f(bx0)} ${f(by0)} ${f(bw)} ${f(bh)} re W n\n`);
+        objs[base + 1] = { type: 'stream', dict: `<< /Length ${clipRaw.length} >>`, streamRaw: clipRaw };
+        const closeRaw = toBytes(`Q\n`);
+        objs[base + 2] = { type: 'stream', dict: `<< /Length ${closeRaw.length} >>`, streamRaw: closeRaw };
+        nums.push(base + 1, base + 2);
+        let contents = `${base + 1} 0 R ${origRefs} ${base + 2} 0 R`;
+        // ── Crop marks (optional): 8 corner lines, offset out from the trim by the bleed ──
+        if (cropMarks) {
+          const seg = [];
+          const h = (xa, xb, y) => seg.push(`${f(xa)} ${f(y)} m ${f(xb)} ${f(y)} l`); // horizontal
+          const v = (x, ya, yb) => seg.push(`${f(x)} ${f(ya)} m ${f(x)} ${f(yb)} l`); // vertical
+          h(t.x0 - b, t.x0 - b - LEN, t.y0); h(t.x0 - b, t.x0 - b - LEN, t.y1);  // left of BL / TL
+          h(t.x1 + b, t.x1 + b + LEN, t.y0); h(t.x1 + b, t.x1 + b + LEN, t.y1);  // right of BR / TR
+          v(t.x0, t.y0 - b, t.y0 - b - LEN); v(t.x1, t.y0 - b, t.y0 - b - LEN);  // below BL / BR
+          v(t.x0, t.y1 + b, t.y1 + b + LEN); v(t.x1, t.y1 + b, t.y1 + b + LEN);  // above TL / TR
+          const streamRaw = toBytes(`q 1 1 1 1 K ${f(WGT)} w\n${seg.join('\n')}\nS Q\n`);
+          objs[base + 3] = { type: 'stream', dict: `<< /Length ${streamRaw.length} >>`, streamRaw };
+          nums.push(base + 3);
+          contents += ` ${base + 3} 0 R`;
+        }
+        body = arr
+          ? body.replace(/\/Contents\s*\[([^\]]*)\]/, `/Contents [ ${contents} ]`)
+          : body.replace(/\/Contents\s+\d+\s+0\s+R/, `/Contents [ ${contents} ]`);
       }
-      // ── Page box = the crop-marks extent (trim ± bleed ± mark length), NOT the artwork.
-      // Art spilling beyond the marks is clipped by the page box, so the file size follows
-      // the cut/bleed sheet rather than however far the design overflows. ──
+      // ── Page box = trim ± bleed ± mark length. The real clip above bounds the artwork to
+      // the bleed box; the MediaBox then frames that plus the room the marks need. ──
       const nx0 = t.x0 - M, ny0 = t.y0 - M;
       const nx1 = t.x1 + M, ny1 = t.y1 + M;
       body = body.replace(/\/MediaBox\s*\[[^\]]*\]/,
