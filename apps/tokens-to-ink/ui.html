@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <style>
-:root{--font-family: Inter;--m-size: 11px;--m-weight: 600;--m-lh: 17.3px;--s-size: 10px;--s-weight: 700;--s-lh: 15.1px;--l-size: 13px;--l-weight: 600;--radius-full: 24px;--radius-modal: var(--radius-full);--radius-swatch: var(--radius-full);--radius-md: 12px;--radius-toast: 24px;--radius-tooltip: 8px;--icon-xsmall: 1.2px;--icon-small: 1.5px;--icon-large: 2px;--thickness: 1.5px;--modal-duration: .28s;--modal-duration-out: .16s;--modal-easing: cubic-bezier(.22, 1, .36, 1);--modal-easing-out: cubic-bezier(.4, 0, .84, .16);--modal-offset: 16px;--neutral-100: #0a0a0a;--neutral-200: #2b2b2b;--neutral-300: #404040;--neutral-400: #595959;--neutral-500: #828282;--neutral-600: #adadad;--neutral-700: #d6d6d6;--neutral-800: #ededed;--neutral-900: #f7f7f7;--neutral-1000: #ffffff;--min-height: 60px;--button-min-height: 24px;--dividerSection-height: 6px;--gap-xs: 2px;--gap-s: 4px;--gap-m: 8px;--gap-l: 12px;--gap-xl: 16px;--padding-xxs: 2px;--padding-xs: 4px;--padding-s: 8px;--padding-m: 12px;--padding-l: 16px;--padding-xl: 24px;--node-background-idle: var(--neutral-1000);--node-background-hover: var(--neutral-900);--node-background-selected: var(--neutral-1000);--node-border-hover: var(--neutral-700);--node-border-selected: var(--neutral-100);--node-border-disabled: var(--neutral-700);--node-label-selected: var(--neutral-200);--node-label-disabled: var(--neutral-400);--node-icon-selected: var(--neutral-400);--node-icon-idle: var(--neutral-600);--node-icon-hover: var(--neutral-400);--node-icon-disabled: var(--neutral-600);--node-border-idle: var(--neutral-800);--node-label-idle: var(--neutral-300);--node-label-hover: var(--neutral-300);--bg: var(--neutral-900);--bg-detail: var(--neutral-800);--bg-secondary: var(--neutral-800);--surface: var(--neutral-1000);--border: var(--neutral-700);--panel-border: var(--border);--text: var(--neutral-100);--text-secondary: var(--neutral-300);--text-muted: var(--neutral-400);--accent: var(--neutral-100);--node-border-selected-hover: var(--neutral-200);--red: #c20000;--green: #00804b;--yellow: #cf9e00;--semantic-positive: var(--green);--semantic-warning: var(--yellow);--semantic-negative: var(--red);--toast-background-error: var(--semantic-negative);--toast-title-error: var(--neutral-1000);--toast-icon-error: var(--neutral-1000);--buttonTertiary-background: var(--neutral-800);--buttonTertiary-text: var(--neutral-100);--buttonTertiary-background-active: var(--neutral-1000);--buttonTertiary-text-active: var(--neutral-200);--buttonList-background-hover: var(--neutral-1000);--buttonList-background-selected: var(--neutral-1000);--buttonList-iconPrimary: var(--neutral-600);--buttonList-iconSecondary: var(--neutral-300);--buttonList-text: var(--neutral-200);--buttonList-text-hover: var(--neutral-200);--buttonList-text-selected: var(--neutral-200);--buttonSecondary-background: var(--neutral-1000);--buttonSecondary-border: var(--neutral-700);--buttonSecondary-background-hover: var(--neutral-1000);--buttonSecondary-border-hover: var(--neutral-700);--buttonSecondary-text: var(--neutral-200);--buttonQuaternary-text: var(--neutral-400);--buttonQuaternary-background-hover: var(--neutral-1000);--buttonPrimary-background: var(--neutral-300);--buttonPrimary-text: var(--neutral-1000);--swatch-border-filled: var(--buttonSecondary-border);--swatch-border-empty: var(--neutral-700);--input-border: var(--neutral-700);--input-border-focus: var(--neutral-100);--input-border-hover: var(--neutral-500);--input-value-empty: var(--neutral-500);--input-value-disabled: var(--neutral-500);--input-background-disabled: var(--neutral-1000);--input-background: var(--surface);--input-value: var(--neutral-100);--input-label: var(--neutral-400);--input-icon: var(--neutral-400);--input-min-width: 80px;--input-auto-border: rgba(0,0,0,.1);--actionbar-background: var(--neutral-1000);--actionbar-border: var(--border);--scrollbar-thumb: rgba(0,0,0,.2);--scrollbar-thumb-hover: rgba(0,0,0,.35);--overlay-bg: rgba(242,242,242,.6);--toast-background-loading: var(--neutral-1000);--toast-title-loading: var(--neutral-100);--toast-icon-loading: var(--neutral-600);--toast-background-success: var(--semantic-positive);--toast-title-success: var(--neutral-1000);--toast-icon-success: var(--neutral-1000);--toast-description-loading: var(--neutral-400);--modal-background: var(--neutral-1000);--modal-title: var(--neutral-100);--tooltipPopover-background: var(--neutral-1000);--tooltipPopover-border: var(--neutral-800);--tooltipPopover-text: var(--neutral-300);--tooltipButton-icon: var(--neutral-400);--hex-sub-color: var(--neutral-300);--overflow-background: var(--neutral-1000);--overflow-border: var(--neutral-800);--overflow-text: var(--neutral-500);--overflowList-background: var(--neutral-1000);--overflowList-background-hover: var(--neutral-1000);--overflowList-border: var(--neutral-800);--overflowList-border-hover: var(--overflowList-border);--overflowList-label: var(--neutral-300);--overflowList-label-hover: var(--neutral-800);--tableRow-text: var(--neutral-200);--tableRow-background-hover: var(--neutral-800);--tableRow-icon: var(--neutral-500);--segmentedControl-background: var(--neutral-800);--segmentedControl-border: var(--neutral-700);--segmentedControl-border-selected: var(--node-border-selected);--segmentedControl-label: var(--neutral-400);--segmentedControl-label-selected: var(--neutral-200);--segmentedControl-icon: var(--neutral-500);--segmentedControl-icon-selected: var(--neutral-200);--segmentedControl-background-selected: var(--neutral-1000);--dividerSection-title: var(--neutral-400);--dividerSection-number: var(--neutral-500);--dividerSection-divider: var(--neutral-600);--badge-neutral: var(--neutral-700);--statusbar-text: var(--neutral-100);--statusbar-icon: var(--neutral-600);--emptyState-title: var(--neutral-100);--emptyState-description: var(--neutral-300);--emptyState-icon-neutral: var(--neutral-600);--radioButton-background: var(--neutral-1000);--radioButton-border: var(--neutral-600);--radioButton-border-selected: var(--neutral-100);--radioButton-text: var(--neutral-300);--radioButton-text-current: var(--neutral-100);--radioButton-description: var(--neutral-400);--radioButton-background-selected: var(--toast-background-loading);--radioButton-border-current: var(--neutral-100);--radioButton-border-unselected: var(--neutral-100);--radioButton-text-selected: var(--neutral-100);--radioButton-text-unselected: var(--neutral-200);--checkbox-background: var(--toast-background-loading);--checkbox-border: var(--neutral-600);--checkbox-background-selected: var(--neutral-100);--checkbox-border-selected: var(--neutral-100);--checkbox-icon-selected: var(--toast-background-loading);--checkbox-text: var(--neutral-300);--checkbox-text-selected: var(--neutral-100)}@media (prefers-color-scheme: dark){:root{--neutral-100: #f5f5f5;--neutral-200: #dbdbdb;--neutral-300: #bfbfbf;--neutral-400: #878787;--neutral-500: #5e5e5e;--neutral-600: #454545;--neutral-700: #303030;--neutral-800: #2b2b2b;--neutral-900: #1f1f1f;--neutral-1000: #171717;--bg-secondary: var(--neutral-900);--surface: var(--neutral-800);--border: var(--neutral-700);--text-muted: var(--neutral-300);--buttonTertiary-background: var(--neutral-900);--buttonTertiary-text: var(--neutral-200);--buttonTertiary-text-active: var(--neutral-100);--buttonQuaternary-text: var(--neutral-300);--buttonSecondary-background: var(--neutral-800);--buttonSecondary-border: var(--neutral-600);--buttonSecondary-background-hover: var(--neutral-700);--buttonSecondary-border-hover: var(--neutral-500);--buttonSecondary-text: var(--neutral-200);--buttonPrimary-background: var(--neutral-100);--swatch-border-filled: var(--buttonSecondary-border);--swatch-border-empty: var(--buttonSecondary-border);--input-border: var(--buttonSecondary-border);--input-border-hover: var(--neutral-400);--input-value-empty: var(--neutral-400);--radioButton-text: var(--neutral-200);--checkbox-border: var(--neutral-400);--checkbox-text: var(--neutral-200);--input-value-disabled: var(--neutral-100);--input-background-disabled: var(--neutral-900);--input-auto-border: rgba(255,255,255,.08);--actionbar-background: var(--neutral-800);--scrollbar-thumb: rgba(255,255,255,.2);--scrollbar-thumb-hover: rgba(255,255,255,.4);--overlay-bg: rgba(44,44,44,.6);--node-background-idle: var(--neutral-800);--node-background-hover: var(--neutral-800);--node-background-selected: var(--neutral-700);--node-border-hover: var(--neutral-600);--node-label-selected: var(--neutral-100);--node-border-disabled: var(--neutral-600);--segmentedControl-label-selected: var(--neutral-100);--segmentedControl-icon: var(--neutral-300);--segmentedControl-icon-selected: var(--neutral-100);--segmentedControl-background-selected: var(--neutral-700);--dividerSection-title: var(--neutral-200);--dividerSection-number: var(--neutral-300);--dividerSection-divider: var(--neutral-500);--statusbar-icon: var(--neutral-400);--tableRow-icon: var(--neutral-400);--toast-icon-loading: var(--neutral-500);--overflow-background: var(--neutral-700);--overflow-border: var(--neutral-600);--overflow-text: var(--neutral-300);--overflowList-background: var(--neutral-700);--overflowList-background-hover: var(--neutral-800);--overflowList-border: var(--neutral-600);--overflowList-label: var(--neutral-100);--overflowList-label-hover: var(--neutral-100);--badge-neutral: var(--neutral-300);--emptyState-icon-neutral: var(--neutral-400);--radioButton-border: var(--neutral-400);--radioButton-description: var(--neutral-300);--input-label: var(--neutral-300);--input-icon: var(--neutral-200);--tooltipButton-icon: var(--neutral-300);--node-border-idle: var(--neutral-600);--node-icon-selected: var(--neutral-300);--node-icon-idle: var(--neutral-500);--node-icon-hover: var(--neutral-300);--buttonList-background-hover: var(--neutral-800);--buttonList-background-selected: var(--neutral-700);--buttonList-iconPrimary: var(--neutral-500);--buttonList-iconSecondary: var(--neutral-200);--buttonList-text: var(--neutral-300);--buttonList-text-hover: var(--neutral-100);--buttonList-text-selected: var(--neutral-100);--segmentedControl-border: var(--neutral-600);--segmentedControl-label: var(--neutral-300);--red: #fe6767;--green: #0cdf88;--yellow: #f7c522;--bg-detail: var(--neutral-1000)}}*{margin:0;padding:0;box-sizing:border-box}html{background:var(--bg)!important;overflow:hidden}body{overflow-x:hidden;font-family:var(--font-family),ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:var(--m-size);font-weight:var(--m-weight);color:var(--text);background:var(--bg);padding:0 var(--padding-l);line-height:var(--m-lh);display:flex;flex-direction:column;height:100vh;overflow:hidden}button{height:var(--button-min-height);padding-top:0;padding-bottom:0;box-sizing:border-box;border:none;outline:none;-webkit-appearance:none;appearance:none;font-family:inherit;cursor:pointer;font-weight:var(--m-weight);transition:background .15s ease,color .15s ease,opacity .15s ease}button:disabled{opacity:.5;cursor:not-allowed;pointer-events:none}.buttonTertiary:disabled:hover,.buttonSecondary:disabled:hover,.buttonPrimary:disabled:hover,.buttonQuaternary:disabled:hover,.overflowList:disabled:hover{background:initial;color:initial;outline:none}.buttonQuaternary:disabled:hover:before{background:transparent}#scan-btn:disabled{opacity:.24}.node{display:flex;align-items:center;gap:var(--gap-s);background:var(--node-background-idle);border:var(--thickness) solid transparent;border-radius:var(--radius-full);padding:0 var(--padding-s);min-height:40px;flex-shrink:0;cursor:pointer;position:relative;box-sizing:border-box;text-align:left;font-family:inherit;font-size:var(--m-size);font-weight:var(--m-weight);color:var(--node-label-idle);transition:border-color .1s,background .1s,color .1s;user-select:text}.node.node-selected{border-color:var(--node-border-selected);background:var(--node-background-selected);color:var(--node-label-selected)}.node:hover{border-color:var(--node-border-hover);background:var(--node-background-hover)}.node.node-selected:hover{border-color:var(--node-border-selected-hover)}.node.node-disabled,.node.node-external,.has-selection .node:not(.node-selected){border-style:dashed;border-color:var(--node-border-disabled);background:transparent;color:var(--node-label-disabled);box-shadow:none}.node.node-disabled{cursor:default;pointer-events:none}.node.node-external{cursor:default}.has-selection .node:not(.node-selected):hover{border-color:var(--node-border-hover)}.node.node-unselected{background:transparent;border-color:var(--node-border-idle);color:var(--node-label-idle)}.node:hover .var-name,.node:hover .node-name{color:var(--node-label-hover)}.node svg{color:var(--node-icon-idle);flex-shrink:0}.node:hover .node-type-icon svg,.node:hover .var-type-icon svg{color:var(--node-icon-hover)}.node.node-selected svg{color:var(--node-icon-selected)}.node.node-unselected svg{color:var(--node-icon-idle)}.node.node-disabled .node-type-icon svg,.node.node-disabled .var-type-icon svg,.node.node-external .node-type-icon svg,.node.node-external .var-type-icon svg,.has-selection .node:not(.node-selected) .node-type-icon svg,.has-selection .node:not(.node-selected) .var-type-icon svg{color:var(--node-icon-disabled)}.node.no-icon .node-type-icon,.node.no-icon .var-type-icon{display:none}.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:32px var(--padding-xl);gap:var(--gap-xl);color:var(--emptyState-title);text-align:center}.empty-state-content{text-align:center}.empty-state-content>*{margin:0}.empty-state-content>*+*{margin-top:16px}.empty-state-content svg,.empty-state svg{display:block;margin:0 auto;width:56px;height:56px;color:var(--emptyState-icon-neutral);stroke-width:2px}.empty-state-content p{max-width:200px;margin:0 auto;font-size:var(--m-size);line-height:1.5;color:var(--emptyState-title)}.empty-state-text{display:flex;flex-direction:column;align-items:center;gap:var(--gap-s)}.empty-state-content .empty-state-title{max-width:200px;margin:0 auto;font-size:var(--m-size);font-weight:var(--m-weight);line-height:var(--m-lh);color:var(--emptyState-title)}.empty-state-content .empty-state-desc{max-width:200px;margin:0 auto;font-size:var(--s-size);font-weight:var(--s-weight);line-height:var(--s-lh);color:var(--text-secondary)}.empty-state-content>svg+.empty-state-text{margin-top:var(--gap-s)}.scroll-area{overflow-y:auto;overflow-x:hidden;min-height:0;margin:0 calc(-1 * var(--padding-l));padding-right:12px}#tt{position:fixed;background:var(--tooltipPopover-background);border:var(--thickness) solid var(--tooltipPopover-border);color:var(--tooltipPopover-text);font-size:var(--s-size);font-weight:var(--s-weight);padding:var(--padding-xs) var(--padding-s);gap:var(--gap-xl);border-radius:var(--radius-tooltip);white-space:pre-wrap;word-break:break-word;max-width:240px;z-index:9999;pointer-events:none;opacity:0;transition:opacity .15s ease;line-height:var(--s-lh)}#tt.tt-visible{opacity:1}.buttonSecondary{display:inline-flex;align-items:center;justify-content:center;background:var(--buttonSecondary-background);border:var(--thickness) solid var(--buttonSecondary-border);border-radius:var(--radius-full);color:var(--buttonSecondary-text);cursor:pointer;flex-shrink:0;font-family:inherit;font-size:var(--m-size);font-weight:var(--m-weight);padding:0 var(--padding-xs);gap:var(--gap-s);transition:border-color .15s ease,color .15s ease}.buttonSecondary:hover{border-color:var(--buttonSecondary-border-hover);color:var(--buttonSecondary-text);background:var(--buttonSecondary-background-hover)}.buttonSecondary svg{order:1}.buttonSecondary span,.buttonQuaternary span{white-space:nowrap;padding:0 var(--padding-xs)}.buttonPrimary:has(svg):not(:has(span)),.buttonSecondary:has(svg):not(:has(span)),.buttonTertiary:has(svg):not(:has(span)),.buttonQuaternary:has(svg):not(:has(span)){width:var(--button-min-height);padding:0}.buttonAddOutput svg{transition:transform .2s ease}.output-picker.picker-open .buttonAddOutput svg{transform:rotate(45deg)}.buttonAddOutput{border-radius:50%;width:var(--button-min-height);height:var(--button-min-height);padding:0;margin-left:0;position:relative}.buttonTertiary{display:inline-flex;align-items:center;justify-content:center;height:var(--button-min-height);padding:0 var(--padding-xs);gap:var(--gap-s);background:var(--buttonTertiary-background);border:var(--thickness) solid var(--buttonTertiary-background);border-radius:var(--radius-full);color:var(--buttonTertiary-text);cursor:pointer;flex-shrink:0;font-size:var(--m-size);font-weight:var(--m-weight);white-space:nowrap;line-height:var(--button-min-height);transition:background .15s ease,color .15s ease}.buttonTertiary:hover{background:var(--buttonTertiary-background-active);color:var(--buttonTertiary-text-active);border-color:var(--buttonTertiary-text-active)}.buttonTertiary svg{display:block;flex-shrink:0;stroke:var(--buttonTertiary-text);transition:stroke .15s ease}.buttonTertiary:hover svg{stroke:var(--buttonTertiary-text-active)}.buttonTertiary span{white-space:nowrap;padding:0 var(--padding-xs)}@media (prefers-color-scheme: dark){.buttonTertiary{color:var(--buttonTertiary-text)}.buttonTertiary svg{stroke:var(--buttonTertiary-text)}.buttonTertiary:hover{color:var(--buttonTertiary-text-active);border-color:var(--buttonTertiary-text-active)}.buttonTertiary:hover svg{stroke:var(--buttonTertiary-text-active)}}.tooltipButton{display:inline-flex;align-items:center;justify-content:center;width:var(--button-min-height);height:var(--button-min-height);flex-shrink:0;padding:0;background:none;border:none;cursor:default;color:var(--tooltipButton-icon)}.tooltipButton svg{color:var(--tooltipButton-icon);display:block}.buttonQuaternary{display:inline-flex;align-items:center;justify-content:center;min-height:var(--button-min-height);padding:0 var(--padding-xs);gap:var(--gap-s);background:transparent;border:none;outline:none;-webkit-appearance:none;appearance:none;border-radius:var(--radius-full);color:var(--buttonQuaternary-text);cursor:pointer;flex-shrink:0;font-family:inherit;font-size:var(--m-size);font-weight:var(--m-weight);white-space:nowrap;position:relative;transition:opacity .15s ease}.buttonQuaternary:before{content:"";position:absolute;inset:0;border-radius:var(--radius-full);background:transparent;transition:background .15s ease;pointer-events:none}.buttonQuaternary>*{position:relative;z-index:1}.buttonQuaternary svg{display:block;flex-shrink:0;stroke:var(--buttonQuaternary-text)}.buttonQuaternary:hover:before{background:var(--buttonQuaternary-background-hover)}.buttonUnpair{width:var(--button-min-height);padding:0;font-size:0}.buttonUnpair:hover{outline:none}.output-picker{position:relative;flex-shrink:0}.output-picker-flyout{position:absolute;left:calc(100% + var(--gap-s));top:50%;transform:translateY(-50%);display:flex;flex-wrap:nowrap;gap:var(--gap-s);align-items:center;pointer-events:none;opacity:0;white-space:nowrap;z-index:10}.output-picker-flyout.open{pointer-events:auto;opacity:1;transition:opacity .1s}.buttonPrimary{display:inline-flex;align-items:center;gap:var(--gap-s);height:var(--button-min-height);padding:0 var(--padding-xs);font-size:var(--m-size);color:var(--buttonPrimary-text);cursor:pointer;white-space:nowrap;background:var(--buttonPrimary-background);border:none;border-radius:var(--radius-full);font-family:inherit;line-height:1;flex-shrink:0;transition:background .15s ease,color .15s ease}.buttonPrimary:hover{opacity:.85}.buttonPrimary svg{display:block;flex-shrink:0}.buttonPrimary span{white-space:nowrap;padding:0 var(--padding-xs)}.actionbar{flex-shrink:0;display:flex;flex-wrap:wrap;align-items:center;align-content:center;gap:var(--gap-m);padding:var(--padding-s) var(--padding-l);margin:0 calc(-1 * var(--padding-l));height:40px;background:var(--actionbar-background);border-bottom:var(--thickness) solid var(--actionbar-border)}#rescan-btn,.export-picker{margin-top:0;align-self:center}.buttonRescan{width:var(--button-min-height);height:var(--button-min-height);border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center}.buttonRescan svg{display:block}.inputWrap{display:flex;align-items:center;background:var(--input-background);border:var(--thickness) solid var(--input-border);border-radius:var(--radius-full);padding:0 var(--padding-s);height:var(--button-min-height);gap:var(--gap-s);min-width:var(--input-min-width);transition:border-color .15s ease}.inputWrap:not(.inputWrap--readonly):hover{border-color:var(--input-border-hover)}.inputWrap:not(.inputWrap--readonly):focus-within{border-color:var(--input-border-focus)!important}.inputWrap.inputWrap--readonly{background:transparent;border-color:var(--input-auto-border);pointer-events:none;opacity:.8}.inputWrap.inputWrap--disabled{background:var(--input-background-disabled);border-color:var(--input-border);pointer-events:none;opacity:.5}.inputWrap.inputWrap--disabled .inputField{color:var(--input-value-disabled)}.inputField{background:transparent;border:none;color:var(--input-value);font-family:inherit;font-size:var(--m-size);font-weight:var(--m-weight);padding:0 4px;flex:1;min-width:0;outline:none}.inputField::placeholder{color:var(--input-value-empty)}.inputField:-webkit-autofill,.inputField:-webkit-autofill:hover,.inputField:-webkit-autofill:focus{-webkit-box-shadow:0 0 0px 1000px var(--input-background) inset;-webkit-text-fill-color:var(--text);transition:background-color 9999s ease-in-out 0s}.inputWrap .inputLabel{font-size:var(--m-size);font-weight:var(--m-weight);color:var(--input-label);user-select:none;pointer-events:none;white-space:nowrap;flex-shrink:0;line-height:1}.inputWrap svg{color:var(--input-icon);flex-shrink:0}.inputWrap .icon-right{order:3}.inputWrap.no-icon-left .icon-left,.inputWrap.no-icon-right .icon-right{display:none}.inputWrap.empty{background:transparent}.inputWrap.no-value .inputField{display:none}#progress-container{position:fixed;inset:0;z-index:9997;display:flex;align-items:center;justify-content:center;pointer-events:none}#progress-container:not(:empty){background:var(--overlay-bg);backdrop-filter:blur(4px);pointer-events:none}#progress-container .progress-msg{animation:none}#toast-container:not(:empty){position:fixed;bottom:var(--padding-xl);left:50%;transform:translate(-50%);z-index:9998;display:flex;flex-direction:column;align-items:center;gap:var(--gap-m);pointer-events:none;white-space:nowrap}.progress-msg{background:var(--toast-background-loading);color:var(--toast-title-loading);height:48px;padding:var(--padding-s) var(--padding-m);flex-shrink:0;font-size:var(--m-size);font-weight:var(--m-weight);display:inline-flex;align-items:center;gap:var(--gap-xl);border-radius:var(--radius-toast);white-space:nowrap;pointer-events:auto;animation:modal-in var(--modal-duration) var(--modal-easing) both}.progress-msg.progress-out{animation:modal-out var(--modal-duration) var(--modal-easing-out) forwards}.progress-msg button{flex-shrink:0}.progress-msg--scan{align-items:center;transition:transform .3s cubic-bezier(.4,0,.2,1) .35s}.progress-msg--scan.has-eta{transform:translateY(-8px)}.scan-info{display:flex;flex-direction:column;gap:var(--gap-xs);justify-content:center}.scan-label{display:flex;align-items:center;gap:var(--gap-s);font-size:var(--m-size);font-weight:var(--m-weight);line-height:1.3;white-space:nowrap}.scan-pct{display:inline-block;text-align:right;max-width:0;overflow:hidden;opacity:0;transition:max-width .25s ease,opacity .2s ease .05s}.scan-pct.pct-visible{max-width:32px;opacity:1}.scan-eta{font-size:var(--m-size);line-height:1.3;max-height:0;opacity:0;overflow:hidden;transition:max-height .01s,opacity .3s ease}.progress-msg--scan.has-eta .scan-eta{max-height:2em;opacity:.6}.segmented-control{display:inline-flex;gap:0;padding:0;background:var(--segmentedControl-background);border:var(--thickness) solid var(--segmentedControl-border);border-radius:var(--radius-full);flex-shrink:0;position:relative}.seg-pill{position:absolute;top:0;bottom:0;left:0;width:0;border-radius:var(--radius-full);background:var(--segmentedControl-background-selected);border:var(--thickness) solid var(--segmentedControl-border-selected);pointer-events:none;z-index:0;transition:left .22s cubic-bezier(.4,0,.2,1),width .22s cubic-bezier(.4,0,.2,1)}.segmented-control button{display:inline-flex;align-items:center;justify-content:center;container-type:inline-size;gap:var(--gap-xs);padding:var(--padding-xxs) var(--padding-m);height:var(--button-min-height);background:transparent;border:var(--thickness) solid transparent;position:relative;z-index:1;border-radius:var(--radius-full);color:var(--segmentedControl-label);cursor:pointer;font-family:inherit;font-size:var(--s-size);font-weight:var(--s-weight);white-space:nowrap;transition:background .18s ease,border-color .18s ease,color .18s ease;flex-shrink:0}.segmented-control button:hover:not(.selected){color:var(--text)}.segmented-control button .tab-label{max-width:120px;opacity:1;overflow:hidden;white-space:nowrap;transition:max-width .22s cubic-bezier(.4,0,.2,1),opacity .18s ease;display:inline-block;vertical-align:middle}.segmented-control button.selected{gap:var(--gap-xs);overflow:clip;background:var(--segmentedControl-background-selected);border-color:var(--segmentedControl-border-selected);color:var(--segmentedControl-label-selected)}.segmented-control.has-pill button.selected{background:transparent;border-color:transparent}.segmented-control button.selected .tab-label{max-width:120px;opacity:1}@container (max-width: 72px){.tab-label{max-width:0!important;opacity:0!important}}.segmented-control svg{width:16px;height:16px;flex-shrink:0;color:var(--segmentedControl-icon)}.segmented-control button.selected svg{color:var(--segmentedControl-icon-selected)}.segmented-control button.no-icon svg{display:none}.segmented-control.full-width{width:100%}.segmented-control.full-width button{flex:1 1 0;min-width:0;width:0}.checkbox{display:inline-flex;align-items:center;gap:var(--gap-m);cursor:pointer;user-select:none}.checkbox-input{position:absolute;width:1px;height:1px;opacity:0;margin:0;pointer-events:none}.checkbox-box{flex-shrink:0;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;background:var(--checkbox-background);border:var(--thickness) solid var(--checkbox-border);border-radius:2px;transition:background .12s ease,border-color .12s ease,border-radius .12s ease}.checkbox-check{width:16px;height:16px;color:var(--checkbox-icon-selected);opacity:0;transform:scale(.5);transition:opacity .12s ease,transform .12s ease}.checkbox-input:checked+.checkbox-box{background:var(--checkbox-background-selected);border-color:var(--checkbox-border-selected);border-radius:4px}.checkbox-input:checked+.checkbox-box .checkbox-check{opacity:1;transform:scale(1)}.checkbox-text{font-size:var(--m-size);font-weight:var(--m-weight);line-height:var(--m-lh);color:var(--checkbox-text)}.checkbox-input:checked~.checkbox-text{color:var(--checkbox-text-selected)}.checkbox-input:focus-visible+.checkbox-box{outline:var(--thickness) solid var(--input-border-focus);outline-offset:1px}.seg-status{width:var(--dividerSection-height);height:var(--dividerSection-height);border-radius:var(--radius-full);background:currentColor;flex-shrink:0}.segmented-control button.no-status .seg-status{display:none}.seg-number{font-size:var(--s-size);font-weight:var(--s-weight);flex-shrink:0}.segmented-control button.no-number .seg-number{display:none}.badge{display:inline-flex;align-items:center;align-self:flex-start;gap:var(--gap-s);padding:var(--padding-xxs) var(--padding-s);border-radius:var(--radius-full);font-size:var(--s-size);font-weight:var(--s-weight);flex-shrink:0;white-space:nowrap}.badge.none{background:color-mix(in srgb,var(--badge-neutral) 12%,transparent);color:var(--badge-neutral)}.badge.high{background:color-mix(in srgb,var(--semantic-negative) 12%,transparent);color:var(--semantic-negative)}.badge.medium{background:color-mix(in srgb,var(--semantic-warning) 15%,transparent);color:var(--semantic-warning)}.badge.low{background:color-mix(in srgb,var(--semantic-positive) 12%,transparent);color:var(--semantic-positive)}.badge.clipped,.badge.truncated,.badge.overflow{background:color-mix(in srgb,var(--semantic-negative) 12%,transparent);color:var(--semantic-negative)}.badge svg{flex-shrink:0}.badge.no-icon svg{display:none}.badge.no-label .badge-label{display:none}.overflow{display:flex;flex-direction:column;background:var(--overflow-background);border:var(--thickness) solid var(--overflow-border);border-radius:var(--radius-md);padding:var(--padding-xs) 0;overflow:clip}.overflow-label{font-size:var(--s-size);font-weight:var(--s-weight);color:var(--overflow-text);padding:var(--padding-xs) var(--padding-s);white-space:nowrap}.overflowList{display:flex;align-items:center;width:100%;text-align:left;background:var(--overflowList-background);border:var(--thickness) solid var(--overflowList-border);padding:0 var(--padding-s);gap:var(--gap-s);flex-shrink:0;height:32px;font-family:inherit;font-size:var(--m-size);font-weight:var(--m-weight);color:var(--overflowList-label);cursor:pointer;white-space:nowrap;transition:background .1s ease,color .1s ease}.overflowList:hover{background:var(--overflowList-background-hover);color:var(--overflowList-label-hover);border-color:var(--overflowList-border-hover)}.buttonList{display:flex;align-items:center;gap:var(--gap-s);width:100%;text-align:left;background:transparent;border-bottom:var(--thickness) solid var(--border);padding:0 var(--padding-xs);height:40px;flex-shrink:0;font-family:inherit;font-size:var(--m-size);font-weight:var(--m-weight);color:var(--buttonList-text);cursor:pointer;position:relative;transition:color .1s ease}.buttonList:before{content:"";position:absolute;inset:4px 0;border-radius:var(--radius-full);background:transparent;transition:background .1s ease;pointer-events:none}.buttonList>*{position:relative;z-index:1}.buttonList svg{color:var(--buttonList-iconPrimary);flex-shrink:0}.buttonList:hover:before{background:var(--buttonList-background-hover)}.buttonList:hover,.buttonList.hovered{color:var(--buttonList-text-hover);padding-right:var(--padding-s)}.buttonList:hover svg{color:var(--buttonList-iconPrimary)}.buttonList.hovered svg{color:var(--buttonList-iconPrimary)}.buttonList.selected:before{background:var(--buttonList-background-selected)}.buttonList.selected{color:var(--buttonList-text-selected);padding-right:var(--padding-s)}.buttonList.selected svg{color:var(--buttonList-iconPrimary)}.buttonList .tooltipButton svg,.buttonList:hover .tooltipButton svg,.buttonList.hovered .tooltipButton svg,.buttonList.selected .tooltipButton svg{color:var(--tooltipButton-icon)}.buttonList-arrow{display:none;flex-shrink:0;color:var(--buttonList-iconSecondary)}.buttonList.selected .buttonList-arrow,.buttonList:hover .buttonList-arrow,.buttonList.hovered .buttonList-arrow{display:block;color:var(--buttonList-iconSecondary)}.buttonList-action{display:none}.buttonList:not(.selected):hover .buttonList-action,.buttonList:not(.selected).hovered .buttonList-action{display:inline-flex;align-items:center;justify-content:center;margin-right:var(--gap-s)}.buttonList:not(.selected):hover .buttonList-action svg,.buttonList:not(.selected).hovered .buttonList-action svg{color:var(--buttonTertiary-text)}.buttonList.no-button .buttonList-action{display:none}.tableRow{display:flex;align-items:center;gap:var(--gap-m);min-height:32px;width:100%;padding:0;flex-shrink:0;background:transparent;border:none;color:var(--tableRow-text);font-family:inherit;font-size:var(--s-size);font-weight:var(--s-weight);text-align:left;cursor:pointer;position:relative;transition:background .1s}.tableRow svg{color:var(--tableRow-icon);flex-shrink:0}.tableRow:not(.selected):hover,.tableRow:not(.selected).hovered{background:var(--tableRow-background-hover)}.tableRow.selected,.tableRow.selected:hover{background:var(--buttonList-background-selected)}.dividerLine{height:1px;background:var(--border);flex-shrink:0;margin:0}.actionbar+.dividerLine{margin:0 calc(-1 * var(--padding-l));background:var(--border)}.dividerSection{display:flex;align-items:center;gap:var(--gap-m);padding:var(--padding-l) 0 var(--padding-xs);font-size:var(--s-size);font-weight:var(--s-weight);line-height:var(--s-lh);color:var(--dividerSection-title);flex-shrink:0;position:sticky;top:0;z-index:2;background:var(--bg)}.dividerSection-content{display:flex;align-items:center;gap:var(--gap-s);padding:var(--padding-xs) 0;min-width:0}.dividerSection-action{flex-shrink:0}.dividerSection .count{letter-spacing:normal;text-transform:none;color:var(--dividerSection-number)}.dividerSection .div-sep{color:var(--dividerSection-divider)}.dividerSection.no-priority .tier-dot,.dividerSection.no-number .count,.dividerSection.no-number .div-sep{display:none}.tier-dot{width:var(--dividerSection-height);height:var(--dividerSection-height);border-radius:50%;flex-shrink:0}.tier-dot.low{background:var(--semantic-positive)}.tier-dot.medium{background:var(--semantic-warning)}.tier-dot.high{background:var(--semantic-negative)}.tier-dot.none{background:var(--badge-neutral);opacity:.45}.segmented-control button.tab-empty{opacity:.35;cursor:default;pointer-events:none}.toast{background:var(--toast-background-success);color:var(--toast-title-success);height:32px;padding:var(--padding-s) var(--padding-m);font-size:var(--m-size);font-weight:var(--m-weight);display:inline-flex;align-items:center;justify-content:center;gap:var(--gap-s);border-radius:var(--radius-toast);white-space:nowrap;pointer-events:auto;animation:toast-in .22s cubic-bezier(.16,.84,.44,1);z-index:9999}.toast.toast-out{animation:toast-out .22s cubic-bezier(.4,0,.84,.16) forwards}.toast-icon{color:var(--toast-icon-loading);display:inline-flex;flex-shrink:0}.toast .toast-icon{color:var(--toast-icon-success)}.toast.toast-error{background:var(--toast-background-error);color:var(--toast-title-error)}.toast.toast-error .toast-icon{color:var(--toast-icon-error)}.toast-description{font-size:var(--m-size);color:var(--toast-description-loading);opacity:.85;white-space:nowrap}@keyframes toast-in{0%{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes toast-out{0%{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(8px)}}@keyframes modal-in{0%{opacity:0;transform:translateY(var(--modal-offset))}to{opacity:1;transform:translateY(0)}}@keyframes modal-out{0%{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(var(--modal-offset))}}@keyframes modal-bg-in{0%{opacity:0}to{opacity:1}}@keyframes modal-bg-out{0%{opacity:1}to{opacity:0}}.modal{display:none;position:fixed;inset:0;align-items:center;justify-content:center;z-index:10000}.modal.is-open{display:flex}.modal-overlay{position:absolute;inset:0;background:var(--overlay-bg);backdrop-filter:blur(4px);animation:modal-bg-in var(--modal-duration) var(--modal-easing) both}.modal.is-closing .modal-overlay{animation:modal-bg-out var(--modal-duration-out) var(--modal-easing-out) both}.modal-card{position:relative;z-index:10001;display:flex;flex-direction:column;gap:var(--gap-xl);padding:var(--padding-l);background:var(--modal-background);border-radius:var(--radius-modal);max-width:calc(100% - 2 * var(--padding-l));animation:modal-in var(--modal-duration) var(--modal-easing) both}.modal.is-closing .modal-card{animation:modal-out var(--modal-duration-out) var(--modal-easing-out) both}.modal-card h2,.modal-title{margin:0;font-size:var(--l-size);font-weight:var(--m-weight);color:var(--modal-title)}.modal-slot{display:flex;flex-direction:column;gap:var(--gap-l);width:100%}.modal-footer{display:flex;flex-direction:row;gap:var(--gap-m);width:100%}.modal-footer button{flex:1;justify-content:center}#toast-overlay{position:fixed;inset:0;z-index:9996;background:var(--overlay-bg);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .2s ease}#toast-overlay.visible{opacity:1;pointer-events:auto}.toast-spinner{width:14px;height:14px;border:var(--thickness) solid currentColor;border-top-color:transparent;border-radius:50%;opacity:.7;animation:toast-spin .8s linear infinite;display:inline-block;flex-shrink:0}@keyframes toast-spin{to{transform:rotate(360deg)}}.toast-content{display:flex;align-items:center;gap:var(--gap-m)}.statusBar{height:56px;display:flex;align-items:center;padding:0 var(--padding-l);gap:var(--gap-m);border-bottom:var(--thickness) solid var(--border);flex-shrink:0}.statusBar-title{display:flex;align-items:center;gap:var(--gap-s);min-width:0}.swatch{width:var(--button-min-height);height:var(--button-min-height);border-radius:var(--radius-swatch);border:var(--thickness) solid var(--swatch-border-filled);flex-shrink:0}.swatch.empty{background:repeating-linear-gradient(-45deg,var(--border) 0px,var(--border) 1.2px,transparent 1.2px,transparent 5.6px);border-color:var(--swatch-border-empty)}::-webkit-scrollbar{width:12px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-corner{background:transparent}::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:var(--radius-full);border:2px solid transparent;background-clip:content-box}::-webkit-scrollbar-thumb:hover{background:var(--scrollbar-thumb-hover);background-clip:content-box}.sidePanel{position:relative;flex-shrink:0;height:100%;background:var(--bg);overflow:hidden;transition:width .18s ease;display:flex;flex-direction:column}.sidePanel.resizing{transition:none}.sidePanel--left{border-right:var(--thickness) solid var(--panel-border)}.sidePanel--right{border-left:var(--thickness) solid var(--panel-border)}.sidePanelResize{position:absolute;top:0;bottom:0;width:5px;cursor:ew-resize;z-index:3}.sidePanel--left .sidePanelResize{right:0}.sidePanel--right .sidePanelResize{left:0}.sidePanelResize:after{content:"";position:absolute;top:12px;bottom:12px;width:1px;background:var(--border);opacity:0;transition:opacity .15s}.sidePanel--left .sidePanelResize:after{right:2px}.sidePanel--right .sidePanelResize:after{left:2px}.sidePanelResize:hover:after,.sidePanelResize.dragging:after{opacity:1}.sidePanelHeader{display:flex;align-items:flex-start;gap:var(--gap-m);padding:var(--padding-s) var(--padding-l);flex-shrink:0;background:var(--bg)}.sidePanelBody{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 var(--padding-l)}#resize-handle{position:fixed;bottom:0;right:0;width:20px;height:20px;cursor:ns-resize;z-index:99999;overflow:hidden}#resize-handle svg{position:absolute;bottom:2px;right:2px;opacity:.35;transition:opacity .15s;color:var(--text-muted)}#resize-handle:hover svg{opacity:.8}.hidden{display:none!important}.spinner{width:16px;height:16px;border:var(--thickness) solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:toast-spin .7s linear infinite;flex-shrink:0}.section-label{font-size:var(--s-size);font-weight:var(--s-weight);text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);flex-shrink:0}}{}
+:root{--font-family: Inter;--m-size: 11px;--m-weight: 600;--m-lh: 17.3px;--s-size: 10px;--s-weight: 700;--s-lh: 15.1px;--l-size: 13px;--l-weight: 600;--radius-full: 24px;--radius-modal: var(--radius-full);--radius-swatch: var(--radius-full);--radius-md: 12px;--radius-toast: 24px;--radius-tooltip: 8px;--icon-xsmall: 1.2px;--icon-small: 1.5px;--icon-large: 2px;--thickness: 1.5px;--modal-duration: .28s;--modal-duration-out: .16s;--modal-easing: cubic-bezier(.22, 1, .36, 1);--modal-easing-out: cubic-bezier(.4, 0, .84, .16);--modal-offset: 16px;--neutral-100: #0a0a0a;--neutral-200: #2b2b2b;--neutral-300: #404040;--neutral-400: #595959;--neutral-500: #828282;--neutral-600: #adadad;--neutral-700: #d6d6d6;--neutral-800: #e8e8e8;--neutral-900: #f7f7f7;--neutral-1000: #ffffff;--min-height: 60px;--button-min-height: 24px;--dividerSection-height: 6px;--gap-xs: 2px;--gap-s: 4px;--gap-m: 8px;--gap-l: 12px;--gap-xl: 16px;--padding-xxs: 2px;--padding-xs: 4px;--padding-s: 8px;--padding-m: 12px;--padding-l: 16px;--padding-xl: 24px;--node-background-hover: var(--neutral-900);--node-background-selected: var(--neutral-1000);--node-border-hover: var(--neutral-700);--node-border-selected: var(--neutral-100);--node-border-disabled: var(--neutral-700);--node-label-selected: var(--neutral-200);--node-label-disabled: var(--neutral-400);--node-icon-selected: var(--neutral-400);--node-icon-idle: var(--neutral-600);--node-icon-hover: var(--neutral-400);--node-icon-disabled: var(--neutral-600);--node-border-idle: var(--neutral-800);--node-label-idle: var(--neutral-300);--node-label-hover: var(--neutral-300);--figmaWindowChrome-background: #ffffff;--surface-elevation-high: var(--figmaWindowChrome-background);--bg: var(--neutral-900);--bg-detail: var(--neutral-800);--bg-secondary: var(--neutral-800);--surface: var(--neutral-900);--border: var(--neutral-700);--panel-border: var(--border);--text: var(--neutral-100);--text-secondary: var(--neutral-300);--text-muted: var(--neutral-400);--accent: var(--neutral-100);--node-border-selected-hover: var(--neutral-200);--red: #c20000;--green: #00804b;--yellow: #cf9e00;--semantic-positive: var(--green);--semantic-warning: var(--yellow);--semantic-negative: var(--red);--toast-background-error: var(--semantic-negative);--toast-title-error: var(--neutral-1000);--toast-icon-error: var(--neutral-1000);--buttonTertiary-background: var(--neutral-800);--buttonTertiary-text: var(--neutral-100);--buttonTertiary-background-active: var(--neutral-1000);--buttonTertiary-text-active: var(--neutral-200);--buttonList-background-hover: var(--neutral-1000);--buttonList-background-selected: var(--neutral-1000);--buttonList-iconPrimary: var(--neutral-600);--buttonList-iconSecondary: var(--neutral-300);--buttonList-text: var(--neutral-200);--buttonList-text-hover: var(--neutral-200);--buttonList-text-selected: var(--neutral-200);--buttonSecondary-background: var(--neutral-1000);--buttonSecondary-border: var(--neutral-700);--buttonSecondary-background-hover: var(--neutral-1000);--buttonSecondary-border-hover: var(--neutral-700);--buttonSecondary-text: var(--neutral-200);--buttonQuaternary-text: var(--neutral-400);--buttonQuaternary-background-hover: var(--neutral-1000);--buttonPrimary-background: var(--neutral-200);--buttonPrimary-text: var(--neutral-1000);--swatch-border-filled: var(--buttonSecondary-border);--swatch-border-empty: var(--neutral-700);--input-border: var(--neutral-600);--input-border-focus: var(--neutral-100);--input-border-hover: var(--neutral-500);--input-value-empty: var(--neutral-500);--input-value-disabled: var(--neutral-400);--input-border-disabled: var(--neutral-800);--input-background: var(--surface);--input-value: var(--neutral-100);--input-label: var(--neutral-400);--input-icon: var(--neutral-400);--input-min-width: 80px;--input-auto-border: rgba(0,0,0,.1);--actionbar-background: var(--surface-elevation-high);--actionbar-border: var(--border);--scrollbar-thumb: rgba(0,0,0,.2);--scrollbar-thumb-hover: rgba(0,0,0,.35);--overlay-bg: rgba(242,242,242,.6);--toast-background-success: var(--semantic-positive);--toast-title-success: var(--neutral-1000);--toast-icon-success: var(--neutral-1000);--modal-background: var(--neutral-1000);--modal-title: var(--neutral-100);--tooltipPopover-background: var(--neutral-1000);--tooltipPopover-border: var(--neutral-800);--tooltipPopover-text: var(--neutral-300);--tooltipButton-icon: var(--neutral-400);--hex-sub-color: var(--neutral-300);--overflow-background: var(--neutral-1000);--overflow-border: var(--neutral-800);--overflow-text: var(--neutral-500);--overflowList-background: var(--neutral-1000);--overflowList-background-hover: var(--neutral-1000);--overflowList-border: var(--neutral-800);--overflowList-border-hover: var(--overflowList-border);--overflowList-label: var(--neutral-300);--overflowList-label-hover: var(--neutral-800);--tableRow-text: var(--neutral-200);--tableRow-background-hover: var(--neutral-800);--tableRow-icon: var(--neutral-500);--segmentedControl-background: var(--neutral-900);--segmentedControl-border: var(--neutral-700);--segmentedControl-border-selected: var(--node-border-selected);--segmentedControl-label: var(--neutral-400);--segmentedControl-label-selected: var(--neutral-200);--segmentedControl-icon: var(--neutral-500);--segmentedControl-icon-selected: var(--neutral-200);--segmentedControl-background-selected: var(--neutral-1000);--dividerSection-title: var(--neutral-400);--dividerSection-number: var(--neutral-500);--dividerSection-divider: var(--neutral-600);--badge-neutral: var(--neutral-700);--statusbar-text: var(--neutral-100);--statusbar-icon: var(--neutral-600);--emptyState-title: var(--neutral-100);--emptyState-description: var(--neutral-300);--emptyState-icon-neutral: var(--neutral-600);--radioButton-background: var(--neutral-1000);--radioButton-border: var(--neutral-600);--radioButton-border-selected: var(--neutral-100);--radioButton-text: var(--neutral-300);--radioButton-text-current: var(--neutral-100);--radioButton-description: var(--neutral-400);--radioButton-background-selected: var(--neutral-1000);--radioButton-border-current: var(--neutral-100);--radioButton-border-unselected: var(--neutral-100);--radioButton-text-selected: var(--neutral-100);--radioButton-text-unselected: var(--neutral-200);--checkbox-background: var(--surface);--checkbox-border: var(--neutral-600);--checkbox-background-selected: var(--buttonPrimary-background);--checkbox-border-selected: var(--neutral-100);--checkbox-icon-selected: var(--neutral-1000);--checkbox-text: var(--neutral-300);--checkbox-text-selected: var(--neutral-100);--loader-background: var(--neutral-1000);--loader-spinner: var(--neutral-600);--loader-title: var(--neutral-100);--loader-description: var(--neutral-400)}@media (prefers-color-scheme: dark){:root{--neutral-100: #f5f5f5;--neutral-200: #dbdbdb;--neutral-300: #bfbfbf;--neutral-400: #878787;--neutral-500: #5e5e5e;--neutral-600: #454545;--neutral-700: #303030;--neutral-800: #2b2b2b;--neutral-900: #1f1f1f;--neutral-1000: #171717;--bg-secondary: var(--neutral-900);--surface: var(--neutral-800);--border: var(--neutral-700);--text-muted: var(--neutral-300);--buttonTertiary-background: var(--neutral-900);--buttonTertiary-text: var(--neutral-200);--buttonTertiary-text-active: var(--neutral-100);--buttonQuaternary-text: var(--neutral-300);--buttonSecondary-background: var(--neutral-800);--buttonSecondary-border: var(--neutral-600);--buttonSecondary-background-hover: var(--neutral-700);--buttonSecondary-border-hover: var(--neutral-500);--buttonSecondary-text: var(--neutral-200);--buttonPrimary-background: var(--neutral-100);--swatch-border-filled: var(--buttonSecondary-border);--swatch-border-empty: var(--buttonSecondary-border);--input-border: var(--neutral-500);--input-border-hover: var(--neutral-400);--input-value-empty: var(--neutral-400);--radioButton-text: var(--neutral-200);--checkbox-border: var(--neutral-400);--checkbox-text: var(--neutral-200);--loader-spinner: var(--neutral-400);--input-value-disabled: var(--neutral-100);--input-auto-border: rgba(255,255,255,.08);--figmaWindowChrome-background: #2c2c2c;--scrollbar-thumb: rgba(255,255,255,.2);--scrollbar-thumb-hover: rgba(255,255,255,.4);--overlay-bg: rgba(44,44,44,.6);--node-background-hover: var(--neutral-800);--node-background-selected: var(--neutral-700);--node-border-hover: var(--neutral-600);--node-label-selected: var(--neutral-100);--node-border-disabled: var(--neutral-600);--segmentedControl-label-selected: var(--neutral-100);--segmentedControl-icon: var(--neutral-300);--segmentedControl-icon-selected: var(--neutral-100);--segmentedControl-background-selected: var(--neutral-700);--dividerSection-title: var(--neutral-200);--dividerSection-number: var(--neutral-300);--dividerSection-divider: var(--neutral-500);--statusbar-icon: var(--neutral-400);--tableRow-icon: var(--neutral-400);--overflow-background: var(--neutral-700);--overflow-border: var(--neutral-600);--overflow-text: var(--neutral-300);--overflowList-background: var(--neutral-700);--overflowList-background-hover: var(--neutral-800);--overflowList-border: var(--neutral-600);--overflowList-label: var(--neutral-100);--overflowList-label-hover: var(--neutral-100);--badge-neutral: var(--neutral-300);--emptyState-icon-neutral: var(--neutral-400);--radioButton-border: var(--neutral-400);--radioButton-description: var(--neutral-300);--input-label: var(--neutral-300);--input-icon: var(--neutral-200);--tooltipButton-icon: var(--neutral-300);--node-border-idle: var(--neutral-600);--node-icon-selected: var(--neutral-300);--node-icon-idle: var(--neutral-500);--node-icon-hover: var(--neutral-300);--buttonList-background-hover: var(--neutral-800);--buttonList-background-selected: var(--neutral-700);--buttonList-iconPrimary: var(--neutral-500);--buttonList-iconSecondary: var(--neutral-200);--buttonList-text: var(--neutral-300);--buttonList-text-hover: var(--neutral-100);--buttonList-text-selected: var(--neutral-100);--segmentedControl-background: var(--neutral-800);--segmentedControl-border: var(--neutral-600);--segmentedControl-label: var(--neutral-300);--red: #fe6767;--green: #0cdf88;--yellow: #f7c522;--bg-detail: var(--neutral-1000)}}*{margin:0;padding:0;box-sizing:border-box}html{background:var(--bg)!important;overflow:hidden}body{overflow-x:hidden;font-family:var(--font-family),ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:var(--m-size);font-weight:var(--m-weight);color:var(--text);background:var(--bg);padding:0 var(--padding-l);line-height:var(--m-lh);display:flex;flex-direction:column;height:100vh;overflow:hidden}button{height:var(--button-min-height);padding-top:0;padding-bottom:0;box-sizing:border-box;border:none;outline:none;-webkit-appearance:none;appearance:none;font-family:inherit;cursor:pointer;font-weight:var(--m-weight);transition:background .15s ease,color .15s ease,opacity .15s ease}button:disabled{opacity:.5;cursor:not-allowed;pointer-events:none}.buttonTertiary:disabled:hover,.buttonSecondary:disabled:hover,.buttonPrimary:disabled:hover,.buttonQuaternary:disabled:hover,.overflowList:disabled:hover{background:initial;color:initial;outline:none}.buttonQuaternary:disabled:hover:before{background:transparent}#scan-btn:disabled{opacity:.24}.node{display:flex;align-items:center;gap:var(--gap-s);background:transparent;border:var(--thickness) solid transparent;border-radius:var(--radius-full);padding:0 var(--padding-s);min-height:40px;flex-shrink:0;cursor:pointer;position:relative;box-sizing:border-box;text-align:left;font-family:inherit;font-size:var(--m-size);font-weight:var(--m-weight);color:var(--node-label-idle);transition:border-color .1s,background .1s,color .1s;user-select:text}.node.node-selected{border-color:var(--node-border-selected);background:var(--node-background-selected);color:var(--node-label-selected)}.node:hover{border-color:var(--node-border-hover);background:var(--node-background-hover)}.node.node-selected:hover{border-color:var(--node-border-selected-hover)}.node.node-disabled,.node.node-external,.has-selection .node:not(.node-selected){border-style:dashed;border-color:var(--node-border-disabled);background:transparent;color:var(--node-label-disabled);box-shadow:none}.node.node-disabled{cursor:default;pointer-events:none}.node.node-external{cursor:default}.has-selection .node:not(.node-selected):hover{border-color:var(--node-border-hover)}.node.node-unselected{background:transparent;border-color:var(--node-border-idle);color:var(--node-label-idle)}.node:hover .var-name,.node:hover .node-name{color:var(--node-label-hover)}.node svg{color:var(--node-icon-idle);flex-shrink:0}.node:hover .node-type-icon svg,.node:hover .var-type-icon svg{color:var(--node-icon-hover)}.node.node-selected svg{color:var(--node-icon-selected)}.node.node-unselected svg{color:var(--node-icon-idle)}.node.node-disabled .node-type-icon svg,.node.node-disabled .var-type-icon svg,.node.node-external .node-type-icon svg,.node.node-external .var-type-icon svg,.has-selection .node:not(.node-selected) .node-type-icon svg,.has-selection .node:not(.node-selected) .var-type-icon svg{color:var(--node-icon-disabled)}.node.no-icon .node-type-icon,.node.no-icon .var-type-icon{display:none}.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:32px var(--padding-xl);gap:var(--gap-xl);color:var(--emptyState-title);text-align:center}.empty-state-content{text-align:center}.empty-state-content>*{margin:0}.empty-state-content>*+*{margin-top:16px}.empty-state-content svg,.empty-state svg{display:block;margin:0 auto;width:56px;height:56px;color:var(--emptyState-icon-neutral);stroke-width:2px}.empty-state-content p{max-width:200px;margin:0 auto;font-size:var(--m-size);line-height:1.5;color:var(--emptyState-title)}.empty-state-text{display:flex;flex-direction:column;align-items:center;gap:var(--gap-s)}.empty-state-content .empty-state-title{max-width:200px;margin:0 auto;font-size:var(--m-size);font-weight:var(--m-weight);line-height:var(--m-lh);color:var(--emptyState-title)}.empty-state-content .empty-state-desc{max-width:200px;margin:0 auto;font-size:var(--s-size);font-weight:var(--s-weight);line-height:var(--s-lh);color:var(--text-secondary)}.empty-state-content>svg+.empty-state-text{margin-top:var(--gap-s)}.scroll-area{overflow-y:auto;overflow-x:hidden;min-height:0;margin:0 calc(-1 * var(--padding-l));padding-right:12px}#tt{position:fixed;background:var(--tooltipPopover-background);border:var(--thickness) solid var(--tooltipPopover-border);color:var(--tooltipPopover-text);font-size:var(--s-size);font-weight:var(--s-weight);padding:var(--padding-xs) var(--padding-s);gap:var(--gap-xl);border-radius:var(--radius-tooltip);white-space:pre-wrap;word-break:break-word;max-width:240px;z-index:10002;pointer-events:none;opacity:0;transition:opacity .15s ease;line-height:var(--s-lh)}#tt.tt-visible{opacity:1}.buttonSecondary{display:inline-flex;align-items:center;justify-content:center;background:var(--buttonSecondary-background);border:var(--thickness) solid var(--buttonSecondary-border);border-radius:var(--radius-full);color:var(--buttonSecondary-text);cursor:pointer;flex-shrink:0;font-family:inherit;font-size:var(--m-size);font-weight:var(--m-weight);padding:0 var(--padding-xs);gap:var(--gap-s);transition:border-color .15s ease,color .15s ease}.buttonSecondary:hover{border-color:var(--buttonSecondary-border-hover);color:var(--buttonSecondary-text);background:var(--buttonSecondary-background-hover)}.buttonSecondary svg{order:1}.buttonSecondary span,.buttonQuaternary span{white-space:nowrap;padding:0 var(--padding-xs)}.buttonPrimary:has(svg):not(:has(span)),.buttonSecondary:has(svg):not(:has(span)),.buttonTertiary:has(svg):not(:has(span)),.buttonQuaternary:has(svg):not(:has(span)){width:var(--button-min-height);padding:0}.buttonAddOutput svg{transition:transform .2s ease}.output-picker.picker-open .buttonAddOutput svg{transform:rotate(45deg)}.buttonAddOutput{border-radius:50%;width:var(--button-min-height);height:var(--button-min-height);padding:0;margin-left:0;position:relative}.buttonTertiary{display:inline-flex;align-items:center;justify-content:center;height:var(--button-min-height);padding:0 var(--padding-xs);gap:var(--gap-s);background:var(--buttonTertiary-background);border:var(--thickness) solid var(--buttonTertiary-background);border-radius:var(--radius-full);color:var(--buttonTertiary-text);cursor:pointer;flex-shrink:0;font-size:var(--m-size);font-weight:var(--m-weight);white-space:nowrap;line-height:var(--button-min-height);transition:background .15s ease,color .15s ease}.buttonTertiary:hover{background:var(--buttonTertiary-background-active);color:var(--buttonTertiary-text-active);border-color:var(--buttonTertiary-text-active)}.buttonTertiary svg{display:block;flex-shrink:0;stroke:var(--buttonTertiary-text);transition:stroke .15s ease}.buttonTertiary:hover svg{stroke:var(--buttonTertiary-text-active)}.buttonTertiary span{white-space:nowrap;padding:0 var(--padding-xs)}@media (prefers-color-scheme: dark){.buttonTertiary{color:var(--buttonTertiary-text)}.buttonTertiary svg{stroke:var(--buttonTertiary-text)}.buttonTertiary:hover{color:var(--buttonTertiary-text-active);border-color:var(--buttonTertiary-text-active)}.buttonTertiary:hover svg{stroke:var(--buttonTertiary-text-active)}}.tooltipButton{display:inline-flex;align-items:center;justify-content:center;width:var(--button-min-height);height:var(--button-min-height);flex-shrink:0;padding:0;background:none;border:none;cursor:default;color:var(--tooltipButton-icon)}.tooltipButton svg{color:var(--tooltipButton-icon);display:block}.buttonQuaternary{display:inline-flex;align-items:center;justify-content:center;min-height:var(--button-min-height);padding:0 var(--padding-xs);gap:var(--gap-s);background:transparent;border:none;outline:none;-webkit-appearance:none;appearance:none;border-radius:var(--radius-full);color:var(--buttonQuaternary-text);cursor:pointer;flex-shrink:0;font-family:inherit;font-size:var(--m-size);font-weight:var(--m-weight);white-space:nowrap;position:relative;transition:opacity .15s ease}.buttonQuaternary:before{content:"";position:absolute;inset:0;border-radius:var(--radius-full);background:transparent;transition:background .15s ease;pointer-events:none}.buttonQuaternary>*{position:relative;z-index:1}.buttonQuaternary svg{display:block;flex-shrink:0;stroke:var(--buttonQuaternary-text)}.buttonQuaternary:hover:before{background:var(--buttonQuaternary-background-hover)}.buttonUnpair{width:var(--button-min-height);padding:0;font-size:0}.buttonUnpair:hover{outline:none}.output-picker{position:relative;flex-shrink:0}.output-picker-flyout{position:absolute;left:calc(100% + var(--gap-s));top:50%;transform:translateY(-50%);display:flex;flex-wrap:nowrap;gap:var(--gap-s);align-items:center;pointer-events:none;opacity:0;white-space:nowrap;z-index:10}.output-picker-flyout.open{pointer-events:auto;opacity:1;transition:opacity .1s}.buttonPrimary{display:inline-flex;align-items:center;gap:var(--gap-s);height:var(--button-min-height);padding:0 var(--padding-xs);font-size:var(--m-size);color:var(--buttonPrimary-text);cursor:pointer;white-space:nowrap;background:var(--buttonPrimary-background);border:none;border-radius:var(--radius-full);font-family:inherit;line-height:1;flex-shrink:0;transition:background .15s ease,color .15s ease}.buttonPrimary:hover{opacity:.85}.buttonPrimary svg{display:block;flex-shrink:0}.buttonPrimary span{white-space:nowrap;padding:0 var(--padding-xs)}.actionbar{flex-shrink:0;display:flex;flex-wrap:wrap;align-items:center;align-content:center;gap:var(--gap-m);padding:var(--padding-s) var(--padding-l);margin:0 calc(-1 * var(--padding-l));min-height:40px;background:var(--actionbar-background);border-bottom:var(--thickness) solid var(--actionbar-border)}#rescan-btn,.export-picker{margin-top:0;align-self:center}.buttonRescan{width:var(--button-min-height);height:var(--button-min-height);border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center}.buttonRescan svg{display:block}.inputWrap{display:flex;align-items:center;background:var(--input-background);border:var(--thickness) solid var(--input-border);border-radius:var(--radius-full);padding:0 var(--padding-s);height:var(--button-min-height);gap:var(--gap-s);min-width:var(--input-min-width);transition:border-color .15s ease}.inputWrap:not(.inputWrap--readonly):hover{border-color:var(--input-border-hover)}.inputWrap:not(.inputWrap--readonly):focus-within{border-color:var(--input-border-focus)!important}.inputWrap.inputWrap--readonly{background:transparent;border-color:var(--input-auto-border);pointer-events:none;opacity:.8}.inputWrap.inputWrap--disabled{border-color:var(--input-border-disabled);pointer-events:none;opacity:.5}.inputWrap.inputWrap--disabled .inputField{color:var(--input-value-disabled)}.inputField{background:transparent;border:none;color:var(--input-value);font-family:inherit;font-size:var(--m-size);font-weight:var(--m-weight);padding:0 4px;flex:1;min-width:0;outline:none}.inputField::placeholder{color:var(--input-value-empty)}.inputField:-webkit-autofill,.inputField:-webkit-autofill:hover,.inputField:-webkit-autofill:focus{-webkit-box-shadow:0 0 0px 1000px var(--input-background) inset;-webkit-text-fill-color:var(--text);transition:background-color 9999s ease-in-out 0s}.inputWrap .inputLabel{font-size:var(--m-size);font-weight:var(--m-weight);color:var(--input-label);user-select:none;pointer-events:none;white-space:nowrap;flex-shrink:0;line-height:1}.inputWrap svg{color:var(--input-icon);flex-shrink:0}.inputWrap .icon-right{order:3}.inputWrap.no-icon-left .icon-left,.inputWrap.no-icon-right .icon-right{display:none}.inputWrap.empty{background:transparent}.inputWrap.no-value .inputField{display:none}#progress-container{position:fixed;inset:0;z-index:9997;display:flex;align-items:center;justify-content:center;pointer-events:none}#progress-container:not(:empty){background:var(--overlay-bg);backdrop-filter:blur(4px);pointer-events:none}#progress-container .progress-msg{animation:none}#toast-container:not(:empty){position:fixed;bottom:var(--padding-xl);left:50%;transform:translate(-50%);z-index:9998;display:flex;flex-direction:column;align-items:center;gap:var(--gap-m);pointer-events:none;white-space:nowrap}.progress-msg{background:var(--loader-background);color:var(--loader-title);height:48px;padding:var(--padding-s) var(--padding-m);flex-shrink:0;font-size:var(--m-size);font-weight:var(--m-weight);display:inline-flex;align-items:center;gap:var(--gap-xl);border-radius:var(--radius-toast);white-space:nowrap;pointer-events:auto;animation:modal-in var(--modal-duration) var(--modal-easing) both}.progress-msg.progress-out{animation:modal-out var(--modal-duration) var(--modal-easing-out) forwards}.progress-msg button{flex-shrink:0}.progress-msg--scan{align-items:center;transition:transform .3s cubic-bezier(.4,0,.2,1) .35s}.progress-msg--scan.has-eta{transform:translateY(-8px)}.scan-info{display:flex;flex-direction:column;gap:var(--gap-xs);justify-content:center}.scan-label{display:flex;align-items:center;gap:var(--gap-s);font-size:var(--m-size);font-weight:var(--m-weight);line-height:1.3;white-space:nowrap}.scan-pct{display:inline-block;text-align:right;max-width:0;overflow:hidden;opacity:0;transition:max-width .25s ease,opacity .2s ease .05s}.scan-pct.pct-visible{max-width:32px;opacity:1}.scan-eta{font-size:var(--m-size);line-height:1.3;max-height:0;opacity:0;overflow:hidden;transition:max-height .01s,opacity .3s ease}.progress-msg--scan.has-eta .scan-eta{max-height:2em;opacity:.6}.segmented-control{display:inline-flex;gap:0;padding:0;background:var(--segmentedControl-background);border:var(--thickness) solid var(--segmentedControl-border);border-radius:var(--radius-full);flex-shrink:0;position:relative}.seg-pill{position:absolute;top:0;bottom:0;left:0;width:0;border-radius:var(--radius-full);background:var(--segmentedControl-background-selected);border:var(--thickness) solid var(--segmentedControl-border-selected);pointer-events:none;z-index:0;transition:left .22s cubic-bezier(.4,0,.2,1),width .22s cubic-bezier(.4,0,.2,1)}.segmented-control button{display:inline-flex;align-items:center;justify-content:center;container-type:inline-size;gap:var(--gap-xs);padding:var(--padding-xxs) var(--padding-m);height:var(--button-min-height);background:transparent;border:var(--thickness) solid transparent;position:relative;z-index:1;border-radius:var(--radius-full);color:var(--segmentedControl-label);cursor:pointer;font-family:inherit;font-size:var(--s-size);font-weight:var(--s-weight);white-space:nowrap;transition:background .18s ease,border-color .18s ease,color .18s ease;flex-shrink:0}.segmented-control button:hover:not(.selected){color:var(--text)}.segmented-control button .tab-label{max-width:120px;opacity:1;overflow:hidden;white-space:nowrap;transition:max-width .22s cubic-bezier(.4,0,.2,1),opacity .18s ease;display:inline-block;vertical-align:middle}.segmented-control button.selected{gap:var(--gap-xs);overflow:clip;background:var(--segmentedControl-background-selected);border-color:var(--segmentedControl-border-selected);color:var(--segmentedControl-label-selected)}.segmented-control.has-pill button.selected{background:transparent;border-color:transparent}.segmented-control button.selected .tab-label{max-width:120px;opacity:1}@container (max-width: 72px){.tab-label{max-width:0!important;opacity:0!important}}.segmented-control svg{width:16px;height:16px;flex-shrink:0;color:var(--segmentedControl-icon)}.segmented-control button.selected svg{color:var(--segmentedControl-icon-selected)}.segmented-control button.no-icon svg{display:none}.segmented-control.full-width{width:100%}.segmented-control.full-width button{flex:1 1 0;min-width:0;width:0}.checkbox{display:inline-flex;align-items:center;gap:var(--gap-m);cursor:pointer;user-select:none}.checkbox-input{position:absolute;width:1px;height:1px;opacity:0;margin:0;pointer-events:none}.checkbox-box{flex-shrink:0;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;background:var(--checkbox-background);border:var(--thickness) solid var(--checkbox-border);border-radius:2px;transition:background .12s ease,border-color .12s ease,border-radius .12s ease}.checkbox-check{width:16px;height:16px;color:var(--checkbox-icon-selected);opacity:0;transform:scale(.5);transition:opacity .12s ease,transform .12s ease}.checkbox-input:checked+.checkbox-box{background:var(--checkbox-background-selected);border-color:var(--checkbox-border-selected);border-radius:4px}.checkbox-input:checked+.checkbox-box .checkbox-check{opacity:1;transform:scale(1)}.checkbox-text{font-size:var(--m-size);font-weight:var(--m-weight);line-height:var(--m-lh);color:var(--checkbox-text)}.checkbox-input:checked~.checkbox-text{color:var(--checkbox-text-selected)}.checkbox-input:focus-visible+.checkbox-box{outline:var(--thickness) solid var(--input-border-focus);outline-offset:1px}.seg-status{width:var(--dividerSection-height);height:var(--dividerSection-height);border-radius:var(--radius-full);background:currentColor;flex-shrink:0}.segmented-control button.no-status .seg-status{display:none}.seg-number{font-size:var(--s-size);font-weight:var(--s-weight);flex-shrink:0}.segmented-control button.no-number .seg-number{display:none}.badge{display:inline-flex;align-items:center;align-self:flex-start;gap:var(--gap-s);padding:var(--padding-xxs) var(--padding-s);border-radius:var(--radius-full);font-size:var(--s-size);font-weight:var(--s-weight);flex-shrink:0;white-space:nowrap}.badge.none{background:color-mix(in srgb,var(--badge-neutral) 12%,transparent);color:var(--badge-neutral)}.badge.high{background:color-mix(in srgb,var(--semantic-negative) 12%,transparent);color:var(--semantic-negative)}.badge.medium{background:color-mix(in srgb,var(--semantic-warning) 15%,transparent);color:var(--semantic-warning)}.badge.low{background:color-mix(in srgb,var(--semantic-positive) 12%,transparent);color:var(--semantic-positive)}.badge.clipped,.badge.truncated,.badge.overflow{background:color-mix(in srgb,var(--semantic-negative) 12%,transparent);color:var(--semantic-negative)}.badge svg{flex-shrink:0}.badge.no-icon svg{display:none}.badge.no-label .badge-label{display:none}.overflow{display:flex;flex-direction:column;background:var(--overflow-background);border:var(--thickness) solid var(--overflow-border);border-radius:var(--radius-md);padding:var(--padding-xs) 0;overflow:clip}.overflow-label{font-size:var(--s-size);font-weight:var(--s-weight);color:var(--overflow-text);padding:var(--padding-xs) var(--padding-s);white-space:nowrap}.overflowList{display:flex;align-items:center;width:100%;text-align:left;background:var(--overflowList-background);border:var(--thickness) solid var(--overflowList-border);padding:0 var(--padding-s);gap:var(--gap-s);flex-shrink:0;height:32px;font-family:inherit;font-size:var(--m-size);font-weight:var(--m-weight);color:var(--overflowList-label);cursor:pointer;white-space:nowrap;transition:background .1s ease,color .1s ease}.overflowList:hover{background:var(--overflowList-background-hover);color:var(--overflowList-label-hover);border-color:var(--overflowList-border-hover)}.buttonList{display:flex;align-items:center;gap:var(--gap-s);width:100%;text-align:left;background:transparent;border-bottom:var(--thickness) solid var(--border);padding:0 var(--padding-xs);height:40px;flex-shrink:0;font-family:inherit;font-size:var(--m-size);font-weight:var(--m-weight);color:var(--buttonList-text);cursor:pointer;position:relative;transition:color .1s ease}.buttonList:before{content:"";position:absolute;inset:4px 0;border-radius:var(--radius-full);background:transparent;transition:background .1s ease;pointer-events:none}.buttonList>*{position:relative;z-index:1}.buttonList svg{color:var(--buttonList-iconPrimary);flex-shrink:0}.buttonList:hover:before{background:var(--buttonList-background-hover)}.buttonList:hover,.buttonList.hovered{color:var(--buttonList-text-hover);padding-right:var(--padding-s)}.buttonList:hover svg{color:var(--buttonList-iconPrimary)}.buttonList.hovered svg{color:var(--buttonList-iconPrimary)}.buttonList.selected:before{background:var(--buttonList-background-selected)}.buttonList.selected{color:var(--buttonList-text-selected);padding-right:var(--padding-s)}.buttonList.selected svg{color:var(--buttonList-iconPrimary)}.buttonList .tooltipButton svg,.buttonList:hover .tooltipButton svg,.buttonList.hovered .tooltipButton svg,.buttonList.selected .tooltipButton svg{color:var(--tooltipButton-icon)}.buttonList-arrow{display:none;flex-shrink:0;color:var(--buttonList-iconSecondary)}.buttonList.selected .buttonList-arrow,.buttonList:hover .buttonList-arrow,.buttonList.hovered .buttonList-arrow{display:block;color:var(--buttonList-iconSecondary)}.buttonList-action{display:none}.buttonList:not(.selected):hover .buttonList-action,.buttonList:not(.selected).hovered .buttonList-action{display:inline-flex;align-items:center;justify-content:center;margin-right:var(--gap-s)}.buttonList:not(.selected):hover .buttonList-action svg,.buttonList:not(.selected).hovered .buttonList-action svg{color:var(--buttonTertiary-text)}.buttonList.no-button .buttonList-action{display:none}.tableRow{display:flex;align-items:center;gap:var(--gap-m);min-height:32px;width:100%;padding:0;flex-shrink:0;background:transparent;border:none;color:var(--tableRow-text);font-family:inherit;font-size:var(--s-size);font-weight:var(--s-weight);text-align:left;cursor:pointer;position:relative;transition:background .1s}.tableRow svg{color:var(--tableRow-icon);flex-shrink:0}.tableRow:not(.selected):hover,.tableRow:not(.selected).hovered{background:var(--tableRow-background-hover)}.tableRow.selected,.tableRow.selected:hover{background:var(--buttonList-background-selected)}.dividerLine{height:1px;background:var(--border);flex-shrink:0;margin:0}.actionbar+.dividerLine{margin:0 calc(-1 * var(--padding-l));background:var(--border)}.dividerSection{display:flex;align-items:center;gap:var(--gap-m);padding:var(--padding-l) 0 var(--padding-xs);font-size:var(--s-size);font-weight:var(--s-weight);line-height:var(--s-lh);color:var(--dividerSection-title);flex-shrink:0;position:sticky;top:0;z-index:2;background:var(--bg)}.dividerSection-content{display:flex;align-items:center;gap:var(--gap-s);padding:var(--padding-xs) 0;min-width:0}.dividerSection-action{flex-shrink:0}.dividerSection .count{letter-spacing:normal;text-transform:none;color:var(--dividerSection-number)}.dividerSection .div-sep{color:var(--dividerSection-divider)}.dividerSection.no-priority .tier-dot,.dividerSection.no-number .count,.dividerSection.no-number .div-sep{display:none}.tier-dot{width:var(--dividerSection-height);height:var(--dividerSection-height);border-radius:50%;flex-shrink:0}.tier-dot.low{background:var(--semantic-positive)}.tier-dot.medium{background:var(--semantic-warning)}.tier-dot.high{background:var(--semantic-negative)}.tier-dot.none{background:var(--badge-neutral);opacity:.45}.segmented-control button.tab-empty{opacity:.35;cursor:default;pointer-events:none}.toast{background:var(--toast-background-success);color:var(--toast-title-success);height:32px;padding:var(--padding-s) var(--padding-m);font-size:var(--m-size);font-weight:var(--m-weight);display:inline-flex;align-items:center;justify-content:center;gap:var(--gap-s);border-radius:var(--radius-toast);white-space:nowrap;pointer-events:auto;animation:toast-in .22s cubic-bezier(.16,.84,.44,1);z-index:9999}.toast.toast-out{animation:toast-out .22s cubic-bezier(.4,0,.84,.16) forwards}.toast-icon{color:var(--loader-spinner);display:inline-flex;flex-shrink:0}.toast .toast-icon{color:var(--toast-icon-success)}.toast.toast-error{background:var(--toast-background-error);color:var(--toast-title-error)}.toast.toast-error .toast-icon{color:var(--toast-icon-error)}.toast-description{font-size:var(--m-size);color:var(--loader-description);opacity:.85;white-space:nowrap}@keyframes toast-in{0%{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes toast-out{0%{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(8px)}}@keyframes modal-in{0%{opacity:0;transform:translateY(var(--modal-offset))}to{opacity:1;transform:translateY(0)}}@keyframes modal-out{0%{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(var(--modal-offset))}}@keyframes modal-bg-in{0%{opacity:0}to{opacity:1}}@keyframes modal-bg-out{0%{opacity:1}to{opacity:0}}.modal{display:none;position:fixed;inset:0;align-items:center;justify-content:center;z-index:10000}.modal.is-open{display:flex}.modal-overlay{position:absolute;inset:0;background:var(--overlay-bg);backdrop-filter:blur(4px);animation:modal-bg-in var(--modal-duration) var(--modal-easing) both}.modal.is-closing .modal-overlay{animation:modal-bg-out var(--modal-duration-out) var(--modal-easing-out) both}.modal-card{position:relative;z-index:10001;display:flex;flex-direction:column;gap:var(--gap-xl);padding:var(--padding-l);background:var(--modal-background);border-radius:var(--radius-modal);max-width:calc(100% - 2 * var(--padding-l));animation:modal-in var(--modal-duration) var(--modal-easing) both}.modal.is-closing .modal-card{animation:modal-out var(--modal-duration-out) var(--modal-easing-out) both}.modal-card h2,.modal-title{margin:0;font-size:var(--l-size);font-weight:var(--m-weight);color:var(--modal-title)}.modal-slot{display:flex;flex-direction:column;gap:var(--gap-l);width:100%}.modal-footer{display:flex;flex-direction:row;gap:var(--gap-m);width:100%}.modal-footer button{flex:1;justify-content:center}#toast-overlay{position:fixed;inset:0;z-index:9996;background:var(--overlay-bg);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .2s ease}#toast-overlay.visible{opacity:1;pointer-events:auto}.toast-spinner{width:14px;height:14px;border:var(--thickness) solid currentColor;border-top-color:transparent;border-radius:50%;opacity:.7;animation:toast-spin .8s linear infinite;display:inline-block;flex-shrink:0}@keyframes toast-spin{to{transform:rotate(360deg)}}.toast-content{display:flex;align-items:center;gap:var(--gap-m)}.loader{display:inline-flex;align-items:center;gap:var(--gap-xl);padding:var(--padding-s) var(--padding-m);background:var(--loader-background);border-radius:var(--radius-full);flex-shrink:0}.loader-content{display:flex;align-items:center;gap:var(--gap-m)}.loader-spinner{width:14px;height:14px;flex-shrink:0;border:var(--thickness) solid var(--loader-spinner);border-top-color:transparent;border-radius:50%;animation:toast-spin .8s linear infinite;display:inline-block}.loader-text{display:flex;flex-direction:column}.loader-title{font-size:var(--m-size);font-weight:var(--m-weight);line-height:var(--m-lh);color:var(--loader-title)}.loader-description{font-size:var(--s-size);font-weight:var(--s-weight);line-height:var(--s-lh);color:var(--loader-description)}.statusBar{height:56px;display:flex;align-items:center;padding:0 var(--padding-l);gap:var(--gap-m);border-bottom:var(--thickness) solid var(--border);flex-shrink:0}.statusBar-title{display:flex;align-items:center;gap:var(--gap-s);min-width:0}.swatch{width:var(--button-min-height);height:var(--button-min-height);border-radius:var(--radius-swatch);border:var(--thickness) solid var(--swatch-border-filled);flex-shrink:0}.swatch.empty{background:repeating-linear-gradient(-45deg,var(--border) 0px,var(--border) 1.2px,transparent 1.2px,transparent 5.6px);border-color:var(--swatch-border-empty)}::-webkit-scrollbar{width:12px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-corner{background:transparent}::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:var(--radius-full);border:2px solid transparent;background-clip:content-box}::-webkit-scrollbar-thumb:hover{background:var(--scrollbar-thumb-hover);background-clip:content-box}.sidePanel{position:relative;flex-shrink:0;height:100%;background:var(--bg);overflow:hidden;transition:width .18s ease;display:flex;flex-direction:column}.sidePanel.resizing{transition:none}.sidePanel--left{border-right:var(--thickness) solid var(--panel-border)}.sidePanel--right{border-left:var(--thickness) solid var(--panel-border)}.sidePanelResize{position:absolute;top:0;bottom:0;width:5px;cursor:ew-resize;z-index:3}.sidePanel--left .sidePanelResize{right:0}.sidePanel--right .sidePanelResize{left:0}.sidePanelResize:after{content:"";position:absolute;top:12px;bottom:12px;width:1px;background:var(--border);opacity:0;transition:opacity .15s}.sidePanel--left .sidePanelResize:after{right:2px}.sidePanel--right .sidePanelResize:after{left:2px}.sidePanelResize:hover:after,.sidePanelResize.dragging:after{opacity:1}.sidePanelHeader{display:flex;align-items:flex-start;gap:var(--gap-m);padding:var(--padding-s) var(--padding-l);flex-shrink:0;background:var(--bg)}.sidePanelBody{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 var(--padding-l)}#resize-handle{position:fixed;bottom:0;right:0;width:20px;height:20px;cursor:ns-resize;z-index:99999;overflow:hidden}#resize-handle svg{position:absolute;bottom:2px;right:2px;opacity:.35;transition:opacity .15s;color:var(--text-muted)}#resize-handle:hover svg{opacity:.8}.hidden{display:none!important}.spinner{width:16px;height:16px;border:var(--thickness) solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:toast-spin .7s linear infinite;flex-shrink:0}.section-label{font-size:var(--s-size);font-weight:var(--s-weight);text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);flex-shrink:0}}{}
 
 </style>
 <style>
@@ -302,7 +302,7 @@
   }
   /* ── Export modal fields (in the shared DS modal slot) ── */
   .export-modal-card { width: 300px; }
-  .export-field { display: flex; flex-direction: column; gap: var(--gap-s); width: 100%; }
+  .export-field { display: flex; flex-direction: column; gap: var(--gap-l); width: 100%; }
   .export-format-desc {
     font-size: var(--s-size); font-weight: var(--s-weight);
     color: var(--text-secondary);
@@ -320,8 +320,11 @@
     white-space: nowrap;
     user-select: none;
   }
-  /* Both apply to the vector PDF only — dimmed and inert for TIFF. */
-  .export-print.is-disabled { opacity: 0.4; pointer-events: none; }
+  /* The per-format wrappers carry no box of their own — display:contents lets their
+     rows sit directly in the slot and inherit its spacing, so the wrapper doesn't
+     change the rhythm. Only the active format's rows are shown. */
+  #pdf-options, #tiff-options { display: contents; }
+  #pdf-options[hidden], #tiff-options[hidden] { display: none; }
   .export-bleed-row { display: flex; align-items: center; gap: var(--gap-m); }
   /* DS input (.inputWrap + .inputField), sized to content. Only the compact width,
      right-aligned value, and spinner removal are added here. */
@@ -336,7 +339,23 @@
   }
   .cropmarks-bleed-input::-webkit-inner-spin-button,
   .cropmarks-bleed-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  #dpi-input, #tiff-dpi-input { width: 5ch; }   /* room for a 4-digit dpi (e.g. 1200) */
   .cropmarks-unit { color: var(--input-label); font-size: var(--s-size); }
+  /* ── Pre-flight lists (output size + low-res images) ── */
+  .preflight-section { display: flex; flex-direction: column; gap: var(--gap-xs); width: 100%; }
+  /* Author display beats the UA [hidden] rule — restore it so an empty section (no
+     artworks, or no images below target) shows nothing at all, not a stray header. */
+  .preflight-section[hidden] { display: none; }
+  .preflight-header { font-size: var(--s-size); font-weight: var(--s-weight); color: var(--input-label); }
+  .preflight-list { display: flex; flex-direction: column; max-height: 132px; overflow-y: auto; }
+  .preflight-row {
+    display: flex; align-items: center; gap: var(--gap-s);
+    height: 32px; padding: 0 var(--padding-xs);
+    border-bottom: var(--thickness) solid var(--border);
+  }
+  .preflight-row .pf-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--m-size); }
+  .preflight-row .pf-meta { flex-shrink: 0; color: var(--text-secondary); font-size: var(--s-size); white-space: nowrap; }
+  .preflight-focus-btn { flex-shrink: 0; }   /* buttonTertiary icon button — "Focus in canvas" */
 </style>
 </head>
 <body>
@@ -390,33 +409,67 @@
     <div class="modal-slot">
       <div class="export-field">
         <div class="segmented-control full-width" id="export-format">
+          <div class="seg-pill"></div>
           <button type="button" id="format-pdf" class="selected"><span class="tab-label">PDF</span></button>
           <button type="button" id="format-tiff"><span class="tab-label">TIFF</span></button>
         </div>
         <span class="export-format-desc" id="export-format-desc"></span>
       </div>
       <div class="export-print" id="export-print">
-        <label class="checkbox">
-          <input type="checkbox" id="cropmarks-toggle" class="checkbox-input">
-          <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
-          <span class="checkbox-text">Add crop marks</span>
-        </label>
-        <div class="export-bleed-row">
+        <!-- PDF print options: crop marks, bleed and image downsampling -->
+        <div id="pdf-options">
           <label class="checkbox">
-            <input type="checkbox" id="bleed-toggle" class="checkbox-input">
+            <input type="checkbox" id="cropmarks-toggle" class="checkbox-input">
             <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
-            <span class="checkbox-text">Bleed</span>
+            <span class="checkbox-text">Crop marks</span>
           </label>
-          <div class="inputWrap cropmarks-bleed" id="bleed-wrap">
-            <input type="number" id="bleed-input" class="inputField cropmarks-bleed-input" min="0" max="20" step="0.5" value="3" aria-label="Bleed in millimetres">
-            <span class="cropmarks-unit">mm</span>
+          <div class="export-bleed-row">
+            <label class="checkbox">
+              <input type="checkbox" id="bleed-toggle" class="checkbox-input">
+              <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
+              <span class="checkbox-text">Bleed</span>
+            </label>
+            <div class="inputWrap cropmarks-bleed" id="bleed-wrap">
+              <input type="number" id="bleed-input" class="inputField cropmarks-bleed-input" min="0" max="20" step="0.5" value="3" aria-label="Bleed in millimetres">
+              <span class="cropmarks-unit">mm</span>
+            </div>
+          </div>
+          <label class="checkbox">
+            <input type="checkbox" id="regmarks-toggle" class="checkbox-input">
+            <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
+            <span class="checkbox-text">Registration marks</span>
+          </label>
+          <label class="checkbox">
+            <input type="checkbox" id="pageinfo-toggle" class="checkbox-input">
+            <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
+            <span class="checkbox-text">Page information</span>
+          </label>
+          <div class="export-bleed-row">
+            <label class="checkbox">
+              <input type="checkbox" id="downsample-toggle" class="checkbox-input">
+              <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
+              <span class="checkbox-text">Downsample images to</span>
+            </label>
+            <div class="inputWrap cropmarks-bleed" id="dpi-wrap">
+              <input type="number" id="dpi-input" class="inputField cropmarks-bleed-input" min="72" max="1200" step="10" value="300" aria-label="Target resolution in DPI">
+              <span class="cropmarks-unit">dpi</span>
+            </div>
+          </div>
+          <div class="preflight-section" id="preflight-images-section" hidden>
+            <span class="preflight-header" id="preflight-images-header">Images under target dpi:</span>
+            <div class="preflight-list" id="preflight-images"></div>
           </div>
         </div>
-        <label class="checkbox">
-          <input type="checkbox" id="downsample-toggle" class="checkbox-input">
-          <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
-          <span class="checkbox-text">Downsample images to 300 DPI</span>
-        </label>
+        <!-- TIFF is a raster export: crop marks and bleed don't apply — only the resolution -->
+        <div id="tiff-options" hidden>
+          <div class="export-bleed-row">
+            <span class="checkbox-text export-res-label">Resolution</span>
+            <div class="inputWrap cropmarks-bleed" id="tiff-dpi-wrap">
+              <input type="number" id="tiff-dpi-input" class="inputField cropmarks-bleed-input" min="72" max="1200" step="10" value="300" aria-label="Export resolution in DPI">
+              <span class="cropmarks-unit">dpi</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -498,9 +551,13 @@
   let _singleFileHandle = null; // one-shot handle from showSaveFilePicker (single file)
   let _pendingFiles = [];       // accumulates files for ZIP when FSA is unavailable (multi-file)
   let _cropMarks = false;       // add crop/trim marks to the CMYK PDF (print) — off by default
+  let _regMarks = false;        // add registration (plate-alignment) targets — off by default
+  let _pageInfo = false;        // print the file name + timestamp in the slug — off by default
   let _bleedOn = false;         // add a bleed margin around the trim — off by default
   let _bleedMm = 3;             // configurable bleed amount, in millimetres (used only when _bleedOn)
-  let _downsample = false;      // downsample embedded images to 300 DPI on PDF export — off by default
+  let _downsample = false;      // downsample embedded images on PDF export — off by default
+  let _downsampleDpi = 300;     // target resolution for downsampling, in DPI (used only when _downsample)
+  let _tiffDpi = 300;           // TIFF raster export resolution, in DPI
 
   // ── Minimal ZIP builder (store/no-compression) for multi-file fallback ──
   function _buildZip(files) {
@@ -1208,6 +1265,143 @@
     return { allImg, imgNums, imgCsRefs };
   }
 
+  // Concatenate two PDF affine matrices [a b c d e f] (row-vector convention:
+  // the result applies `a` first, then `b`). Used to track the CTM while walking a
+  // content stream so we can recover each image's on-page size.
+  function matMul(a, b) {
+    return [
+      a[0]*b[0] + a[1]*b[2],
+      a[0]*b[1] + a[1]*b[3],
+      a[2]*b[0] + a[3]*b[2],
+      a[2]*b[1] + a[3]*b[3],
+      a[4]*b[0] + a[5]*b[2] + b[4],
+      a[4]*b[1] + a[5]*b[3] + b[5],
+    ];
+  }
+
+  // Walk a content stream, tracking the graphics-state matrix (q/Q stack + cm), and
+  // record the on-page size of each drawn image XObject. An image is painted over the
+  // unit square, so at a `/Name Do` the CTM's basis vectors give its width/height in
+  // points: wPt = |(a,b)|, hPt = |(c,d)|. `nameToImg` maps XObject names → object
+  // numbers; `sizes` is filled with the LARGEST placement seen per object.
+  function scanContentForImageSizes(txt, nameToImg, sizes) {
+    const re = /(\/[A-Za-z0-9._#+-]+)|(-?\d*\.?\d+)|([A-Za-z*'"]+)/g;
+    let ctm = [1,0,0,1,0,0]; const stack = []; let ops = []; let name = null; let m;
+    while ((m = re.exec(txt)) !== null) {
+      if (m[1]) { name = m[1].slice(1); continue; }        // /Name — an operand
+      if (m[2]) { ops.push(parseFloat(m[2])); continue; }  // number — an operand
+      const op = m[3];                                     // operator — acts, then clears operands
+      if (op === 'q') stack.push(ctm.slice());
+      else if (op === 'Q') { if (stack.length) ctm = stack.pop(); }
+      else if (op === 'cm' && ops.length >= 6) ctm = matMul(ops.slice(-6), ctm);
+      else if (op === 'Do' && name && nameToImg[name] != null) {
+        const num = nameToImg[name];
+        const wPt = Math.hypot(ctm[0], ctm[1]), hPt = Math.hypot(ctm[2], ctm[3]);
+        const cur = sizes[num];
+        if (!cur || wPt*hPt > cur.wPt*cur.hPt) sizes[num] = { wPt, hPt };
+      }
+      ops = []; name = null;
+    }
+  }
+
+  // Compute the on-page size (in points) of every image XObject, so downsampling can
+  // work out each image's true DPI. Maps XObject names → object numbers from every
+  // /XObject resource dict, then walks each page's content stream(s). Returns
+  // { objNum: {wPt, hPt} }; images whose placement can't be found are simply absent
+  // (the caller then leaves them at full resolution rather than guessing).
+  async function imageDisplaySizes(objs, allImg) {
+    const bs = (u) => { let s = ''; for (let i = 0; i < u.length; i++) s += String.fromCharCode(u[i]); return s; };
+    const sizes = {}, nameToImg = {};
+    for (const o of Object.values(objs)) {
+      const t = o.type === 'plain' ? (o.body || '') : o.dict;
+      const xo = t.match(/\/XObject\s*<<([^>]*)>>/);
+      if (!xo) continue;
+      let mm; const nr = /\/([A-Za-z0-9._#+-]+)\s+(\d+)\s+0\s+R/g;
+      while ((mm = nr.exec(xo[1])) !== null) if (allImg.has(+mm[2])) nameToImg[mm[1]] = +mm[2];
+    }
+    if (!Object.keys(nameToImg).length) return sizes;
+    const contentNums = new Set();
+    for (const o of Object.values(objs)) {
+      const body = o.type === 'plain' ? (o.body || '') : '';
+      if (!/\/Type\s*\/Page\b/.test(body) || /\/Type\s*\/Pages\b/.test(body)) continue;
+      const arr = body.match(/\/Contents\s*\[([^\]]*)\]/);
+      const single = body.match(/\/Contents\s+(\d+)\s+0\s+R/);
+      if (arr) { let mm; const rr=/(\d+)\s+0\s+R/g; while ((mm=rr.exec(arr[1]))!==null) contentNums.add(+mm[1]); }
+      else if (single) contentNums.add(+single[1]);
+    }
+    for (const cn of contentNums) {
+      const o = objs[cn]; if (!o || o.type !== 'stream') continue;
+      let txt;
+      try { txt = o.isFlate ? bs(await inflateBuf(o.streamRaw)) : bs(o.streamRaw); }
+      catch (e) { continue; }
+      scanContentForImageSizes(txt, nameToImg, sizes);
+    }
+    return sizes;
+  }
+
+  // Nearest-neighbour downsample of an RGBA buffer (fallback for raw FlateDecode
+  // pixel images; the DCTDecode path re-decodes at the target size via canvas, which
+  // resamples with smoothing). Only ever called to shrink, never to enlarge.
+  function resizeRgbaNearest(rgba, w, h, tw, th) {
+    const out = new Uint8Array(tw * th * 4);
+    for (let y = 0; y < th; y++) {
+      const sy = Math.min(h - 1, Math.floor((y * h) / th));
+      for (let x = 0; x < tw; x++) {
+        const sx = Math.min(w - 1, Math.floor((x * w) / tw));
+        const si = (sy * w + sx) * 4, di = (y * tw + x) * 4;
+        out[di] = rgba[si]; out[di+1] = rgba[si+1]; out[di+2] = rgba[si+2]; out[di+3] = rgba[si+3];
+      }
+    }
+    return out;
+  }
+
+  // Nearest-neighbour downsample of a single-channel (grey) buffer.
+  function resizeGrayNearest(g, w, h, tw, th) {
+    const out = new Uint8Array(tw * th);
+    for (let y = 0; y < th; y++) {
+      const sy = Math.min(h - 1, Math.floor((y * h) / th));
+      for (let x = 0; x < tw; x++) {
+        const sx = Math.min(w - 1, Math.floor((x * w) / tw));
+        out[y * tw + x] = g[sy * w + sx];
+      }
+    }
+    return out;
+  }
+
+  // Downsample a soft-mask image (the DeviceGray /SMask of a base image) to tw×th so it
+  // stays the same size as the base after the base is downsampled. A base/mask size
+  // mismatch makes Illustrator mis-scale the mask — the image then renders half-clipped
+  // or vanishes. Re-encodes the mask as FlateDecode grey and rewrites /Width /Height /
+  // Length. Returns false (leaving the mask untouched) if it can't be decoded, so the
+  // caller can keep the base at full size and preserve the match.
+  async function downsampleGrayImage(obj, tw, th) {
+    if (!obj || obj.type !== 'stream') return false;
+    const wm = obj.dict.match(/\/Width\s+(\d+)/), hm = obj.dict.match(/\/Height\s+(\d+)/);
+    if (!wm || !hm) return false;
+    const w = parseInt(wm[1]), h = parseInt(hm[1]); if (!w || !h) return false;
+    if (tw >= w && th >= h) return true;   // already no larger than the target
+    let gray = null;
+    try {
+      if (/\/DCTDecode\b/.test(obj.dict)) {
+        const rgba = await decodeImageToRgba(obj.streamRaw, tw, th, 'image/jpeg');
+        gray = new Uint8Array(tw * th);
+        for (let i = 0, j = 0; i < gray.length; i++, j += 4) gray[i] = rgba[j];
+      } else if (obj.isFlate) {
+        const d = await inflateBuf(obj.streamRaw);
+        if (d.length === w * h) gray = resizeGrayNearest(d, w, h, tw, th);
+        else if (d.length === w * h * 4) { const g0 = new Uint8Array(w * h); for (let i = 0, j = 0; i < g0.length; i++, j += 4) g0[i] = d[j]; gray = resizeGrayNearest(g0, w, h, tw, th); }
+      }
+    } catch (e) { gray = null; }
+    if (!gray) return false;
+    obj.streamRaw = await deflateBuf(gray);
+    obj.dict = obj.dict.replace(/\/Width\s+\d+/, '/Width ' + tw);
+    obj.dict = obj.dict.replace(/\/Height\s+\d+/, '/Height ' + th);
+    obj.dict = obj.dict.replace(/\/Filter\s*(\/\w+|\[[^\]]*\])/, '/Filter /FlateDecode');
+    obj.dict = obj.dict.replace(/\/DecodeParms\s*(<<[\s\S]*?>>|\[[^\]]*\]|\d+\s+0\s+R)/, '');
+    obj.dict = obj.dict.replace(/\/Length\s+\d+(\s+0\s+R)?/, '/Length ' + obj.streamRaw.length);
+    return true;
+  }
+
   // Convert each RGB image XObject to a FlateDecode /DeviceCMYK image, preserving its
   // /SMask. Figma embeds photos as DCTDecode (JPEG), so decode via the browser (it
   // handles JPEG and PNG alike) rather than assuming raw FlateDecode pixels. If an
@@ -1215,25 +1409,50 @@
   // than being dropped or corrupted. Returns the count of images that could NOT be
   // converted, so the caller can WARN the user (an RGB image in a "CMYK" print file
   // must never pass silently).
-  async function convertRgbImagesToCmyk(objs, imgNums, colorLookup) {
+  //
+  // `ds`, when set to { dpi, sizes }, downsamples any image finer than `dpi` at its
+  // on-page size down to `dpi` (see imageDisplaySizes) before the CMYK pass — the
+  // image is re-decoded/resampled to the smaller pixel grid and its /Width /Height
+  // are rewritten. Images with no known placement, or already at/under `dpi`, are
+  // left at full resolution (downsampling never enlarges).
+  async function convertRgbImagesToCmyk(objs, imgNums, colorLookup, ds) {
     let unconverted = 0;
     for (const n of imgNums) {
       const obj = objs[n]; if (!obj || obj.type !== 'stream') { unconverted++; continue; }
       const wm = obj.dict.match(/\/Width\s+(\d+)/), hm = obj.dict.match(/\/Height\s+(\d+)/);
       if (!wm || !hm) { unconverted++; continue; }
       const w = parseInt(wm[1]), h = parseInt(hm[1]); if (!w || !h) { unconverted++; continue; }
+      // Target pixel size: shrink to the requested DPI at the image's on-page size.
+      // Never enlarge (downsampling only) and never drop below 1px.
+      let tw = w, th = h;
+      if (ds && ds.dpi > 0 && ds.sizes && ds.sizes[n]) {
+        const dw = Math.max(1, Math.round((ds.sizes[n].wPt / 72) * ds.dpi));
+        const dh = Math.max(1, Math.round((ds.sizes[n].hPt / 72) * ds.dpi));
+        if (dw < w) tw = dw;
+        if (dh < h) th = dh;
+      }
+      let shrink = (tw !== w || th !== h);
+      // A base image and its soft-mask image must stay the same size, or Illustrator
+      // mis-scales the mask (image half-clipped or invisible). Resize the mask to match;
+      // if it can't be resized, keep the base at full size so the pair stays consistent.
+      if (shrink) {
+        const smRef = obj.dict.match(/\/SMask\s+(\d+)\s+0\s+R/);
+        if (smRef && !(await downsampleGrayImage(objs[+smRef[1]], tw, th))) { tw = w; th = h; shrink = false; }
+      }
       let rgba = null;
       try {
-        if (/\/DCTDecode\b/.test(obj.dict)) rgba = await decodeImageToRgba(obj.streamRaw, w, h, 'image/jpeg');
+        if (/\/DCTDecode\b/.test(obj.dict)) rgba = await decodeImageToRgba(obj.streamRaw, tw, th, 'image/jpeg');
         else if (obj.isFlate) {
           const d = await inflateBuf(obj.streamRaw);
-          if (d.length === w * h * 4) rgba = d;
-          else if (d.length === w * h * 3) { rgba = new Uint8Array(w * h * 4); for (let i = 0, j = 0; i < d.length; i += 3, j += 4) { rgba[j] = d[i]; rgba[j+1] = d[i+1]; rgba[j+2] = d[i+2]; rgba[j+3] = 255; } }
+          let full = null;
+          if (d.length === w * h * 4) full = d;
+          else if (d.length === w * h * 3) { full = new Uint8Array(w * h * 4); for (let i = 0, j = 0; i < d.length; i += 3, j += 4) { full[j] = d[i]; full[j+1] = d[i+1]; full[j+2] = d[i+2]; full[j+3] = 255; } }
+          if (full) rgba = shrink ? resizeRgbaNearest(full, w, h, tw, th) : full;
         }
       } catch (e) { rgba = null; }
       if (!rgba) { unconverted++; continue; } // undecodable → left intact (RGB); warn the user
-      const cmyk = new Uint8Array(w * h * 4);
-      for (let p = 0, q = 0; p < w * h * 4; p += 4, q += 4) {
+      const cmyk = new Uint8Array(tw * th * 4);
+      for (let p = 0, q = 0; p < tw * th * 4; p += 4, q += 4) {
         const c = rgbPixelToCmyk(rgba[p], rgba[p+1], rgba[p+2], colorLookup);
         cmyk[q] = c[0]; cmyk[q+1] = c[1]; cmyk[q+2] = c[2]; cmyk[q+3] = c[3];
       }
@@ -1242,6 +1461,10 @@
       obj.dict = obj.dict.replace(/\/Filter\s*(\/\w+|\[[^\]]*\])/, '/Filter /FlateDecode');
       obj.dict = obj.dict.replace(/\/DecodeParms\s*(<<[\s\S]*?>>|\[[^\]]*\]|\d+\s+0\s+R)/, '');
       obj.dict = obj.dict.replace(/\/Decode\s*\[[^\]]*\]/, '');
+      if (shrink) {
+        obj.dict = obj.dict.replace(/\/Width\s+\d+/, '/Width ' + tw);
+        obj.dict = obj.dict.replace(/\/Height\s+\d+/, '/Height ' + th);
+      }
       obj.dict = obj.dict.replace(/\/Length\s+\d+(\s+0\s+R)?/, '/Length ' + obj.streamRaw.length);
     }
     return unconverted;
@@ -1259,13 +1482,19 @@
   // (BleedBox) whether or not marks are drawn, and crop marks can be drawn with zero bleed
   // (right at the trim). The trim box is the frame's own cut line (may be smaller than the
   // page box when art spills outside the frame).
-  function addPrintMarks(objs, nums, bleedPt, trimBox, cropMarks) {
+  function addPrintMarks(objs, nums, bleedPt, trimBox, cropMarks, regMarks, pageInfo, piLeft, piRight) {
     const b = Math.max(0, bleedPt || 0);
     const LEN = 18, WGT = 0.25;
-    const M = cropMarks ? (b + LEN + 4) : b;   // marks need extra room; bleed-only just needs b
-    if (M <= 0) return 0;                        // nothing to do (no bleed, no marks)
+    const REG_R = 4, REG_CROSS = 13, REG_OFF = 13; // InDesign-style target: small circle, long crosshair reaching well past it
+    let M = b;                                     // margin the page box must add on every side
+    if (cropMarks) M = Math.max(M, b + LEN + 4);
+    if (regMarks)  M = Math.max(M, b + REG_OFF + REG_CROSS);
+    // Page info sits in the slug BELOW whatever marks are present, so it never overlaps them.
+    if (pageInfo)  M = Math.max(M, b + Math.max(cropMarks ? LEN + 4 : 0, regMarks ? REG_OFF + REG_CROSS : 0) + 12);
+    if (M <= 0) return 0;                          // nothing to do (no bleed, no marks)
     const f = (v) => (Math.round(v * 1000) / 1000).toString();
     const toBytes = (s) => { const u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i) & 0xFF; return u; };
+    const escPdf = (str) => String(str).replace(/[\\()]/g, (c) => '\\' + c);
     let added = 0;
     for (const num of [...nums]) {
       const obj = objs[num];
@@ -1280,20 +1509,20 @@
       // is the frame's own bounding box). Overflow beyond the bleed is dropped from the
       // export — Figma may not clip the frame's own overflow, so we do it here — which both
       // makes the output represent the selected frame (not the whole spilling artwork) and
-      // keeps the crop-mark margin clean, so registration marks stay visible over dark art.
+      // keeps the mark margin clean, so crop / registration marks stay visible over dark art.
       // The marks are drawn OUTSIDE this clip so they are never clipped away themselves. ──
       const bx0 = t.x0 - b, by0 = t.y0 - b, bw = (t.x1 - t.x0) + 2 * b, bh = (t.y1 - t.y0) + 2 * b;
       const arr = body.match(/\/Contents\s*\[([^\]]*)\]/);
       const single = body.match(/\/Contents\s+(\d+)\s+0\s+R/);
       const origRefs = arr ? arr[1].trim() : (single ? `${single[1]} 0 R` : null);
       if (origRefs !== null) {
-        const base = Math.max(...nums);
-        const clipRaw = toBytes(`q ${f(bx0)} ${f(by0)} ${f(bw)} ${f(bh)} re W n\n`);
-        objs[base + 1] = { type: 'stream', dict: `<< /Length ${clipRaw.length} >>`, streamRaw: clipRaw };
-        const closeRaw = toBytes(`Q\n`);
-        objs[base + 2] = { type: 'stream', dict: `<< /Length ${closeRaw.length} >>`, streamRaw: closeRaw };
-        nums.push(base + 1, base + 2);
-        let contents = `${base + 1} 0 R ${origRefs} ${base + 2} 0 R`;
+        // New objects take sequential numbers above the current max — one per mark stream.
+        let nextNum = Math.max(...nums) + 1;
+        const addStream = (raw) => { objs[nextNum] = { type: 'stream', dict: `<< /Length ${raw.length} >>`, streamRaw: raw }; nums.push(nextNum); return nextNum++; };
+        const addObj = (bodyStr) => { objs[nextNum] = { type: 'plain', body: bodyStr }; nums.push(nextNum); return nextNum++; };
+        const clipOpen = addStream(toBytes(`q ${f(bx0)} ${f(by0)} ${f(bw)} ${f(bh)} re W n\n`));
+        const clipClose = addStream(toBytes(`Q\n`));
+        let contents = `${clipOpen} 0 R ${origRefs} ${clipClose} 0 R`;
         // ── Crop marks (optional): 8 corner lines, offset out from the trim by the bleed ──
         if (cropMarks) {
           const seg = [];
@@ -1303,10 +1532,47 @@
           h(t.x1 + b, t.x1 + b + LEN, t.y0); h(t.x1 + b, t.x1 + b + LEN, t.y1);  // right of BR / TR
           v(t.x0, t.y0 - b, t.y0 - b - LEN); v(t.x1, t.y0 - b, t.y0 - b - LEN);  // below BL / BR
           v(t.x0, t.y1 + b, t.y1 + b + LEN); v(t.x1, t.y1 + b, t.y1 + b + LEN);  // above TL / TR
-          const streamRaw = toBytes(`q 1 1 1 1 K ${f(WGT)} w\n${seg.join('\n')}\nS Q\n`);
-          objs[base + 3] = { type: 'stream', dict: `<< /Length ${streamRaw.length} >>`, streamRaw };
-          nums.push(base + 3);
-          contents += ` ${base + 3} 0 R`;
+          contents += ` ${addStream(toBytes(`q 1 1 1 1 K ${f(WGT)} w\n${seg.join('\n')}\nS Q\n`))} 0 R`;
+        }
+        // ── Registration marks (optional): a target (circle + crosshair) centred on each side,
+        // out past the bleed, stroked in registration colour so it prints on every plate. ──
+        if (regMarks) {
+          const seg = [];
+          const cx = (t.x0 + t.x1) / 2, cy = (t.y0 + t.y1) / 2;
+          const k = REG_R * 0.5523;                 // cubic-bézier handle length for a circle
+          const target = (x, y) => {
+            seg.push(`${f(x + REG_R)} ${f(y)} m`);
+            seg.push(`${f(x + REG_R)} ${f(y + k)} ${f(x + k)} ${f(y + REG_R)} ${f(x)} ${f(y + REG_R)} c`);
+            seg.push(`${f(x - k)} ${f(y + REG_R)} ${f(x - REG_R)} ${f(y + k)} ${f(x - REG_R)} ${f(y)} c`);
+            seg.push(`${f(x - REG_R)} ${f(y - k)} ${f(x - k)} ${f(y - REG_R)} ${f(x)} ${f(y - REG_R)} c`);
+            seg.push(`${f(x + k)} ${f(y - REG_R)} ${f(x + REG_R)} ${f(y - k)} ${f(x + REG_R)} ${f(y)} c`);
+            seg.push(`${f(x - REG_CROSS)} ${f(y)} m ${f(x + REG_CROSS)} ${f(y)} l`);   // horizontal crosshair
+            seg.push(`${f(x)} ${f(y - REG_CROSS)} m ${f(x)} ${f(y + REG_CROSS)} l`);   // vertical crosshair
+          };
+          target(cx, t.y1 + b + REG_OFF);   // top
+          target(cx, t.y0 - b - REG_OFF);   // bottom
+          target(t.x0 - b - REG_OFF, cy);   // left
+          target(t.x1 + b + REG_OFF, cy);   // right
+          contents += ` ${addStream(toBytes(`q 1 1 1 1 K ${f(WGT)} w\n${seg.join('\n')}\nS Q\n`))} 0 R`;
+        }
+        // ── Page information (optional): file name (left) + timestamp (right) in the bottom
+        // slug, the way InDesign prints it. Needs a font — declare the standard Helvetica
+        // (no embedding needed) and register it in the page's resources as /HB. ──
+        if (pageInfo && (piLeft || piRight)) {
+          const resRef = body.match(/\/Resources\s+(\d+)\s+0\s+R/);
+          const resObj = resRef ? objs[+resRef[1]] : null;
+          if (resObj && resObj.type === 'plain') {
+            const fontNum = addObj('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+            resObj.body = /\/Font\s*<</.test(resObj.body)
+              ? resObj.body.replace(/\/Font\s*<</, `/Font << /HB ${fontNum} 0 R`)
+              : resObj.body.replace('<<', `<< /Font << /HB ${fontNum} 0 R >>`);
+            const SZ = 6, ly = t.y0 - M + 5;                 // 6pt text, near the very bottom edge (below the marks)
+            let ops = `q 1 1 1 1 k BT /HB ${SZ} Tf\n`;
+            if (piLeft)  ops += `1 0 0 1 ${f(t.x0)} ${f(ly)} Tm (${escPdf(piLeft)}) Tj\n`;
+            if (piRight) { const rw = SZ * 0.5 * String(piRight).length; ops += `1 0 0 1 ${f(t.x1 - rw)} ${f(ly)} Tm (${escPdf(piRight)}) Tj\n`; }
+            ops += `ET Q\n`;
+            contents += ` ${addStream(toBytes(ops))} 0 R`;
+          }
         }
         body = arr
           ? body.replace(/\/Contents\s*\[([^\]]*)\]/, `/Contents [ ${contents} ]`)
@@ -1694,11 +1960,14 @@
       obj.dict=obj.dict.replace(/\/Length\s+\d+(\s+0\s+R)?/,'/Length '+obj.streamRaw.length);
     }
 
-    // ── Convert RGB raster images → DeviceCMYK ──
-    window._lastPdfImagesUnconverted = await convertRgbImagesToCmyk(objs,imgNums,colorLookup);
+    // ── Convert RGB raster images → DeviceCMYK (optionally downsampling to a DPI) ──
+    let ds=null;
+    if(opts&&opts.downsample&&opts.downsampleDpi>0)
+      ds={dpi:opts.downsampleDpi,sizes:await imageDisplaySizes(objs,allImg)};
+    window._lastPdfImagesUnconverted = await convertRgbImagesToCmyk(objs,imgNums,colorLookup,ds);
 
     // ── Crop / trim marks (print) — added last so they emit as clean DeviceCMYK ──
-    if(opts&&(opts.cropMarks||opts.bleedPt>0))addPrintMarks(objs,nums,opts.bleedPt,opts.trimBox,opts.cropMarks);
+    if(opts&&(opts.cropMarks||opts.regMarks||opts.pageInfo||opts.bleedPt>0))addPrintMarks(objs,nums,opts.bleedPt,opts.trimBox,opts.cropMarks,opts.regMarks,opts.pageInfo,opts.pageInfoLeft,opts.pageInfoRight);
 
     // ── Rebuild PDF ──
     const parts=[],newOff={};
@@ -1743,9 +2012,10 @@
 
   // ── Convert PNG to 4-channel CMYK (PDF — white bg for transparency) ──
 
-  // ── TIFF: CMYK+Alpha 300 DPI ──────────────────────────────────────
+  // ── TIFF: CMYK+Alpha at the chosen DPI (default 300) ──────────────
 
-  function buildCmykaTiff(data,w,h) {
+  function buildCmykaTiff(data,w,h,dpi) {
+    const res = Math.round(dpi) || 300;
     const pxSz=w*h*5, nT=15, iO=8, iSz=2+(nT*12)+4, eO=iO+iSz;
     // Extra data: BitsPerSample (5 shorts = 10 bytes) + XRes (8) + YRes (8)
     const bO=eO, xO=bO+10, yO=xO+8, sO=yO+8;
@@ -1772,9 +2042,9 @@
     w32(0); // next IFD
     // BitsPerSample
     p=bO; w16(8);w16(8);w16(8);w16(8);w16(8);
-    // XResolution 300/1, YResolution 300/1
-    p=xO; w32(300);w32(1);
-    p=yO; w32(300);w32(1);
+    // XResolution res/1, YResolution res/1
+    p=xO; w32(res);w32(1);
+    p=yO; w32(res);w32(1);
     // Pixel data
     b.set(data, sO);
     return new Uint8Array(buf);
@@ -1824,7 +2094,7 @@
     setExportBusy(true);
     _showExportProgress(`Preparing ${fmt.toUpperCase()} export…`);
 
-    parent.postMessage({ pluginMessage: { type: "export-request", format: fmt } }, "*");
+    parent.postMessage({ pluginMessage: { type: "export-request", format: fmt, tiffDpi: _tiffDpi } }, "*");
   }
 
   // Called when code.js replies with the real exportable frame count.
@@ -1875,6 +2145,60 @@
 
     parent.postMessage({ pluginMessage: { type: "export-frames" } }, "*");
   }
+
+  // A pre-flight row: name + meta + the shared "Focus in canvas" button (a buttonTertiary
+  // with the #icon-focus glyph, matching the source-focus-btn chips). Clicking focuses the node.
+  function preflightRow(id, name, meta) {
+    return `<div class="preflight-row">`
+         + `<span class="pf-name">${esc(name)}</span>`
+         + `<span class="pf-meta">${esc(meta)}</span>`
+         + `<button class="buttonTertiary preflight-focus-btn" data-node-id="${esc(id)}" data-tip="Focus in canvas">${focusIcon}</button>`
+         + `</div>`;
+  }
+  function wirePreflightFocus(listEl) {
+    listEl.querySelectorAll(".preflight-focus-btn").forEach((btn) => {
+      btn.addEventListener("click", () =>
+        parent.postMessage({ pluginMessage: { type: "focus-node", nodeId: btn.dataset.nodeId } }, "*"));
+    });
+  }
+  // Low-res image list — the export pre-flight warning for images below the target dpi.
+  function renderPreflightImages(msg) {
+    const iSec = document.getElementById("preflight-images-section");
+    const iList = document.getElementById("preflight-images");
+    const hdr = document.getElementById("preflight-images-header");
+    if (!iSec || !iList) return;
+    // Only surface the low-res list where downsampling applies (PDF + toggle on), and only
+    // when there's actually something below target — otherwise no warning at all.
+    const target = msg.target || _downsampleDpi;
+    const isPdf = document.getElementById("format-pdf").classList.contains("selected");
+    const imgs = (isPdf && _downsample) ? (msg.images || []) : [];
+    if (imgs.length) {
+      // "won't improve": downsampling only reduces resolution, so it can never raise a
+      // below-target image up to the target (the header always reflects the CURRENT dpi).
+      if (hdr) hdr.textContent = `Images under ${target} dpi:`;
+      iList.innerHTML = imgs.map((im) => preflightRow(im.id, im.name, im.meta)).join("");
+      wirePreflightFocus(iList);
+      iSec.hidden = false;
+    } else {
+      iList.innerHTML = "";
+      iSec.hidden = true;
+    }
+  }
+  // Clear the low-res warning immediately (no scan round-trip) — used when downsampling is
+  // switched off or the format changes away from PDF.
+  function hidePreflightImages() {
+    const iSec = document.getElementById("preflight-images-section");
+    const iList = document.getElementById("preflight-images");
+    if (iSec) iSec.hidden = true;
+    if (iList) iList.innerHTML = "";
+  }
+  // Drop the pre-flight warning when the modal opens, so a reopen after scanning a different
+  // selection never flashes the previous selection's images before the fresh scan returns.
+  function clearPreflight() {
+    hidePreflightImages();
+  }
+  window.__renderPreflightImages = renderPreflightImages;
+
   // Export modal — the shared DS modal shell. Holds the format choice and the
   // print options (crop marks + bleed). Crop-mark state lives in _cropMarks/
   // _bleedMm and is persisted by code.js via clientStorage; format is session-only.
@@ -1889,47 +2213,78 @@
     const confirmLabel = document.getElementById("export-confirm-label");
     const printField = document.getElementById("export-print");
     const toggle  = document.getElementById("cropmarks-toggle");
+    const regmarks = document.getElementById("regmarks-toggle");
+    const pageinfo = document.getElementById("pageinfo-toggle");
     const bleedOn = document.getElementById("bleed-toggle");
     const bleed   = document.getElementById("bleed-input");
     const wrap    = document.getElementById("bleed-wrap");
     const downsample = document.getElementById("downsample-toggle");
-    if (!modal || !openBtn || !confirm || !toggle || !bleedOn || !bleed || !downsample) return;
+    const dpi     = document.getElementById("dpi-input");
+    const dpiWrap = document.getElementById("dpi-wrap");
+    const pdfOptions  = document.getElementById("pdf-options");
+    const tiffOptions = document.getElementById("tiff-options");
+    const tiffDpi     = document.getElementById("tiff-dpi-input");
+    if (!modal || !openBtn || !confirm || !toggle || !bleedOn || !bleed || !downsample || !dpi || !tiffDpi) return;
 
     let _exportFormat = "pdf";
     let closeTimer = null;
-    const DESCS = { pdf: "Vector artwork, CMYK colour.", tiff: "Flattened raster, 300 DPI CMYK." };
+    const DESCS = { pdf: "Vector artwork, CMYK colour.", tiff: "Flattened raster, CMYK colour." };
     const LABELS = { pdf: "Export PDF", tiff: "Export TIFF" };
 
-    // The print options apply to the vector PDF only — dimmed and inert for TIFF. Crop
-    // marks, bleed and downsampling are independent; the bleed amount is editable only
-    // once its own checkbox is on.
+    // Print options are format-specific: PDF gets crop marks, bleed and image
+    // downsampling; TIFF is a raster export, so it only gets a resolution. The blocks
+    // are swapped (not dimmed) so each format shows only what applies. Within the PDF
+    // block, the bleed/downsample amounts are editable only once their own box is on.
     const syncPrint = () => {
       const isPdf = _exportFormat === "pdf";
-      printField.classList.toggle("is-disabled", !isPdf);
-      toggle.disabled = !isPdf;
-      bleedOn.disabled = !isPdf;
-      downsample.disabled = !isPdf;
-      const bleedEditable = isPdf && _bleedOn;
+      pdfOptions.hidden = !isPdf;
+      tiffOptions.hidden = isPdf;
+      const bleedEditable = _bleedOn;
       bleed.disabled = !bleedEditable;
       wrap.classList.toggle("inputWrap--disabled", !bleedEditable);
+      const dpiEditable = _downsample;
+      dpi.disabled = !dpiEditable;
+      dpiWrap.classList.toggle("inputWrap--disabled", !dpiEditable);
     };
+    const fmtControl = document.getElementById("export-format");
+    const moveSegPill = () => { if (typeof updateSegPill === "function") updateSegPill(fmtControl); };
     const selectFormat = (fmt) => {
       _exportFormat = fmt;
       fmtPdf.classList.toggle("selected",  fmt === "pdf");
       fmtTiff.classList.toggle("selected", fmt === "tiff");
       desc.textContent = DESCS[fmt];
       confirmLabel.textContent = LABELS[fmt];
+      moveSegPill();
       syncPrint();
+      if (fmt !== "pdf") hidePreflightImages();   // TIFF: no downsampling, so no low-res warning
+      requestPreflight();   // format change flips whether the low-res list applies
     };
     const persist = () => parent.postMessage({ pluginMessage: {
-      type: "save-settings", cropMarks: _cropMarks, bleedOn: _bleedOn, bleedMm: _bleedMm, downsample: _downsample,
+      type: "save-settings", cropMarks: _cropMarks, regMarks: _regMarks, pageInfo: _pageInfo, bleedOn: _bleedOn, bleedMm: _bleedMm,
+      downsample: _downsample, downsampleDpi: _downsampleDpi, tiffDpi: _tiffDpi,
     } }, "*");
+
+    // Ask code.js to scan the selection for output sizes (+ low-res images when downsampling).
+    // Only while the modal is open — avoids scanning on plugin load.
+    let _preflightTimer = null;
+    const requestPreflight = () => {
+      if (!modal.classList.contains("is-open")) return;
+      parent.postMessage({ pluginMessage: {
+        type: "preflight-request", dpi: _downsampleDpi, scanImages: _exportFormat === "pdf" && _downsample,
+      } }, "*");
+    };
+    const requestPreflightSoon = () => { if (_preflightTimer) clearTimeout(_preflightTimer); _preflightTimer = setTimeout(requestPreflight, 250); };
 
     fmtPdf.addEventListener("click", () => selectFormat("pdf"));
     fmtTiff.addEventListener("click", () => selectFormat("tiff"));
     toggle.addEventListener("change", () => { _cropMarks = toggle.checked; persist(); });
+    regmarks.addEventListener("change", () => { _regMarks = regmarks.checked; persist(); });
+    pageinfo.addEventListener("change", () => { _pageInfo = pageinfo.checked; persist(); });
     bleedOn.addEventListener("change", () => { _bleedOn = bleedOn.checked; syncPrint(); persist(); });
-    downsample.addEventListener("change", () => { _downsample = downsample.checked; persist(); });
+    downsample.addEventListener("change", () => {
+      _downsample = downsample.checked; syncPrint(); persist();
+      if (_downsample) requestPreflight(); else hidePreflightImages();   // off → clear the warning now
+    });
     bleed.addEventListener("input", () => {
       const v = parseFloat(bleed.value);
       if (isNaN(v)) return;
@@ -1937,23 +2292,49 @@
       persist();
     });
     bleed.addEventListener("blur", () => { bleed.value = String(_bleedMm); });
+    dpi.addEventListener("input", () => {
+      const v = parseFloat(dpi.value);
+      if (isNaN(v)) return;
+      _downsampleDpi = Math.max(72, Math.min(1200, Math.round(v)));
+      persist();
+      requestPreflightSoon();   // re-flag images against the new threshold
+    });
+    dpi.addEventListener("blur", () => { dpi.value = String(_downsampleDpi); });
+    tiffDpi.addEventListener("input", () => {
+      const v = parseFloat(tiffDpi.value);
+      if (isNaN(v)) return;
+      _tiffDpi = Math.max(72, Math.min(1200, Math.round(v)));
+      persist();
+    });
+    tiffDpi.addEventListener("blur", () => { tiffDpi.value = String(_tiffDpi); });
     // Called when code.js sends back the persisted settings.
     window.__applyExportSettings = (s) => {
       s = s || {};
       _cropMarks = !!s.cropMarks;
+      _regMarks = !!s.regMarks;
+      _pageInfo = !!s.pageInfo;
       _bleedOn = !!s.bleedOn;
       _downsample = !!s.downsample;
       if (typeof s.bleedMm === "number" && s.bleedMm >= 0) _bleedMm = s.bleedMm;
+      if (typeof s.downsampleDpi === "number" && s.downsampleDpi > 0) _downsampleDpi = s.downsampleDpi;
+      if (typeof s.tiffDpi === "number" && s.tiffDpi > 0) _tiffDpi = s.tiffDpi;
       toggle.checked = _cropMarks;
+      regmarks.checked = _regMarks;
+      pageinfo.checked = _pageInfo;
       bleedOn.checked = _bleedOn;
       downsample.checked = _downsample;
       bleed.value = String(_bleedMm);
+      dpi.value = String(_downsampleDpi);
+      tiffDpi.value = String(_tiffDpi);
       syncPrint();
     };
 
     const openModal = () => {
       if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; modal.classList.remove("is-closing"); }
+      clearPreflight();                   // drop any content from a previous selection
       modal.classList.add("is-open");
+      requestAnimationFrame(moveSegPill); // position the pill once the modal is laid out
+      requestPreflight();                 // re-scan the CURRENT selection for sizes + low-res images
     };
     window.__closeExportModal = () => {
       if (!modal.classList.contains("is-open")) return;
@@ -2146,6 +2527,8 @@
       if (window.__applyExportSettings) window.__applyExportSettings(msg);
       return;
     }
+
+    if (msg.type === "preflight-images") { renderPreflightImages(msg); return; }
 
     if (msg.type === "external-vars-resolved") {
       Object.entries(msg.libraries).forEach(([varId, libName]) => {
@@ -2650,15 +3033,21 @@
 
         let fileBytes, fileName, fileMime;
         if (msg.format === "pdf") {
+          const now = new Date();
+          const pad = (n) => String(n).padStart(2, "0");
+          const stamp = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
           fileBytes = await convertPdfToCmyk(msg.pdfBytes, _exportLookup,
-            { cropMarks: _cropMarks, bleedPt: _bleedOn ? _bleedMm * 72 / 25.4 : 0,
-              downsample: _downsample, trimBox: msg.trimBox });
+            { cropMarks: _cropMarks, regMarks: _regMarks, bleedPt: _bleedOn ? _bleedMm * 72 / 25.4 : 0,
+              downsample: _downsample, downsampleDpi: _downsampleDpi, trimBox: msg.trimBox,
+              pageInfo: _pageInfo,
+              pageInfoLeft: [msg.fileName, msg.frameName].filter(Boolean).join("  ·  "),
+              pageInfoRight: stamp });
           _exportRgbImages += window._lastPdfImagesUnconverted;
           if (window._lastPdfImagesUnconverted > 0) _exportRgbFrames.push(msg.frameName);
           fileName = `${safe}_CMYK.pdf`; fileMime = "application/pdf";
         } else {
           const cmyka = await convertImageToCmyka(msg.pngBytes, msg.width, msg.height, _exportLookup);
-          fileBytes = buildCmykaTiff(cmyka, msg.width, msg.height);
+          fileBytes = buildCmykaTiff(cmyka, msg.width, msg.height, msg.dpi);
           fileName = `${safe}_CMYK.tiff`; fileMime = "image/tiff";
         }
         // Disambiguate against earlier files this batch so same-named items don't

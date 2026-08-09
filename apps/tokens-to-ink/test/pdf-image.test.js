@@ -95,6 +95,48 @@ describe('tokens-to-ink — CMYK PDF keeps images', () => {
     expect(ui.$('#toast-container').textContent).not.toMatch(/couldn.t be converted/i);
   });
 
+  // The fixture's image (obj 9) is 24×24 px placed over the full 64pt frame
+  // (content stream: `64 0 0 64 … cm /X1 Do`) → ~27 DPI on the page.
+  const cmykImageDims = (s) => {
+    const d = imageDicts(s).find((x) => /\/ColorSpace\s*\/DeviceCMYK/.test(x));
+    if (!d) return null;
+    const w = d.match(/\/Width\s+(\d+)/), h = d.match(/\/Height\s+(\d+)/);
+    return { w: w && +w[1], h: h && +h[1] };
+  };
+
+  it('downsamples an image whose on-page DPI exceeds the target', async () => {
+    ui = bootUI();
+    ui.window.decodeImageToRgba = async (_b, w, h) => new Uint8Array(w * h * 4).fill(180);
+    // 64pt frame at 12 DPI → 64/72*12 ≈ 10.7 → 11 px, below the source's 24 px.
+    const out = await ui.window.convertPdfToCmyk(pdfBytes(), {}, { downsample: true, downsampleDpi: 12 });
+    const s = latin1(out);
+    const dims = cmykImageDims(s);
+    expect(dims).toBeTruthy();
+    expect(dims.w).toBe(11);
+    expect(dims.h).toBe(11);
+    // The soft-mask image (obj 4) must be resized in lockstep — a base/mask size
+    // mismatch makes Illustrator mis-scale the mask and drop or shift the image.
+    const smask = objBody(s, 4);
+    expect(smask).toMatch(/\/Width\s+11\b/);
+    expect(smask).toMatch(/\/Height\s+11\b/);
+    expect(smask).toMatch(/\/ColorSpace\s*\/DeviceGray/);  // still a grey mask
+  });
+
+  it('never upsamples: a target DPI above the source resolution leaves it unchanged', async () => {
+    ui = bootUI();
+    ui.window.decodeImageToRgba = async (_b, w, h) => new Uint8Array(w * h * 4).fill(180);
+    // 64pt frame at 300 DPI → ~267 px target, far above the source's 24 px.
+    const out = await ui.window.convertPdfToCmyk(pdfBytes(), {}, { downsample: true, downsampleDpi: 300 });
+    expect(cmykImageDims(latin1(out))).toEqual({ w: 24, h: 24 });
+  });
+
+  it('leaves image dimensions untouched when downsampling is off', async () => {
+    ui = bootUI();
+    ui.window.decodeImageToRgba = async (_b, w, h) => new Uint8Array(w * h * 4).fill(180);
+    const out = await ui.window.convertPdfToCmyk(pdfBytes(), {}, { downsample: false, downsampleDpi: 12 });
+    expect(cmykImageDims(latin1(out))).toEqual({ w: 24, h: 24 });
+  });
+
   it('leaves the DeviceGray SMask image stream intact (never colour-converted)', async () => {
     ui = bootUI();
     const before = latin1(pdfBytes());

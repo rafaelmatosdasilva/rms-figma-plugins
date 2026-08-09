@@ -194,6 +194,51 @@ describe('tokens-to-ink UI — export', () => {
     expect(ui.sentOf('export-request')[0]).toMatchObject({ format: 'tiff' });
   });
 
+  it('swaps crop marks / bleed for a resolution field when TIFF is chosen', async () => {
+    ui = loadUI(UI);
+    ui.receive(scanResults());
+    await painted();
+
+    ui.click('#export-btn');
+    expect(ui.$('#pdf-options').hidden).toBe(false);   // PDF options by default
+    expect(ui.$('#tiff-options').hidden).toBe(true);
+
+    ui.click('#format-tiff');
+    expect(ui.$('#pdf-options').hidden).toBe(true);     // crop marks + bleed gone
+    expect(ui.$('#tiff-options').hidden).toBe(false);   // resolution shown
+  });
+
+  it('sends the chosen TIFF export resolution with the request', async () => {
+    ui = loadUI(UI);
+    ui.receive(scanResults());
+    await painted();
+
+    ui.click('#export-btn');
+    ui.click('#format-tiff');
+    const res = ui.$('#tiff-dpi-input');
+    res.value = '600';
+    res.dispatchEvent(new ui.window.Event('input'));
+    ui.click('#export-confirm-btn');
+
+    expect(ui.sentOf('export-request')[0]).toMatchObject({ format: 'tiff', tiffDpi: 600 });
+  });
+
+  it('writes the chosen resolution into the TIFF XResolution tag', async () => {
+    ui = loadUI(UI);
+    // 2×2 CMYK+alpha buffer (5 bytes/px); we only assert the resolution tag here.
+    const px = new Uint8Array(2 * 2 * 5);
+    const tiff = ui.window.buildCmykaTiff(px, 2, 2, 600);
+    const dv = new DataView(tiff.buffer, tiff.byteOffset, tiff.byteLength);
+    // Little-endian TIFF: walk the IFD, find XResolution (tag 282), read its RATIONAL.
+    const ifd = dv.getUint32(4, true), n = dv.getUint16(ifd, true);
+    let xres = null;
+    for (let i = 0; i < n; i++) {
+      const e = ifd + 2 + i * 12;
+      if (dv.getUint16(e, true) === 282) { const off = dv.getUint32(e + 8, true); xres = dv.getUint32(off, true); }
+    }
+    expect(xres).toBe(600);
+  });
+
   it('reports how many frames are queued', async () => {
     ui = loadUI(UI);
     ui.receive(scanResults());
@@ -372,25 +417,22 @@ describe('tokens-to-ink UI — crop marks option', () => {
     expect(ui.$('#export-confirm-label').textContent).toBe('Export PDF');
   });
 
-  it('disables the print options for TIFF (they only apply to the vector PDF)', async () => {
+  it('hides the crop/bleed options for TIFF and restores them when back on PDF', async () => {
     ui = loadUI(UI);
     ui.receive(scanResults());
     await painted();
-
-    const marks = ui.$('#cropmarks-toggle');
-    const bleedOn = ui.$('#bleed-toggle');
-    const down = ui.$('#downsample-toggle');
-    expect(marks.disabled).toBe(false); // PDF is the default format
-    expect(bleedOn.disabled).toBe(false);
-    expect(down.disabled).toBe(false);
-
     ui.click('#export-btn');
-    ui.click('#format-tiff');            // switch to the raster format
 
-    expect(marks.disabled).toBe(true);
-    expect(bleedOn.disabled).toBe(true);
-    expect(down.disabled).toBe(true);
-    expect(ui.$('#export-print').classList.contains('is-disabled')).toBe(true);
+    expect(ui.$('#pdf-options').hidden).toBe(false);   // PDF is the default format
+    expect(ui.$('#tiff-options').hidden).toBe(true);
+
+    ui.click('#format-tiff');
+    expect(ui.$('#pdf-options').hidden).toBe(true);     // crop marks + bleed removed
+    expect(ui.$('#tiff-options').hidden).toBe(false);   // resolution shown instead
+
+    ui.click('#format-pdf');
+    expect(ui.$('#pdf-options').hidden).toBe(false);    // restored on the way back
+    expect(ui.$('#tiff-options').hidden).toBe(true);
   });
 });
 

@@ -80,6 +80,45 @@ export async function collectNodeColors(node, colorMap, isCancelled, _counter = 
 }
 
 /**
+ * Recursively collects visible IMAGE fills from a node tree into `out` (array).
+ * Property access only — the caller resolves each imageHash's source size and DPI
+ * (those need figma.* APIs). Each entry carries the host node's id/name and box
+ * (width/height in px = pt) plus the paint's scaleMode/imageTransform/scalingFactor.
+ * @param {isCancelled} () => boolean
+ */
+export async function collectImageFills(node, out, isCancelled, _counter = { n: 0 }) {
+  if (node.visible === false) return;
+  if (typeof node.opacity === "number" && node.opacity === 0) return;
+
+  if ("fills" in node && Array.isArray(node.fills) && typeof node.width === "number") {
+    // The image's placed size is its LOCAL box times whatever scale its ancestors apply
+    // (a nested/scaled group renders the image larger → lower effective DPI). Capture the
+    // node's absolute scale (basis-vector lengths, rotation-invariant); the caller divides
+    // by the exported root's scale to get the true rendered size. Defaults to 1 (no scaling).
+    const at = node.absoluteTransform;
+    const absScaleX = (at && at[0] && at[1] && Math.hypot(at[0][0], at[1][0])) || 1;
+    const absScaleY = (at && at[0] && at[1] && Math.hypot(at[0][1], at[1][1])) || 1;
+    for (const fill of node.fills) {
+      if (fill.type === "IMAGE" && fill.visible !== false && (fill.opacity == null || fill.opacity > 0) && fill.imageHash) {
+        out.push({
+          nodeId: node.id, name: node.name, imageHash: fill.imageHash,
+          scaleMode: fill.scaleMode, imageTransform: fill.imageTransform, scalingFactor: fill.scalingFactor,
+          boxW: node.width, boxH: node.height, absScaleX, absScaleY,
+        });
+      }
+    }
+  }
+
+  if ("children" in node) {
+    for (const child of node.children) {
+      if (isCancelled()) return;
+      if (++_counter.n % YIELD_EVERY === 0) await yieldTick();
+      await collectImageFills(child, out, isCancelled, _counter);
+    }
+  }
+}
+
+/**
  * Recursively collects all bound variable IDs from a node tree into ids (Set).
  * @param {isCancelled} () => boolean
  */

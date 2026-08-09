@@ -80,6 +80,56 @@ describe('tokens-to-ink — crop marks', () => {
     expect(out).not.toMatch(/1 1 1 1 K/);            // …but NO crop-mark lines were drawn.
   });
 
+  it('adds registration targets (circle + crosshair) centred on each side, in registration colour', async () => {
+    ui = bootUI();
+    // No bleed, no crop marks — registration only. Fixture trim is [0 0 64 64].
+    const out = latin1(await ui.window.convertPdfToCmyk(pdfBytes(), {}, { regMarks: true, bleedPt: 0 }));
+    // The page grows to make room for the targets (REG_OFF 11 + crosshair 9 = 20 each side).
+    const mb = mediaBox(out);
+    expect(parseFloat(mb[1])).toBeLessThan(0);
+    expect(parseFloat(mb[3])).toBeGreaterThan(64);
+    // Registration colour (all four plates).
+    expect(out).toMatch(/1 1 1 1 K/);
+    // Top target centred at (32, 77): the circle path starts at (36,77), draws a bézier arc…
+    expect(out).toMatch(/36 77 m/);
+    expect(out).toMatch(/36 79\.209 34\.209 81 32 81 c/);
+    // …with a long crosshair through the centre (InDesign style: reaches well past the circle).
+    expect(out).toMatch(/19 77 m 45 77 l/);
+  });
+
+  it('draws crop marks (lines) and registration marks (curves) together', async () => {
+    ui = bootUI();
+    const out = latin1(await ui.window.convertPdfToCmyk(pdfBytes(), {}, { cropMarks: true, regMarks: true, bleedPt: 0 }));
+    expect(out).toMatch(/36 79\.209 34\.209 81 32 81 c/);   // registration circle curve
+    expect(out).toMatch(/0 0 m 0 -18 l/);                   // a crop corner line below the BL corner
+    expect(out).toMatch(/1 1 1 1 K/);
+  });
+
+  it('prints page information (file name + timestamp) with a Helvetica font in the slug', async () => {
+    ui = bootUI();
+    const out = latin1(await ui.window.convertPdfToCmyk(pdfBytes(), {}, {
+      pageInfo: true, bleedPt: 0,
+      pageInfoLeft: 'My Catalog  ·  Sapphire Mini', pageInfoRight: '09/08/2026 10:01',
+    }));
+    // A standard Helvetica font is declared and registered in the page resources as /HB.
+    expect(out).toMatch(/\/BaseFont\s*\/Helvetica/);
+    expect(out).toMatch(/\/Font\s*<<\s*\/HB\s+\d+\s+0\s+R/);
+    // The text is drawn (BT … Tj … ET) at 6pt in registration colour.
+    expect(out).toMatch(/BT[\s\S]*\/HB 6 Tf/);
+    expect(out).toMatch(/\(My Catalog  ·  Sapphire Mini\)\s*Tj/);
+    expect(out).toMatch(/\(09\/08\/2026 10:01\)\s*Tj/);
+    // The page grew to make slug room.
+    expect(parseFloat(mediaBox(out)[3])).toBeGreaterThan(64);
+  });
+
+  it('escapes parentheses in page-info text so the PDF string stays valid', async () => {
+    ui = bootUI();
+    const out = latin1(await ui.window.convertPdfToCmyk(pdfBytes(), {}, {
+      pageInfo: true, bleedPt: 0, pageInfoLeft: 'File (v2)', pageInfoRight: '',
+    }));
+    expect(out).toMatch(/\(File \\\(v2\\\)\)\s*Tj/);
+  });
+
   it('leaves the page untouched when both crop marks and bleed are off', async () => {
     ui = bootUI();
     const out = latin1(await ui.window.convertPdfToCmyk(pdfBytes(), {}, { cropMarks: false }));

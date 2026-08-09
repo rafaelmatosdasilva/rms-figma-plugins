@@ -7,8 +7,9 @@
 import {
   rgbToHex, rgbToCmyk, parseCmykString,
   parseDescTag, setDescTag, removeDescTag,
-  collectNodeColors, collectVarIds,
+  collectNodeColors, collectVarIds, collectImageFills,
   attachWindowResize, focusNode, getPageForNode,
+  effectiveImageDpi,
 } from '@rms/core';
 
 figma.showUI(__html__, { width: 600, height: 600 });
@@ -16,7 +17,11 @@ figma.showUI(__html__, { width: 600, height: 600 });
 const handleResizeMsg = attachWindowResize(figma, { defaultW: 600, defaultH: 600, minW: 320, minH: 200 });
 
 let _exportCancelled = false;
-let _exportState = null; // { selection, format, colorLookup } — persists across ack messages
+let _exportState = null; // { selection, format, colorLookup, tiffDpi } — persists across ack messages
+// imageHash → { width, height } | null. A bitmap's source size is fixed for its hash, so we
+// resolve each hash's getSizeAsync ONCE and reuse it across preflight scans (dpi changes then
+// re-filter with no round-trips). Replacing an image changes its hash, so this never goes stale.
+const _preflightSizeCache = new Map();
 let _scanCancelled = false;
 
 function notifySelectionCount() {
@@ -397,17 +402,18 @@ async function _exportOneFrame(i) {
         type: "export-data", format: "pdf",
         pdfBytes: pdfBytes,
         trimBox: frameTrimBox(node),
-        colorLookup, frameName: node.name, index: i, total: selection.length,
+        colorLookup, frameName: node.name, fileName: figma.root.name, index: i, total: selection.length,
       });
     } else {
-      const dpiScale = 300 / 72;
+      const dpi = _exportState.tiffDpi || 300;
+      const dpiScale = dpi / 72;
       const pngBytes = await node.exportAsync({
         format: "PNG", constraint: { type: "SCALE", value: dpiScale },
       });
       if (_exportCancelled) return;
       figma.ui.postMessage({
         type: "export-data", format: "tiff",
-        pngBytes: pngBytes,
+        pngBytes: pngBytes, dpi,
         width: Math.round(node.width * dpiScale),
         height: Math.round(node.height * dpiScale),
         colorLookup, frameName: node.name, index: i, total: selection.length,
@@ -442,9 +448,13 @@ figma.ui.onmessage = async (msg) => {
       figma.ui.postMessage({
         type: 'settings',
         cropMarks: !!s.cropMarks,
+        regMarks: !!s.regMarks,
+        pageInfo: !!s.pageInfo,
         bleedOn: !!s.bleedOn,
         bleedMm: typeof s.bleedMm === 'number' ? s.bleedMm : 3,
         downsample: !!s.downsample,
+        downsampleDpi: typeof s.downsampleDpi === 'number' ? s.downsampleDpi : 300,
+        tiffDpi: typeof s.tiffDpi === 'number' ? s.tiffDpi : 300,
       });
     }
     return;
@@ -453,9 +463,13 @@ figma.ui.onmessage = async (msg) => {
   if (msg.type === "save-settings") {
     await figma.clientStorage.setAsync('exportSettings', {
       cropMarks: !!msg.cropMarks,
+      regMarks: !!msg.regMarks,
+      pageInfo: !!msg.pageInfo,
       bleedOn: !!msg.bleedOn,
       bleedMm: typeof msg.bleedMm === 'number' ? msg.bleedMm : 3,
       downsample: !!msg.downsample,
+      downsampleDpi: typeof msg.downsampleDpi === 'number' ? msg.downsampleDpi : 300,
+      tiffDpi: typeof msg.tiffDpi === 'number' ? msg.tiffDpi : 300,
     });
     return;
   }
@@ -505,7 +519,8 @@ figma.ui.onmessage = async (msg) => {
     const allVariablesById = new Map(allVariables.map(v => [v.id, v]));
     const colorLookup = await buildColorLookup(colorVariables, allVariablesById);
 
-    _exportState = { selection, format, colorLookup };
+    const tiffDpi = typeof msg.tiffDpi === "number" && msg.tiffDpi > 0 ? msg.tiffDpi : 300;
+    _exportState = { selection, format, colorLookup, tiffDpi };
     figma.ui.postMessage({ type: "export-ready", count: selection.length, format });
     return;
   }
@@ -515,6 +530,77 @@ figma.ui.onmessage = async (msg) => {
     if (!_exportState || _exportCancelled) return;
     figma.ui.postMessage({ type: "export-batch-start", total: _exportState.selection.length, format: _exportState.format });
     await _exportOneFrame(0);
+    return;
+  }
+
+  // Pre-flight for the export modal: report any raster image below the target DPI (which
+  // downsampling can't fix — it only shrinks). Each row carries the node id so the UI can
+  // focus the item on canvas. Read-only; no export.
+  if (msg.type === "preflight-request") {
+    if (msg.scanImages === false) return;   // only PDF + downsample asks for the low-res scan
+    const target = typeof msg.dpi === "number" && msg.dpi > 0 ? msg.dpi : 300;
+    const EXPORTABLE = new Set(["FRAME", "COMPONENT", "COMPONENT_SET", "INSTANCE", "GROUP", "SECTION"]);
+    let selection;
+    if (_lastScannedIds.length > 0) {
+      const resolved = await Promise.all(
+        _lastScannedIds.map(id => figma.getNodeByIdAsync(id).catch(() => null))
+      );
+      selection = resolved.filter(n => n && !n.removed && EXPORTABLE.has(n.type));
+    } else {
+      selection = Array.from(figma.currentPage.selection).filter(n => EXPORTABLE.has(n.type));
+    }
+
+    // The export renders each selected node in its OWN coordinate space, so an image's placed
+    // size is its local box scaled by ancestors DOWN FROM that root — its absolute scale ÷ the
+    // root's. Fold that into boxW/boxH before measuring DPI.
+    const scaleOf = (n) => {
+      const at = n && n.absoluteTransform;
+      return at && at[0] && at[1]
+        ? { x: Math.hypot(at[0][0], at[1][0]) || 1, y: Math.hypot(at[0][1], at[1][1]) || 1 }
+        : { x: 1, y: 1 };
+    };
+    const fills = [];
+    for (const n of selection) {
+      const rootFills = [];
+      await collectImageFills(n, rootFills, () => false);
+      const rs = scaleOf(n);
+      for (const f of rootFills) {
+        f.boxW = f.boxW * ((f.absScaleX || 1) / rs.x);
+        f.boxH = f.boxH * ((f.absScaleY || 1) / rs.y);
+        fills.push(f);
+      }
+    }
+
+    // getSizeAsync is the slow part — resolve every UNIQUE, uncached hash CONCURRENTLY
+    // (not one-by-one), so a big selection is one parallel batch, and cached hashes cost nothing.
+    // Cache ONLY successful sizes: a failed/empty fetch stays uncached so the next scan retries
+    // it (caching null would permanently hide that image for the rest of the session).
+    const needed = [...new Set(fills.map(f => f.imageHash))].filter(h => !_preflightSizeCache.has(h));
+    await Promise.all(needed.map(async (h) => {
+      try {
+        const img = figma.getImageByHash(h);
+        if (!img) return;
+        const src = await img.getSizeAsync();
+        if (src && src.width && src.height) _preflightSizeCache.set(h, src);
+      } catch (_) { /* leave uncached — retried next scan */ }
+    }));
+
+    const worstByNode = new Map();   // one row per node — its lowest-DPI image
+    for (const f of fills) {
+      const src = _preflightSizeCache.get(f.imageHash);
+      if (!src || !src.width || !src.height) continue;
+      const dpi = effectiveImageDpi(f, src.width, src.height, f.boxW, f.boxH);
+      if (!dpi) continue;                                   // undeterminable (e.g. TILE, no factor)
+      const lowest = Math.min(dpi.dpiX, dpi.dpiY);
+      if (lowest >= target) continue;                       // meets target → not flagged
+      const dpiX = Math.round(dpi.dpiX), dpiY = Math.round(dpi.dpiY);
+      const dpiLabel = dpiX === dpiY ? `${dpiX} dpi` : `${dpiX}×${dpiY} dpi`;
+      const entry = { id: f.nodeId, name: f.name, lowest, meta: `${src.width}×${src.height} px · ${dpiLabel}` };
+      const prev = worstByNode.get(f.nodeId);
+      if (!prev || entry.lowest < prev.lowest) worstByNode.set(f.nodeId, entry);
+    }
+    const images = [...worstByNode.values()].map(e => ({ id: e.id, name: e.name, meta: e.meta }));
+    figma.ui.postMessage({ type: "preflight-images", target, images });
     return;
   }
 

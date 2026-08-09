@@ -80,6 +80,13 @@ export function makeFigmaMock(scene = {}) {
 
     async getNodeByIdAsync(id) { return nodeById.get(id) || null; },
     async getStyleByIdAsync(id) { return (scene.stylesById || {})[id] || null; },
+    // Image bitmaps by hash. scene.images maps imageHash → { width, height } (source px);
+    // an unknown hash returns null, like the real API for a stale/absent image.
+    getImageByHash(hash) {
+      const size = (scene.images || {})[hash];
+      if (!size) return null;
+      return { hash, async getSizeAsync() { return { width: size.width, height: size.height }; } };
+    },
     // The manifests declare documentAccess:"dynamic-page", under which Figma REMOVES
     // the synchronous by-id lookups — calling them throws. The mock mirrors that so a
     // regression back to a sync call fails loudly instead of silently passing.
