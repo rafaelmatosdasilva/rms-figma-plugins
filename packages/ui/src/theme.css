@@ -41,7 +41,7 @@
     --neutral-500: #828282;
     --neutral-600: #adadad;
     --neutral-700: #d6d6d6;
-    --neutral-800: #ededed;
+    --neutral-800: #e8e8e8;
     --neutral-900: #f7f7f7;
     --neutral-1000: #ffffff;
 
@@ -62,7 +62,8 @@
     --padding-xl:  24px;
 
     /* Node component tokens — mode-aware via neutral ramp */
-    --node-background-idle:           var(--neutral-1000); /* node/background/idle N1000 */
+    /* node/background/idle retired from the DS — the resting node has no fill token now
+       (transparent; only hover/selected carry a background). */
     --node-background-hover:                var(--neutral-900);  /* node/background/default L=N900 #f7f7f7, D→override */
     --node-background-selected:       var(--neutral-1000); /* node/background/selected N1000 */
     /* node/border/default removed — DS Idle state has no stroke; the resting .node border
@@ -81,10 +82,13 @@
     --node-label-hover:       var(--neutral-300); /* node/label/hover/color → node/label/idle → N300 both modes (L #404040, D #bfbfbf) */
 
     /* Base — mode-aware via neutral ramp */
-    --bg: var(--neutral-900);           /* panel/background/color N900 */
-    --bg-detail: var(--neutral-800);    /* semantic/background/color L=N800, D→N1000 */
+    /* Surfaces — the DS elevation scale (semantic/surface/elevation{Low,Medium,High}). */
+    --figmaWindowChrome-background: #ffffff; /* figmaWindowChrome/background — direct DS value (L #fff / D #2c2c2c) */
+    --surface-elevation-high:   var(--figmaWindowChrome-background); /* semantic/surface/elevationHigh → figmaWindowChrome/background */
+    --bg: var(--neutral-900);           /* semantic/surface/elevationMedium N900 (app/panel surface) */
+    --bg-detail: var(--neutral-800);    /* semantic/surface/elevationLow L=N800, D→N1000 (detail surface) */
     --bg-secondary: var(--neutral-800); /* hover/secondary surface N800 */
-    --surface: var(--neutral-1000);     /* input/background/filled L=N1000, D→override */
+    --surface: var(--neutral-900);      /* input/background/filled L=N900, D→override */
     --border: var(--neutral-700);       /* dividerLine/border L=N700, D→override */
     --panel-border: var(--border);      /* panel/border/color → dividerLine/border (N700 both modes) */
     --text: var(--neutral-100);         /* semantic/text/primary N100 */
@@ -129,19 +133,19 @@
     --buttonQuaternary-text:             var(--neutral-400); /* buttonQuaternary/iconText/color L=N400, D→auto */
     --buttonQuaternary-background-hover: var(--neutral-1000);/* buttonQuaternary/background/hover/color N1000 */
     /* Primary button — different primitive per mode */
-    --buttonPrimary-background:   var(--neutral-300);  /* L=N300=#404040, D→override */
+    --buttonPrimary-background:   var(--neutral-200);  /* buttonPrimary/background L=N200, D→override */
     --buttonPrimary-text: var(--neutral-1000); /* buttonPrimary/iconText/color N1000 */
     /* Swatches */
     --swatch-border-filled: var(--buttonSecondary-border); /* swatch/border/filled → buttonSecondary/border (both modes) */
     --swatch-border-empty:  var(--neutral-700);             /* swatch/border/empty L=N700, D→buttonSecondary-border */
     /* Swatch stripe color = same as --border; gap = transparent. No separate vars needed. */
     /* Inputs */
-    --input-border:             var(--neutral-700); /* input/border/default/color L=N700 */
+    --input-border:             var(--neutral-600); /* input/border/default/color L=N600, D→override */
     --input-border-focus:              var(--neutral-100); /* input/border/focus/color  L=N100 */
     --input-border-hover:              var(--neutral-500); /* input/border/hover/color  L=N500 */
     --input-value-empty:        var(--neutral-500); /* input/value/empty/color   L=N5, D→override */
-    --input-value-disabled:     var(--neutral-500); /* input/value/disabled/color L=N5, D→override */
-    --input-background-disabled: var(--neutral-1000); /* input/background/disabled/color L=N1000, D→override */
+    --input-value-disabled:     var(--neutral-400); /* input/value/disabled/color L=N4, D→override */
+    --input-border-disabled:    var(--neutral-800); /* input/border/disabled/color N800 both (replaces removed input/background/disabled) */
     --input-background:          var(--surface);       /* input/background/filled → surface alias */
     --input-value:               var(--neutral-100);   /* input/value/filled/color N1 both */
     --input-label:               var(--neutral-400);   /* input/label/color L=N4, D→override */
@@ -151,7 +155,7 @@
     /* Action bar — gained its own DS tokens 2026-07-31 (was borrowing figmaWindowChrome).
        Border mirrors Figma's chain actionbar/border → dividerLine/border, so it routes
        through --border rather than straight to the primitive. Same in both modes. */
-    --actionbar-background: var(--neutral-1000); /* actionbar/background/color L=N1000, D→override */
+    --actionbar-background: var(--surface-elevation-high); /* actionbar/background → semantic/surface/elevationHigh */
     --actionbar-border:     var(--border);       /* actionbar/border/color → dividerLine/border, both modes */
     /* figmaWindowChrome/background, /title, /button, /divider — Figma-native chrome,
        not HTML-controllable. No CSS vars; see COVERED in parity-map.mjs. */
@@ -160,13 +164,11 @@
     --scrollbar-thumb-hover: rgba(0,0,0,0.35);
     /* Misc */
     --overlay-bg: rgba(242,242,242,0.6);
-    --toast-background-loading: var(--neutral-1000); /* toast/background/loading/color N1000 both */
-    --toast-title-loading:      var(--neutral-100);  /* toast/title/loading/color N100 both */
-    --toast-icon-loading:       var(--neutral-600);  /* toast/icon/loading/color L=N6, D→N500 */
+    /* toast loading tokens retired — the loading variant moved to the `loader` component
+       (loader/* tokens); the progress UI now uses --loader-background/spinner/title/description. */
     --toast-background-success: var(--semantic-positive); /* toast/background/success/color — mode-aware via semantic */
     --toast-title-success:      var(--neutral-1000); /* toast/title/success/color N1000 both */
     --toast-icon-success:       var(--neutral-1000); /* toast/icon/success/color N1000 both */
-    --toast-description-loading: var(--neutral-400); /* toast/description/loading/color L=N400, D→auto */
     --modal-background: var(--neutral-1000);         /* modal/background N1000 */
     --modal-title: var(--neutral-100);       /* modal/title N100 */
     /* Tooltip */
@@ -191,7 +193,7 @@
     --tableRow-background-hover: var(--neutral-800); /* tableRow/background/hover/color N800 both modes */
     --tableRow-icon:             var(--neutral-500); /* tableRow/icon/color L=N500, D→override */
     /* Segmented control */
-    --segmentedControl-background:          var(--neutral-800); /* segmentedControl/background/default N8 both */
+    --segmentedControl-background:          var(--neutral-900); /* segmentedControl/background/default L=N900, D→N800 override */
     --segmentedControl-border:              var(--neutral-700);  /* segmentedControl/border/default N700, D=N600 */
     --segmentedControl-border-selected:     var(--node-border-selected); /* segmentedControl/border/selected → node/border/selected */
     --segmentedControl-label:               var(--neutral-400);  /* segmentedControl/label/default L=N4, D→override */
@@ -221,19 +223,24 @@
     --radioButton-text-current:   var(--neutral-100);  /* radioButton/text/current N100 both */
     --radioButton-description:    var(--neutral-400);  /* radioButton/description L=N4, D→override */
     /* radioButton state variants — dedicated vars for every bound Figma token */
-    --radioButton-background-selected: var(--toast-background-loading); /* radioButton/background/selected → toast/background/loading/color → N1000 both */
+    --radioButton-background-selected: var(--neutral-1000); /* radioButton/background/selected → N1000 both */
     --radioButton-border-current:      var(--neutral-100);  /* radioButton/border/current N100 both */
     --radioButton-border-unselected:   var(--neutral-100);  /* radioButton/border/unselected N100 both */
     --radioButton-text-selected:       var(--neutral-100);  /* radioButton/text/selected N100 both */
     --radioButton-text-unselected:     var(--neutral-200);  /* radioButton/text/unselected N200 both */
     /* Checkbox */
-    --checkbox-background:          var(--toast-background-loading); /* checkbox/background/default → N1000 both */
+    --checkbox-background:          var(--surface); /* checkbox/background/default → input/background/filled (N900 L / N800 D) */
     --checkbox-border:              var(--neutral-600);  /* checkbox/border/default L=N6, D→override */
-    --checkbox-background-selected: var(--neutral-100);  /* checkbox/background/selected N100 both */
+    --checkbox-background-selected: var(--buttonPrimary-background);  /* checkbox/background/selected → buttonPrimary/background (N200 L / N100 D) */
     --checkbox-border-selected:     var(--neutral-100);  /* checkbox/border/selected N100 both */
-    --checkbox-icon-selected:       var(--toast-background-loading); /* checkbox/icon/selected → N1000 both */
+    --checkbox-icon-selected:       var(--neutral-1000); /* checkbox/icon/selected → N1000 (light DS binding missing; N1000 = white tick on selected bg, matches dark) */
     --checkbox-text:                var(--neutral-300);  /* checkbox/text/default L=N3, D→override */
     --checkbox-text-selected:       var(--neutral-100);  /* checkbox/text/selected N100 both */
+    /* Loader (DS 68:52296) */
+    --loader-background:  var(--neutral-1000); /* loader/background N1000 both */
+    --loader-spinner:     var(--neutral-600);  /* loader/spinner L=N6, D→override */
+    --loader-title:       var(--neutral-100);  /* loader/title N100 both */
+    --loader-description: var(--neutral-400);  /* loader/description N400 both */
     /* listItem component — title and description vars removed with their last consumers
        (library-atlas, then the retired Font Scaling Lab details rows). Both DS tokens are
        in COVERED; declare a var again when a plugin actually renders a listItem. */
@@ -271,21 +278,21 @@
       --buttonPrimary-background:   var(--neutral-100);  /* D=N100=#ededed */
       --swatch-border-filled: var(--buttonSecondary-border); /* Dark → buttonSecondary/border (= N600) */
       --swatch-border-empty:  var(--buttonSecondary-border); /* Dark → buttonSecondary/border/default/color */
-      --input-border:              var(--buttonSecondary-border); /* input/border/default D=N600 via buttonSecondary/border */
+      --input-border:              var(--neutral-500); /* input/border/default D=N500 */
       --input-border-hover:               var(--neutral-400);   /* input/border/hover D=N400 */
       --input-value-empty:         var(--neutral-400);   /* input/value/empty D=N400 */
       --radioButton-text: var(--neutral-200);  /* radioButton/text/default Dark = N200 */
       --checkbox-border: var(--neutral-400);   /* checkbox/border/default Dark = N400 */
       --checkbox-text:   var(--neutral-200);   /* checkbox/text/default Dark = N200 */
+      --loader-spinner:  var(--neutral-400);   /* loader/spinner Dark = N400 */
       --input-value-disabled:      var(--neutral-100);   /* input/value/disabled D=N100 */
-      --input-background-disabled: var(--neutral-900);   /* input/background/disabled D=N900 */
+      /* input/border/disabled D=N800 (#2b2b2b) — resolves from :root --neutral-800 */
       --input-auto-border: rgba(255,255,255,0.08);
-      --actionbar-background: var(--neutral-800);            /* actionbar/background Dark = N800 #2b2b2b */
+      --figmaWindowChrome-background: #2c2c2c;                /* figmaWindowChrome/background Dark (elevationHigh → actionbar) */
       --scrollbar-thumb: rgba(255,255,255,0.2);
       --scrollbar-thumb-hover: rgba(255,255,255,0.4);
       --overlay-bg: rgba(44,44,44,0.6);
       /* Node tokens — different primitives per mode */
-      --node-background-idle:           var(--neutral-800);  /* Dark = N800 */
       --node-background-hover:                var(--neutral-800);  /* node/background/default Dark = N800 #2c2c2c */
       --node-background-selected:       var(--neutral-700);  /* Dark = N700 */
       --node-border-hover:      var(--neutral-600);  /* Dark = N300 */
@@ -300,7 +307,6 @@
       --dividerSection-divider: var(--neutral-500); /* Dark = N500 */
       --statusbar-icon: var(--neutral-400);      /* D=N400 */
       --tableRow-icon: var(--neutral-400);       /* D=N400 */
-      --toast-icon-loading: var(--neutral-500);  /* D=N500 (light=N6, dark=N5) */
       --overflow-background: var(--neutral-700);  /* D=N700 */
       --overflow-border:     var(--neutral-600);  /* D=N600 */
       --overflow-text:       var(--neutral-300);  /* D=N3 */
@@ -332,6 +338,7 @@
       --buttonList-text-hover:    var(--neutral-100); /* D=N1 */
       --buttonList-text-selected: var(--neutral-100); /* D=N1 */
       /* segmentedControl */
+      --segmentedControl-background: var(--neutral-800); /* Dark = N800 (#2b2b2b) — L uses N900 */
       --segmentedControl-border: var(--neutral-600); /* Dark = N600 */
       --segmentedControl-label: var(--neutral-300);  /* D=N3 */
       --red:    #fe6767;
@@ -382,7 +389,7 @@
     display: flex;
     align-items: center;
     gap: var(--gap-s);
-    background: var(--node-background-idle);
+    background: transparent; /* node/background/idle retired — resting node is transparent (shows the panel) */
     /* Idle state (DS node 544:51070) has NO stroke — border-color stays transparent at
        rest and is only colored by the interactive/selection states below. The width is
        reserved (var(--thickness)) so hover/select never shifts layout. */
@@ -536,7 +543,7 @@
     white-space: pre-wrap;
     word-break: break-word;
     max-width: 240px;
-    z-index: 9999;
+    z-index: 10002;   /* above the modal (card is 10001) so tooltips aren't trapped behind it */
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.15s ease;
@@ -751,7 +758,7 @@
     gap: var(--gap-m); /* slot-content gap — DS actionBar root itemSpacing is 0 (Slot); gap/m is the content-level default */
     padding: var(--padding-s) var(--padding-l); /* DS actionBar 138:16657: tb padding/s, lr padding/l */
     margin: 0 calc(-1 * var(--padding-l));
-    height: 40px; /* 24px content + padding/s × 2 */
+    min-height: 40px; /* 24px content + padding/s × 2; hugs taller when chips wrap to more rows */
     background: var(--actionbar-background);
     /* DS 138:16657 binds strokes to actionbar/border with strokeBottomWeight 1.5 and
        strokeAlign INSIDE — a bottom rule only, drawn inside the 40px (box-sizing is
@@ -783,7 +790,7 @@
   .inputWrap:not(.inputWrap--readonly):hover { border-color: var(--input-border-hover); }
   .inputWrap:not(.inputWrap--readonly):focus-within { border-color: var(--input-border-focus) !important; }
   .inputWrap.inputWrap--readonly { background: transparent; border-color: var(--input-auto-border); pointer-events: none; opacity: 0.8; }
-  .inputWrap.inputWrap--disabled { background: var(--input-background-disabled); border-color: var(--input-border); pointer-events: none; opacity: 0.5; }
+  .inputWrap.inputWrap--disabled { border-color: var(--input-border-disabled); pointer-events: none; opacity: 0.5; }
   .inputWrap.inputWrap--disabled .inputField { color: var(--input-value-disabled); }
   .inputField {
     background: transparent; border: none;
@@ -831,7 +838,8 @@
     white-space: nowrap;
   }
   .progress-msg {
-    background: var(--toast-background-loading); color: var(--toast-title-loading);
+    /* Loading moved out of toast into the DS `loader` component — uses loader/* tokens. */
+    background: var(--loader-background); color: var(--loader-title);
     height: 48px; padding: var(--padding-s) var(--padding-m); /* Figma: h=48, paddingVar tb=padding/s lr=padding/m */
     flex-shrink: 0; /* DS toast is a fixed 48px — never compress */
     font-size: var(--m-size); font-weight: var(--m-weight);
@@ -1245,7 +1253,7 @@
     animation: toast-in 0.22s cubic-bezier(0.16, 0.84, 0.44, 1); z-index: 9999;
   }
   .toast.toast-out { animation: toast-out 0.22s cubic-bezier(0.4, 0, 0.84, 0.16) forwards; }
-  .toast-icon { color: var(--toast-icon-loading); display: inline-flex; flex-shrink: 0; }
+  .toast-icon { color: var(--loader-spinner); display: inline-flex; flex-shrink: 0; }
   .toast .toast-icon { color: var(--toast-icon-success); }
   /* Failure variant — DS "state=error". Same 32px shell, padding and radius as the
      success toast; only the fill and the icon/label colour change. The icon has its
@@ -1254,7 +1262,7 @@
   .toast.toast-error .toast-icon { color: var(--toast-icon-error); }
   .toast-description {
     font-size: var(--m-size);
-    color: var(--toast-description-loading);
+    color: var(--loader-description);
     opacity: 0.85;
     white-space: nowrap;
   }
@@ -1323,6 +1331,30 @@
   }
   @keyframes toast-spin { to { transform: rotate(360deg); } }
   .toast-content { display: flex; align-items: center; gap: var(--gap-m); /* gap/m — DS loading-toast "content" frame spinner↔text gap */ }
+
+  /* ── Loader (DS 68:52296): a pill card — spinner + title/description with an optional
+     trailing action (gap/xl). Horizontal, padding s/m, radius/button; hugs its content. ── */
+  .loader {
+    display: inline-flex; align-items: center;
+    gap: var(--gap-xl);
+    padding: var(--padding-s) var(--padding-m);
+    background: var(--loader-background);
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+  }
+  .loader-content { display: flex; align-items: center; gap: var(--gap-m); /* gap/m — spinner↔text */ }
+  .loader-spinner {
+    /* DS Spinner instance box is 14x14; mirrors .toast-spinner. */
+    width: 14px; height: 14px; flex-shrink: 0;
+    border: var(--thickness) solid var(--loader-spinner);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: toast-spin 0.8s linear infinite;
+    display: inline-block;
+  }
+  .loader-text { display: flex; flex-direction: column; }
+  .loader-title { font-size: var(--m-size); font-weight: var(--m-weight); line-height: var(--m-lh); color: var(--loader-title); }
+  .loader-description { font-size: var(--s-size); font-weight: var(--s-weight); line-height: var(--s-lh); color: var(--loader-description); }
 
   /* ── Status bar ── DS statusBar 789:38384: h=56 (24 content + padding/l × 2), all padding padding/l,
      root gap gap/xl between slot groups (flattened — flex spacer separates groups; visible inter-item
