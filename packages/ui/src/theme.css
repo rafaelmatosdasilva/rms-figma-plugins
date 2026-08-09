@@ -233,7 +233,7 @@
     --checkbox-border:              var(--neutral-600);  /* checkbox/border/default L=N6, D→override */
     --checkbox-background-selected: var(--buttonPrimary-background);  /* checkbox/background/selected → buttonPrimary/background (N200 L / N100 D) */
     --checkbox-border-selected:     var(--neutral-100);  /* checkbox/border/selected N100 both */
-    --checkbox-icon-selected:       var(--neutral-1000); /* checkbox/icon/selected → N1000 (light DS binding missing; N1000 = white tick on selected bg, matches dark) */
+    --checkbox-icon-selected:       var(--neutral-1000); /* checkbox/icon/selected → N1000 both */
     --checkbox-text:                var(--neutral-300);  /* checkbox/text/default L=N3, D→override */
     --checkbox-text-selected:       var(--neutral-100);  /* checkbox/text/selected N100 both */
     /* Loader (DS 68:52296) */
