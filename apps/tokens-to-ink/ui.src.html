@@ -298,6 +298,18 @@
     margin-left: auto;
   }
   /* ── Export modal fields (in the shared DS modal slot) ── */
+  /* Export format picker (DS overflow) — a flyout anchored under the export button. */
+  .export-picker { position: relative; }
+  .export-overflow {
+    position: absolute;
+    top: calc(100% + var(--gap-s));
+    right: 0;
+    z-index: 100;
+    min-width: 172px;
+  }
+  .export-overflow[hidden] { display: none; }
+  /* Format is picked in the overflow now — the modal's segmented control is redundant. */
+  #export-format { display: none; }
   .export-modal-card { width: 300px; }
   .export-field { display: flex; flex-direction: column; gap: var(--gap-l); width: 100%; }
   .export-format-desc {
@@ -368,6 +380,17 @@
       <button class="buttonSecondary buttonAddOutput" id="export-btn" data-tip="Export CMYK">
         <svg width="16" height="16"><use href="#icon-download"/></svg>
       </button>
+      <!-- Format picker (DS overflow 2004:35523) — choosing here keeps PDF/TIFF logic split
+           and opens a modal with only that format's options. -->
+      <div class="overflow export-overflow" id="export-overflow" hidden>
+        <div class="overflow-label">Export Select Artwork</div>
+        <button type="button" class="overflowList" id="export-pdf-item" data-format="pdf">
+          <svg width="16" height="16"><use href="#icon-vector"/></svg><span>PDF CMYK Vector</span>
+        </button>
+        <button type="button" class="overflowList" id="export-tiff-item" data-format="tiff">
+          <svg width="16" height="16"><use href="#icon-image"/></svg><span>TIFF CMYK Raster</span>
+        </button>
+      </div>
     </div>
     <!-- Label swaps with the selection — see the selection-count handler. -->
     <button id="rescan-btn" class="buttonPrimary">
@@ -2328,7 +2351,9 @@
       clearPreflight();                   // drop any content from a previous selection
       modal.classList.add("is-open");
       requestAnimationFrame(moveSegPill); // position the pill once the modal is laid out
-      requestPreflight();                 // re-scan the CURRENT selection for sizes + low-res images
+      // Preflight (image-size scan for downsampling) is a PDF-only concern — TIFF never runs it,
+      // so the PDF and TIFF paths stay fully separated once a format is chosen in the overflow.
+      if (_exportFormat === "pdf") requestPreflight();
     };
     window.__closeExportModal = () => {
       if (!modal.classList.contains("is-open")) return;
@@ -2336,11 +2361,30 @@
       closeTimer = setTimeout(() => { modal.classList.remove("is-open", "is-closing"); closeTimer = null; }, 160);
     };
 
-    openBtn.addEventListener("click", (e) => { e.stopPropagation(); openModal(); });
+    // The export button opens the DS format-picker overflow (PDF vs TIFF); picking a format
+    // opens the modal with only that format's options — PDF and TIFF logic stay separated.
+    const overflow = document.getElementById("export-overflow");
+    const closeOverflow = () => { overflow.hidden = true; };
+    openBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (modal.classList.contains("is-open")) return;
+      overflow.hidden = !overflow.hidden;
+    });
+    overflow.querySelectorAll(".overflowList").forEach((item) => {
+      item.addEventListener("click", (e) => {
+        e.stopPropagation();
+        selectFormat(item.dataset.format);
+        closeOverflow();
+        openModal();
+      });
+    });
+    document.addEventListener("click", (e) => { if (!e.target.closest("#export-picker")) closeOverflow(); });
     cancel.addEventListener("click", window.__closeExportModal);
     modal.querySelector(".modal-overlay").addEventListener("click", window.__closeExportModal);
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && modal.classList.contains("is-open")) window.__closeExportModal();
+      if (e.key !== "Escape") return;
+      if (modal.classList.contains("is-open")) window.__closeExportModal();
+      closeOverflow();
     });
     confirm.addEventListener("click", () => startExport(_exportFormat));
 

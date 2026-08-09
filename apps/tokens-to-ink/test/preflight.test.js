@@ -7,7 +7,9 @@ const UI = fileURLToPath(new URL('../ui.html', import.meta.url));
 let ui;
 afterEach(() => { if (ui) { ui.close(); ui = null; } });
 
-const openModal = (u) => u.click('#export-btn');
+// The export button opens the DS overflow (PDF/TIFF); picking a format opens the modal.
+const openModal    = (u) => { u.click('#export-btn'); u.click('#export-pdf-item'); };
+const openModalTiff = (u) => { u.click('#export-btn'); u.click('#export-tiff-item'); };
 const enableDownsample = (u) => { const t = u.$('#downsample-toggle'); t.checked = true; t.dispatchEvent(new u.window.Event('change')); };
 // The low-res image list arrives on a preflight-images message.
 const imagesMsg = (over = {}) => ({ type: 'preflight-images', target: 300, images: [], ...over });
