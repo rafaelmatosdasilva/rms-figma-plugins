@@ -23,6 +23,24 @@ let _exportState = null; // { selection, format, colorLookup, tiffDpi } — pers
 // re-filter with no round-trips). Replacing an image changes its hash, so this never goes stale.
 const _preflightSizeCache = new Map();
 let _scanCancelled = false;
+// Bumped on every preflight request; an in-flight scan bails the moment a newer one starts,
+// so the debounced dpi re-scans never overlap and decode images twice at once.
+let _preflightSeq = 0;
+// Peak-memory guard for the low-res image scan. getImageByHash(h).getSizeAsync() forces Figma
+// to load the bitmap; firing it for every unique hash at once (Promise.all over hundreds of
+// large images) spikes the file's memory hard enough to crash Figma. A small pool keeps peak
+// memory flat while staying concurrent. Bails between items when `shouldStop` turns true.
+const PREFLIGHT_DECODE_POOL = 4;
+async function mapPool(items, limit, fn, shouldStop) {
+  let i = 0;
+  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (i < items.length) {
+      if (shouldStop && shouldStop()) return;
+      await fn(items[i++]);
+    }
+  });
+  await Promise.all(runners);
+}
 
 function notifySelectionCount() {
   figma.ui.postMessage({ type: "selection-count", count: figma.currentPage.selection.length });
@@ -538,6 +556,8 @@ figma.ui.onmessage = async (msg) => {
   // focus the item on canvas. Read-only; no export.
   if (msg.type === "preflight-request") {
     if (msg.scanImages === false) return;   // only PDF + downsample asks for the low-res scan
+    const seq = ++_preflightSeq;            // a newer request supersedes this in-flight one
+    const superseded = () => _preflightSeq !== seq;
     const target = typeof msg.dpi === "number" && msg.dpi > 0 ? msg.dpi : 300;
     const EXPORTABLE = new Set(["FRAME", "COMPONENT", "COMPONENT_SET", "INSTANCE", "GROUP", "SECTION"]);
     let selection;
@@ -561,8 +581,9 @@ figma.ui.onmessage = async (msg) => {
     };
     const fills = [];
     for (const n of selection) {
+      if (superseded()) return;
       const rootFills = [];
-      await collectImageFills(n, rootFills, () => false);
+      await collectImageFills(n, rootFills, superseded);
       const rs = scaleOf(n);
       for (const f of rootFills) {
         f.boxW = f.boxW * ((f.absScaleX || 1) / rs.x);
@@ -571,19 +592,22 @@ figma.ui.onmessage = async (msg) => {
       }
     }
 
-    // getSizeAsync is the slow part — resolve every UNIQUE, uncached hash CONCURRENTLY
-    // (not one-by-one), so a big selection is one parallel batch, and cached hashes cost nothing.
-    // Cache ONLY successful sizes: a failed/empty fetch stays uncached so the next scan retries
-    // it (caching null would permanently hide that image for the rest of the session).
+    // getSizeAsync is the slow part AND the memory-heavy part — each call makes Figma load the
+    // bitmap. Resolve every UNIQUE, uncached hash through a small pool (not one Promise.all over
+    // all of them), so a selection with hundreds of large images decodes a few at a time instead
+    // of all at once — which previously spiked file memory enough to crash Figma. Cached hashes
+    // cost nothing. Cache ONLY successful sizes: a failed/empty fetch stays uncached so the next
+    // scan retries it (caching null would permanently hide that image for the rest of the session).
     const needed = [...new Set(fills.map(f => f.imageHash))].filter(h => !_preflightSizeCache.has(h));
-    await Promise.all(needed.map(async (h) => {
+    await mapPool(needed, PREFLIGHT_DECODE_POOL, async (h) => {
       try {
         const img = figma.getImageByHash(h);
         if (!img) return;
         const src = await img.getSizeAsync();
         if (src && src.width && src.height) _preflightSizeCache.set(h, src);
       } catch (_) { /* leave uncached — retried next scan */ }
-    }));
+    }, superseded);
+    if (superseded()) return;   // a newer scan started — drop this one's stale results
 
     const worstByNode = new Map();   // one row per node — its lowest-DPI image
     for (const f of fills) {

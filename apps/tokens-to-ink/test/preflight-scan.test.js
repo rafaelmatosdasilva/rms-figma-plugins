@@ -78,6 +78,47 @@ describe('tokens-to-ink — preflight scan (code.js)', () => {
     expect(lastOf('preflight-images').images.map((i) => i.id)).toContain('nested');
   });
 
+  it('decodes images in a bounded pool — never all at once (memory-crash guard)', async () => {
+    // A selection with many distinct images. getSizeAsync forces Figma to load each bitmap;
+    // firing them all at once spiked file memory enough to crash Figma. Sizes must resolve
+    // through a small pool, so peak in-flight decodes stays capped no matter the image count.
+    const N = 40;
+    const frame = makeNode('FRAME', { id: 'wall', name: 'Photo wall', width: 2000, height: 2000 });
+    const images = {};
+    for (let i = 0; i < N; i++) {
+      images[`img-${i}`] = { width: 800, height: 800 };   // low-res in an A4 box → all flagged below 300 dpi
+      frame.appendChild(makeNode('RECTANGLE', {
+        id: `r${i}`, name: `Photo ${i}`, width: 595, height: 842, fills: [imageFill(`img-${i}`)],
+      }));
+    }
+    const page = makePage('Page 1');
+    page.appendChild(frame);
+    page.selection = [frame];
+
+    const { send, figma, lastOf } = await loadPlugin(ENTRY, { pages: [page], images });
+
+    let inFlight = 0, peak = 0;
+    const realGet = figma.getImageByHash;
+    figma.getImageByHash = (h) => {
+      const img = realGet(h);
+      if (!img) return null;
+      const realSize = img.getSizeAsync;
+      img.getSizeAsync = async () => {
+        inFlight += 1; peak = Math.max(peak, inFlight);
+        await new Promise((r) => setTimeout(r, 5));   // hold the "decode" open so overlap is visible
+        inFlight -= 1;
+        return realSize.call(img);
+      };
+      return img;
+    };
+
+    await send({ type: 'preflight-request', dpi: 300, scanImages: true });
+
+    expect(lastOf('preflight-images').images).toHaveLength(N);   // all decoded, none dropped
+    expect(peak).toBeGreaterThan(1);    // still concurrent (not serialised)
+    expect(peak).toBeLessThanOrEqual(4);   // …but capped at the pool size
+  });
+
   it('reuses the cached bitmap size on a re-scan (no second getSizeAsync)', async () => {
     const { send, figma, lastOf } = await loadPlugin(ENTRY, scene());
     let sizeCalls = 0;
