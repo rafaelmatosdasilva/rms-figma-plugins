@@ -1071,7 +1071,9 @@
     width: 100%;
     text-align: left;
     background: var(--overflowList-background);
-    border: var(--thickness) solid var(--overflowList-border);
+    /* DS overflowList item (789:35422) binds ONLY strokeBottomWeight (general/thickness);
+       top/left/right are 0. It's a row divider, not a boxed border. */
+    border-bottom: var(--thickness) solid var(--overflowList-border);
     padding: 0 var(--padding-s);
     gap: var(--gap-s);
     flex-shrink: 0; /* DS overflowList is a fixed 32px — never compress as a flyout row */
@@ -1087,7 +1089,7 @@
   .overflowList:hover {
     background: var(--overflowList-background-hover);
     color: var(--overflowList-label-hover);
-    border-color: var(--overflowList-border-hover);
+    border-bottom-color: var(--overflowList-border-hover);
   }
 
   /* ── Button list item (icon-label row: nav/settings lists) ── */
