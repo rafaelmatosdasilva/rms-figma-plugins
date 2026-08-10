@@ -22,7 +22,39 @@ let _exportState = null; // { selection, format, colorLookup, tiffDpi } — pers
 // resolve each hash's getSizeAsync ONCE and reuse it across preflight scans (dpi changes then
 // re-filter with no round-trips). Replacing an image changes its hash, so this never goes stale.
 const _preflightSizeCache = new Map();
+// imageHash → a short reason string if the image will NOT convert to CMYK on PDF export (it
+// stays RGB), or null if it converts fine. Sniffed once per hash from the stored bytes.
+const _preflightFormatCache = new Map();
 let _scanCancelled = false;
+
+// Sniff an image's stored bytes to predict whether the CMYK PDF converter will leave it as RGB.
+// This is a BEST-EFFORT hint, not the truth: Figma re-encodes images when it writes the PDF, and
+// the source bytes can't reveal that re-encoding (predictors, colour-space changes). The one case
+// that reliably survives un-convertible is a CMYK (4-channel) JPEG, which Figma passes through as
+// DCTDecode — so that's all we flag here. Everything else (PNG/GIF/WebP…) is re-encoded to RGB by
+// Figma and converts fine, so flagging it would be a false alarm. The export-time check on the
+// actual PDF (convertRgbImagesToCmyk) remains the ground truth. Returns a reason or null.
+function classifyImageBytes(bytes) {
+  if (!bytes || bytes.length < 4) return null;
+  if (bytes[0] === 0xFF && bytes[1] === 0xD8) {   // JPEG — walk markers to the SOF component count
+    let i = 2;
+    while (i + 1 < bytes.length) {
+      if (bytes[i] !== 0xFF) { i++; continue; }
+      const marker = bytes[i + 1];
+      if (marker === 0xFF) { i++; continue; }                       // fill byte
+      if (marker === 0xD8 || marker === 0xD9 || marker === 0x01 || (marker >= 0xD0 && marker <= 0xD7)) { i += 2; continue; }
+      if (i + 3 >= bytes.length) break;
+      const len = (bytes[i + 2] << 8) | bytes[i + 3];
+      if (len < 2) break;
+      if (marker >= 0xC0 && marker <= 0xCF && marker !== 0xC4 && marker !== 0xC8 && marker !== 0xCC) {
+        if (i + 9 >= bytes.length) break;
+        return bytes[i + 9] === 4 ? "CMYK JPEG" : null;             // 4 components = CMYK/YCCK
+      }
+      i += 2 + len;
+    }
+  }
+  return null;   // not a CMYK JPEG → assume Figma re-encodes it to convertible RGB
+}
 // Bumped on every preflight request; an in-flight scan bails the moment a newer one starts,
 // so the debounced dpi re-scans never overlap and decode images twice at once.
 let _preflightSeq = 0;
@@ -467,6 +499,7 @@ figma.ui.onmessage = async (msg) => {
         type: 'settings',
         cropMarks: !!s.cropMarks,
         regMarks: !!s.regMarks,
+        colorBars: !!s.colorBars,
         pageInfo: !!s.pageInfo,
         bleedOn: !!s.bleedOn,
         bleedMm: typeof s.bleedMm === 'number' ? s.bleedMm : 3,
@@ -482,6 +515,7 @@ figma.ui.onmessage = async (msg) => {
     await figma.clientStorage.setAsync('exportSettings', {
       cropMarks: !!msg.cropMarks,
       regMarks: !!msg.regMarks,
+      colorBars: !!msg.colorBars,
       pageInfo: !!msg.pageInfo,
       bleedOn: !!msg.bleedOn,
       bleedMm: typeof msg.bleedMm === 'number' ? msg.bleedMm : 3,
@@ -555,7 +589,6 @@ figma.ui.onmessage = async (msg) => {
   // downsampling can't fix — it only shrinks). Each row carries the node id so the UI can
   // focus the item on canvas. Read-only; no export.
   if (msg.type === "preflight-request") {
-    if (msg.scanImages === false) return;   // only PDF + downsample asks for the low-res scan
     const seq = ++_preflightSeq;            // a newer request supersedes this in-flight one
     const superseded = () => _preflightSeq !== seq;
     const target = typeof msg.dpi === "number" && msg.dpi > 0 ? msg.dpi : 300;
@@ -572,7 +605,9 @@ figma.ui.onmessage = async (msg) => {
 
     // The export renders each selected node in its OWN coordinate space, so an image's placed
     // size is its local box scaled by ancestors DOWN FROM that root — its absolute scale ÷ the
-    // root's. Fold that into boxW/boxH before measuring DPI.
+    // root's. Fold that into boxW/boxH before measuring DPI. This walk is property-only (no
+    // bitmap loads), so it also cheaply answers "does the selection contain any image?" —
+    // which the modal uses to decide whether to offer the Image-quality tab at all.
     const scaleOf = (n) => {
       const at = n && n.absoluteTransform;
       return at && at[0] && at[1]
@@ -591,40 +626,73 @@ figma.ui.onmessage = async (msg) => {
         fills.push(f);
       }
     }
+    const hasImages = fills.length > 0;
+    // Answer "does the selection have images?" IMMEDIATELY (this walk was property-only, no bitmap
+    // loads) so the modal can reveal the tabs and open without waiting on the slow byte/size scans
+    // below. The lists that follow populate the (background) Image-quality tab a moment later.
+    figma.ui.postMessage({ type: "preflight-selection", hasImages });
+    if (superseded()) return;
 
-    // getSizeAsync is the slow part AND the memory-heavy part — each call makes Figma load the
-    // bitmap. Resolve every UNIQUE, uncached hash through a small pool (not one Promise.all over
-    // all of them), so a selection with hundreds of large images decodes a few at a time instead
-    // of all at once — which previously spiked file memory enough to crash Figma. Cached hashes
-    // cost nothing. Cache ONLY successful sizes: a failed/empty fetch stays uncached so the next
-    // scan retries it (caching null would permanently hide that image for the rest of the session).
-    const needed = [...new Set(fills.map(f => f.imageHash))].filter(h => !_preflightSizeCache.has(h));
-    await mapPool(needed, PREFLIGHT_DECODE_POOL, async (h) => {
-      try {
-        const img = figma.getImageByHash(h);
-        if (!img) return;
-        const src = await img.getSizeAsync();
-        if (src && src.width && src.height) _preflightSizeCache.set(h, src);
-      } catch (_) { /* leave uncached — retried next scan */ }
-    }, superseded);
-    if (superseded()) return;   // a newer scan started — drop this one's stale results
+    // Images that won't convert to CMYK (stay RGB). Always checked for PDF (independent of
+    // downsampling), since conversion always runs. Sniff each UNIQUE hash's stored bytes once,
+    // through the same small pool that caps peak memory, and keep one row per node.
+    let unconvertible = [];
+    if (hasImages) {
+      const needFmt = [...new Set(fills.map(f => f.imageHash))].filter(h => !_preflightFormatCache.has(h));
+      await mapPool(needFmt, PREFLIGHT_DECODE_POOL, async (h) => {
+        try {
+          const img = figma.getImageByHash(h);
+          if (!img) { _preflightFormatCache.set(h, "missing image"); return; }
+          _preflightFormatCache.set(h, classifyImageBytes(await img.getBytesAsync()));
+        } catch (_) { /* leave uncached — retried next scan */ }
+      }, superseded);
+      if (superseded()) return;
 
-    const worstByNode = new Map();   // one row per node — its lowest-DPI image
-    for (const f of fills) {
-      const src = _preflightSizeCache.get(f.imageHash);
-      if (!src || !src.width || !src.height) continue;
-      const dpi = effectiveImageDpi(f, src.width, src.height, f.boxW, f.boxH);
-      if (!dpi) continue;                                   // undeterminable (e.g. TILE, no factor)
-      const lowest = Math.min(dpi.dpiX, dpi.dpiY);
-      if (lowest >= target) continue;                       // meets target → not flagged
-      const dpiX = Math.round(dpi.dpiX), dpiY = Math.round(dpi.dpiY);
-      const dpiLabel = dpiX === dpiY ? `${dpiX} dpi` : `${dpiX}×${dpiY} dpi`;
-      const entry = { id: f.nodeId, name: f.name, lowest, meta: `${src.width}×${src.height} px · ${dpiLabel}` };
-      const prev = worstByNode.get(f.nodeId);
-      if (!prev || entry.lowest < prev.lowest) worstByNode.set(f.nodeId, entry);
+      const badByNode = new Map();   // one row per node — the first un-convertible image on it
+      for (const f of fills) {
+        const reason = _preflightFormatCache.get(f.imageHash);
+        if (!reason) continue;                                  // convertible (or not yet sniffed)
+        if (!badByNode.has(f.nodeId)) badByNode.set(f.nodeId, { id: f.nodeId, name: f.name, meta: reason });
+      }
+      unconvertible = [...badByNode.values()];
     }
-    const images = [...worstByNode.values()].map(e => ({ id: e.id, name: e.name, meta: e.meta }));
-    figma.ui.postMessage({ type: "preflight-images", target, images });
+
+    // The low-res list is only computed when asked (PDF + downsample on) AND there are images.
+    // getSizeAsync is the slow, memory-heavy part — each call makes Figma load the bitmap — so
+    // resolve every UNIQUE, uncached hash through a small pool (not one Promise.all over all of
+    // them), decoding a few at a time instead of all at once (which spiked memory and crashed
+    // Figma). Cache ONLY successful sizes so a failed fetch retries next scan.
+    let images = [];
+    if (msg.scanImages !== false && hasImages) {
+      const needed = [...new Set(fills.map(f => f.imageHash))].filter(h => !_preflightSizeCache.has(h));
+      await mapPool(needed, PREFLIGHT_DECODE_POOL, async (h) => {
+        try {
+          const img = figma.getImageByHash(h);
+          if (!img) return;
+          const src = await img.getSizeAsync();
+          if (src && src.width && src.height) _preflightSizeCache.set(h, src);
+        } catch (_) { /* leave uncached — retried next scan */ }
+      }, superseded);
+      if (superseded()) return;   // a newer scan started — drop this one's stale results
+
+      const worstByNode = new Map();   // one row per node — its lowest-DPI image
+      for (const f of fills) {
+        const src = _preflightSizeCache.get(f.imageHash);
+        if (!src || !src.width || !src.height) continue;
+        const dpi = effectiveImageDpi(f, src.width, src.height, f.boxW, f.boxH);
+        if (!dpi) continue;                                   // undeterminable (e.g. TILE, no factor)
+        const lowest = Math.min(dpi.dpiX, dpi.dpiY);
+        if (lowest >= target) continue;                       // meets target → not flagged
+        const dpiX = Math.round(dpi.dpiX), dpiY = Math.round(dpi.dpiY);
+        const dpiLabel = dpiX === dpiY ? `${dpiX} dpi` : `${dpiX}×${dpiY} dpi`;
+        const entry = { id: f.nodeId, name: f.name, lowest, meta: `${src.width}×${src.height} px · ${dpiLabel}` };
+        const prev = worstByNode.get(f.nodeId);
+        if (!prev || entry.lowest < prev.lowest) worstByNode.set(f.nodeId, entry);
+      }
+      images = [...worstByNode.values()].map(e => ({ id: e.id, name: e.name, meta: e.meta }));
+    }
+    if (superseded()) return;
+    figma.ui.postMessage({ type: "preflight-images", target, hasImages, images, unconvertible });
     return;
   }
 

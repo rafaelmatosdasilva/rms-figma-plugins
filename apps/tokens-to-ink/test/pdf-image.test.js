@@ -38,6 +38,46 @@ function imageDicts(s) {
   return out;
 }
 
+// Build a tiny valid PDF holding one 8-bit DeviceGray FlateDecode image (the real-world case
+// that used to be "left as RGB"). Returns raw bytes; the stream is real zlib so the converter
+// inflates it exactly as it would a Figma export.
+const enc = (s) => Uint8Array.from([...s].map((c) => c.charCodeAt(0) & 0xff));
+const concatU8 = (chunks) => { const out = new Uint8Array(chunks.reduce((a, c) => a + c.length, 0)); let o = 0; for (const c of chunks) { out.set(c, o); o += c.length; } return out; };
+async function deflateRaw(u8) {
+  const cs = new CompressionStream('deflate');
+  const w = cs.writable.getWriter(); w.write(u8); w.close();
+  return new Uint8Array(await new Response(cs.readable).arrayBuffer());
+}
+async function buildGrayPdf(w = 4, h = 4) {
+  const gray = new Uint8Array(w * h); for (let i = 0; i < gray.length; i++) gray[i] = (i * 17) & 0xff;
+  const zlib = await deflateRaw(gray);
+  const content = enc('64 0 0 64 0 0 cm /X1 Do\n');
+  return concatU8([
+    enc('%PDF-1.7\n'),
+    enc('1 0 obj<< /Type /Catalog /Pages 2 0 R >>endobj\n'),
+    enc('2 0 obj<< /Type /Pages /Kids [3 0 R] /Count 1 >>endobj\n'),
+    enc('3 0 obj<< /Type /Page /Parent 2 0 R /MediaBox [0 0 64 64] /Resources << /XObject << /X1 4 0 R >> >> /Contents 5 0 R >>endobj\n'),
+    enc(`4 0 obj<< /Type /XObject /Subtype /Image /Width ${w} /Height ${h} /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode /Length ${zlib.length} >>stream\n`),
+    zlib,
+    enc('\nendstream endobj\n'),
+    enc(`5 0 obj<< /Length ${content.length} >>stream\n`), content, enc('\nendstream endobj\n'),
+    enc('trailer<< /Root 1 0 R /Size 6 >>\nstartxref\n0\n%%EOF'),
+  ]);
+}
+
+describe('tokens-to-ink — grayscale images convert to CMYK', () => {
+  it('re-encodes an 8-bit DeviceGray FlateDecode image as DeviceCMYK (was left as RGB)', async () => {
+    ui = bootUI();
+    const out = latin1(await ui.window.convertPdfToCmyk(await buildGrayPdf(), {}));
+    const img = imageDicts(out).find((d) => /\/Width\s+4\b/.test(d));
+    expect(img).toBeTruthy();
+    expect(img).toMatch(/\/ColorSpace\s*\/DeviceCMYK/);   // gray → CMYK, not left as gray/RGB
+    expect(img).toMatch(/\/Filter\s*\/FlateDecode/);
+    // Nothing was left un-converted.
+    expect(ui.window._lastPdfImageFailures || []).toHaveLength(0);
+  });
+});
+
 describe('tokens-to-ink — CMYK PDF keeps images', () => {
   it('does not clobber an image ICCBased colour space to /DeviceGray', async () => {
     ui = bootUI();
@@ -93,6 +133,29 @@ describe('tokens-to-ink — CMYK PDF keeps images', () => {
     });
     await new Promise((r) => setTimeout(r, 50));
     expect(ui.$('#toast-container').textContent).not.toMatch(/couldn.t be converted/i);
+  });
+
+  it('confirms a clean export with a success toast — after the save dialog closes, not before', async () => {
+    ui = bootUI();
+    ui.window.downloadFile = () => {};                 // download path (no FSA in jsdom)
+    ui.window.decodeImageToRgba = async (_b, w, h) => new Uint8Array(w * h * 4).fill(180);
+    ui.receive({ type: 'export-batch-start', total: 1, format: 'pdf' });
+    await ui.receive({
+      type: 'export-data', format: 'pdf', pdfBytes: pdfBytes(),
+      colorLookup: {}, frameName: 'Art', index: 0, total: 1,
+    });
+    await new Promise((r) => setTimeout(r, 50));
+    // The save dialog is open (window blurred) → nothing saved yet, so NO confirmation.
+    ui.window.dispatchEvent(new ui.window.Event('blur'));
+    expect(ui.$('#toast-container').textContent).not.toMatch(/exported/i);
+    // The dialog closes → the window regains focus → after a short beat the toast appears
+    // (delayed so its slide-in animation plays on a fresh paint, not behind the dialog).
+    ui.window.dispatchEvent(new ui.window.Event('focus'));
+    expect(ui.$('#toast-container').textContent).not.toMatch(/artwork exported/i);   // not immediate
+    await new Promise((r) => setTimeout(r, 500));
+    expect(ui.$('#toast-container').textContent).toMatch(/artwork exported successfully/i);
+    // It uses the DS success toast, which animates in and auto-dismisses (animates out).
+    expect(ui.$('#toast-container .toast')).toBeTruthy();
   });
 
   // The fixture's image (obj 9) is 24×24 px placed over the full 64pt frame

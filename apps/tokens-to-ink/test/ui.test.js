@@ -176,8 +176,9 @@ describe('tokens-to-ink UI — export', () => {
     ui.receive(scanResults());
     await painted();
 
-    ui.click('#export-btn');          // opens the export modal
-    ui.click('#export-confirm-btn');  // PDF is the default format
+    ui.click('#export-btn');          // opens the format picker overflow
+    ui.click('#export-pdf-item');     // choose PDF → opens the modal
+    ui.click('#export-confirm-btn');
 
     expect(ui.sentOf('export-request')[0]).toMatchObject({ format: 'pdf' });
   });
@@ -187,25 +188,27 @@ describe('tokens-to-ink UI — export', () => {
     ui.receive(scanResults());
     await painted();
 
-    ui.click('#export-btn');          // opens the export modal
-    ui.click('#format-tiff');         // switch the format to TIFF
+    ui.click('#export-btn');          // opens the format picker overflow
+    ui.click('#export-tiff-item');    // choose TIFF → opens the modal
     ui.click('#export-confirm-btn');
 
     expect(ui.sentOf('export-request')[0]).toMatchObject({ format: 'tiff' });
   });
 
-  it('swaps crop marks / bleed for a resolution field when TIFF is chosen', async () => {
+  it('shows marks/bleeds for PDF and a resolution-only panel for TIFF', async () => {
     ui = loadUI(UI);
     ui.receive(scanResults());
     await painted();
 
     ui.click('#export-btn');
-    expect(ui.$('#pdf-options').hidden).toBe(false);   // PDF options by default
-    expect(ui.$('#tiff-options').hidden).toBe(true);
+    ui.click('#export-pdf-item');
+    expect(ui.$('#tab-marks').hidden).toBe(false);   // marks/bleeds group by default
+    expect(ui.$('#tiff-panel').hidden).toBe(true);
 
-    ui.click('#format-tiff');
-    expect(ui.$('#pdf-options').hidden).toBe(true);     // crop marks + bleed gone
-    expect(ui.$('#tiff-options').hidden).toBe(false);   // resolution shown
+    ui.click('#export-tiff-item');                   // re-pick TIFF from the overflow
+    expect(ui.$('#tab-marks').hidden).toBe(true);    // crop marks + bleed gone
+    expect(ui.$('#tiff-panel').hidden).toBe(false);  // resolution shown
+    expect(ui.$('#export-tabs').hidden).toBe(true);  // …and no tabs for a raster export
   });
 
   it('sends the chosen TIFF export resolution with the request', async () => {
@@ -214,7 +217,7 @@ describe('tokens-to-ink UI — export', () => {
     await painted();
 
     ui.click('#export-btn');
-    ui.click('#format-tiff');
+    ui.click('#export-tiff-item');
     const res = ui.$('#tiff-dpi-input');
     res.value = '600';
     res.dispatchEvent(new ui.window.Event('input'));
@@ -409,11 +412,12 @@ describe('tokens-to-ink UI — crop marks option', () => {
     ui.receive(scanResults());
     await painted();
     ui.click('#export-btn');
+    ui.click('#export-pdf-item');
 
     expect(ui.$('#export-confirm-label').textContent).toBe('Export PDF');
-    ui.click('#format-tiff');
+    ui.click('#export-tiff-item');
     expect(ui.$('#export-confirm-label').textContent).toBe('Export TIFF');
-    ui.click('#format-pdf');
+    ui.click('#export-pdf-item');
     expect(ui.$('#export-confirm-label').textContent).toBe('Export PDF');
   });
 
@@ -422,17 +426,18 @@ describe('tokens-to-ink UI — crop marks option', () => {
     ui.receive(scanResults());
     await painted();
     ui.click('#export-btn');
+    ui.click('#export-pdf-item');
 
-    expect(ui.$('#pdf-options').hidden).toBe(false);   // PDF is the default format
-    expect(ui.$('#tiff-options').hidden).toBe(true);
+    expect(ui.$('#tab-marks').hidden).toBe(false);    // PDF is the default format
+    expect(ui.$('#tiff-panel').hidden).toBe(true);
 
-    ui.click('#format-tiff');
-    expect(ui.$('#pdf-options').hidden).toBe(true);     // crop marks + bleed removed
-    expect(ui.$('#tiff-options').hidden).toBe(false);   // resolution shown instead
+    ui.click('#export-tiff-item');
+    expect(ui.$('#tab-marks').hidden).toBe(true);      // crop marks + bleed removed
+    expect(ui.$('#tiff-panel').hidden).toBe(false);    // resolution shown instead
 
-    ui.click('#format-pdf');
-    expect(ui.$('#pdf-options').hidden).toBe(false);    // restored on the way back
-    expect(ui.$('#tiff-options').hidden).toBe(true);
+    ui.click('#export-pdf-item');
+    expect(ui.$('#tab-marks').hidden).toBe(false);     // restored on the way back
+    expect(ui.$('#tiff-panel').hidden).toBe(true);
   });
 });
 

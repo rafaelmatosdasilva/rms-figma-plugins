@@ -47,10 +47,61 @@ describe('tokens-to-ink — preflight scan (code.js)', () => {
     expect(lastOf('preflight-images').images).toEqual([]);
   });
 
-  it('does nothing when scanImages is false', async () => {
-    const { send, postedOf } = await loadPlugin(ENTRY, scene());
+  it('flags only a CMYK JPEG — RGB JPEG, PNG and GIF are re-encoded to RGB by Figma', async () => {
+    // Minimal format headers the sniffer reads: a JPEG SOF marker carrying the component count,
+    // a PNG signature, and a GIF signature (which Figma rasterises to RGB, so NOT flagged).
+    const jpegSOF = (comps) => Uint8Array.from([0xFF, 0xD8, 0xFF, 0xC0, 0x00, 0x11, 0x08, 0x00, 0x10, 0x00, 0x10, comps]);
+    const png = Uint8Array.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+    const gif = Uint8Array.from([0x47, 0x49, 0x46, 0x38, 0x39, 0x61]);
+    const mk = (id, hash) => makeNode('RECTANGLE', { id, name: id, width: 100, height: 100, fills: [imageFill(hash)] });
+    const frame = makeNode('FRAME', { id: 'f', name: 'Art', width: 400, height: 400 });
+    ['cmyk', 'rgb', 'png', 'gif'].forEach((k) => frame.appendChild(mk(k, `h-${k}`)));
+    const page = makePage('Page 1');
+    page.appendChild(frame);
+    page.selection = [frame];
+
+    const images = {
+      'h-cmyk': { width: 100, height: 100, bytes: jpegSOF(4) },   // 4 components = CMYK → flagged
+      'h-rgb': { width: 100, height: 100, bytes: jpegSOF(3) },    // 3 components = RGB → fine
+      'h-png': { width: 100, height: 100, bytes: png },          // PNG → Figma re-encodes to RGB → fine
+      'h-gif': { width: 100, height: 100, bytes: gif },          // GIF → rasterised to RGB → fine
+    };
+    const { send, lastOf } = await loadPlugin(ENTRY, { pages: [page], images });
     await send({ type: 'preflight-request', dpi: 300, scanImages: false });
-    expect(postedOf('preflight-images')).toHaveLength(0);
+
+    const msg = lastOf('preflight-images');
+    const byId = Object.fromEntries((msg.unconvertible || []).map((u) => [u.id, u.meta]));
+    expect(Object.keys(byId)).toEqual(['cmyk']);
+    expect(byId.cmyk).toBe('CMYK JPEG');
+  });
+
+  it('answers hasImages immediately (a preflight-selection message) before the slower scans', async () => {
+    const { send, postedOf } = await loadPlugin(ENTRY, scene());
+    await send({ type: 'preflight-request', dpi: 300, scanImages: true });
+    const sel = postedOf('preflight-selection');
+    expect(sel.length).toBeGreaterThan(0);
+    expect(sel.pop()).toMatchObject({ hasImages: true });
+  });
+
+  it('reports hasImages but skips the (costly) size scan when scanImages is false', async () => {
+    // The UI still needs to know whether the selection has images (to reveal the Image-quality
+    // tab) even when downsampling is off — so hasImages is always reported, but the per-image
+    // resolution scan is skipped and the low-res list comes back empty.
+    const { send, figma, lastOf } = await loadPlugin(ENTRY, scene());
+    let sizeCalls = 0;
+    const realGet = figma.getImageByHash;
+    figma.getImageByHash = (h) => {
+      const img = realGet(h);
+      if (!img) return null;
+      const realSize = img.getSizeAsync;
+      img.getSizeAsync = async () => { sizeCalls += 1; return realSize.call(img); };
+      return img;
+    };
+    await send({ type: 'preflight-request', dpi: 300, scanImages: false });
+    const msg = lastOf('preflight-images');
+    expect(msg.hasImages).toBe(true);   // the scene has images…
+    expect(msg.images).toEqual([]);     // …but none were sized/flagged
+    expect(sizeCalls).toBe(0);          // the expensive decode was skipped
   });
 
   it('raising the target flags more images (both, at 2000 dpi)', async () => {

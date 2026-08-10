@@ -308,32 +308,23 @@
     min-width: 172px;
   }
   .export-overflow[hidden] { display: none; }
-  /* Format is picked in the overflow now — the modal's segmented control is redundant. */
-  #export-format { display: none; }
   .export-modal-card { width: 300px; }
-  .export-field { display: flex; flex-direction: column; gap: var(--gap-l); width: 100%; }
-  .export-format-desc {
-    font-size: var(--s-size); font-weight: var(--s-weight);
-    color: var(--text-secondary);
-    min-height: 1.2em;
-  }
-  /* Crop marks and bleed are independent print options, stacked in the modal slot. */
-  .export-print {
-    display: flex;
-    flex-direction: column;
-    gap: var(--gap-l);   /* DS slot item spacing = gap/l (12) */
-    width: 100%;
-    font-size: var(--s-size);
-    font-weight: var(--s-weight);
-    color: var(--text-secondary);
-    white-space: nowrap;
-    user-select: none;
-  }
-  /* The per-format wrappers carry no box of their own — display:contents lets their
-     rows sit directly in the slot and inherit its spacing, so the wrapper doesn't
-     change the rhythm. Only the active format's rows are shown. */
-  #pdf-options, #tiff-options { display: contents; }
-  #pdf-options[hidden], #tiff-options[hidden] { display: none; }
+  /* Each panel stacks its rows with the slot's spacing; only the active one shows. Class-based
+     (not id) so the stacking override below can win on specificity. */
+  .tab-panel, #tiff-panel { display: flex; flex-direction: column; gap: var(--gap-l); width: 100%; }
+  .tab-panel[hidden], #tiff-panel[hidden] { display: none; }
+  /* The DS .segmented-control sets its own display, which beats the UA [hidden] rule — restore
+     hiding for the tabs when the selection has no images (or the format is TIFF). */
+  #export-tabs[hidden] { display: none; }
+  /* When the selection has images, the two PDF tabs share one grid cell so the modal keeps the
+     height of the TALLER tab and never resizes as you switch between them. The inactive tab is
+     kept in layout (visibility:hidden) rather than removed, so its height stays reserved. */
+  .pdf-body { width: 100%; }
+  /* align-items:start anchors both tabs to the TOP of the shared (tallest) cell, so the rows
+     don't recentre/shift when switching — the shorter tab just leaves empty space below. */
+  .pdf-body.stacked { display: grid; align-items: start; }
+  .pdf-body.stacked > .tab-panel { grid-area: 1 / 1; }
+  .pdf-body.stacked > .tab-panel[hidden] { display: flex; visibility: hidden; }
   .export-bleed-row { display: flex; align-items: center; gap: var(--gap-m); }
   /* DS input (.inputWrap + .inputField), sized to content. Only the compact width,
      right-aligned value, and spinner removal are added here. */
@@ -425,69 +416,87 @@
 <div id="export-modal" class="modal">
   <div class="modal-overlay"></div>
   <div class="modal-card export-modal-card">
-    <h2 class="modal-title">Choose export settings:</h2>
+    <h2 class="modal-title" id="export-modal-title">PDF CMYK Vector</h2>
     <div class="modal-slot">
-      <div class="export-field">
-        <div class="segmented-control full-width" id="export-format">
-          <div class="seg-pill"></div>
-          <button type="button" id="format-pdf" class="selected"><span class="tab-label">PDF</span></button>
-          <button type="button" id="format-tiff"><span class="tab-label">TIFF</span></button>
-        </div>
-        <span class="export-format-desc" id="export-format-desc"></span>
+      <!-- Tabs — PDF only, and only when the selection actually has images. Otherwise there's
+           nothing to check resolution-wise, so just the marks/bleeds group shows. -->
+      <div class="segmented-control full-width" id="export-tabs" hidden>
+        <div class="seg-pill"></div>
+        <button type="button" id="tab-marks-btn" class="selected"><span class="tab-label">Marks and bleeds</span></button>
+        <button type="button" id="tab-quality-btn"><span class="tab-label">Image quality</span></button>
       </div>
-      <div class="export-print" id="export-print">
-        <!-- PDF print options: crop marks, bleed and image downsampling -->
-        <div id="pdf-options">
+
+      <!-- PDF panels — the two tabs share a grid cell (see .pdf-body.stacked) so the modal
+           doesn't resize when switching between "Marks and bleeds" and "Image quality". -->
+      <div id="pdf-body" class="pdf-body">
+      <!-- PDF · Marks and bleeds -->
+      <div id="tab-marks" class="tab-panel">
+        <label class="checkbox">
+          <input type="checkbox" id="cropmarks-toggle" class="checkbox-input">
+          <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
+          <span class="checkbox-text">Crop marks</span>
+        </label>
+        <div class="export-bleed-row">
           <label class="checkbox">
-            <input type="checkbox" id="cropmarks-toggle" class="checkbox-input">
+            <input type="checkbox" id="bleed-toggle" class="checkbox-input">
             <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
-            <span class="checkbox-text">Crop marks</span>
+            <span class="checkbox-text">Bleed</span>
           </label>
-          <div class="export-bleed-row">
-            <label class="checkbox">
-              <input type="checkbox" id="bleed-toggle" class="checkbox-input">
-              <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
-              <span class="checkbox-text">Bleed</span>
-            </label>
-            <div class="inputWrap cropmarks-bleed" id="bleed-wrap">
-              <input type="number" id="bleed-input" class="inputField cropmarks-bleed-input" min="0" max="20" step="0.5" value="3" aria-label="Bleed in millimetres">
-              <span class="cropmarks-unit">mm</span>
-            </div>
-          </div>
-          <label class="checkbox">
-            <input type="checkbox" id="regmarks-toggle" class="checkbox-input">
-            <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
-            <span class="checkbox-text">Registration marks</span>
-          </label>
-          <label class="checkbox">
-            <input type="checkbox" id="pageinfo-toggle" class="checkbox-input">
-            <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
-            <span class="checkbox-text">Page information</span>
-          </label>
-          <div class="export-bleed-row">
-            <label class="checkbox">
-              <input type="checkbox" id="downsample-toggle" class="checkbox-input">
-              <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
-              <span class="checkbox-text">Downsample images to</span>
-            </label>
-            <div class="inputWrap cropmarks-bleed" id="dpi-wrap">
-              <input type="number" id="dpi-input" class="inputField cropmarks-bleed-input" min="72" max="1200" step="10" value="300" aria-label="Target resolution in DPI">
-              <span class="cropmarks-unit">dpi</span>
-            </div>
-          </div>
-          <div class="preflight-section" id="preflight-images-section" hidden>
-            <span class="preflight-header" id="preflight-images-header">Images under target dpi:</span>
-            <div class="preflight-list" id="preflight-images"></div>
+          <div class="inputWrap cropmarks-bleed" id="bleed-wrap">
+            <input type="number" id="bleed-input" class="inputField cropmarks-bleed-input" min="0" max="20" step="0.5" value="3" aria-label="Bleed in millimetres">
+            <span class="cropmarks-unit">mm</span>
           </div>
         </div>
-        <!-- TIFF is a raster export: crop marks and bleed don't apply — only the resolution -->
-        <div id="tiff-options" hidden>
-          <div class="export-bleed-row">
-            <span class="checkbox-text export-res-label">Resolution</span>
-            <div class="inputWrap cropmarks-bleed" id="tiff-dpi-wrap">
-              <input type="number" id="tiff-dpi-input" class="inputField cropmarks-bleed-input" min="72" max="1200" step="10" value="300" aria-label="Export resolution in DPI">
-              <span class="cropmarks-unit">dpi</span>
-            </div>
+        <label class="checkbox">
+          <input type="checkbox" id="regmarks-toggle" class="checkbox-input">
+          <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
+          <span class="checkbox-text">Registration marks</span>
+        </label>
+        <label class="checkbox">
+          <input type="checkbox" id="colorbars-toggle" class="checkbox-input">
+          <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
+          <span class="checkbox-text">Color bars</span>
+        </label>
+        <label class="checkbox">
+          <input type="checkbox" id="pageinfo-toggle" class="checkbox-input">
+          <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
+          <span class="checkbox-text">File information</span>
+        </label>
+      </div>
+
+      <!-- PDF · Image quality (only reachable when the selection has images) -->
+      <div id="tab-quality" class="tab-panel" hidden>
+        <div class="export-bleed-row">
+          <label class="checkbox">
+            <input type="checkbox" id="downsample-toggle" class="checkbox-input">
+            <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
+            <span class="checkbox-text">Downsample images to</span>
+          </label>
+          <div class="inputWrap cropmarks-bleed" id="dpi-wrap">
+            <input type="number" id="dpi-input" class="inputField cropmarks-bleed-input" min="72" max="1200" step="10" value="300" aria-label="Target resolution in DPI">
+            <span class="cropmarks-unit">dpi</span>
+          </div>
+        </div>
+        <div class="preflight-section" id="preflight-images-section" hidden>
+          <span class="preflight-header" id="preflight-images-header">Images under target dpi:</span>
+          <div class="preflight-list" id="preflight-images"></div>
+        </div>
+        <!-- Images that will stay RGB in the CMYK file (couldn't be converted). Independent of
+             downsampling — the conversion always runs — so this shows whenever any are found. -->
+        <div class="preflight-section" id="preflight-cmyk-section" hidden>
+          <span class="preflight-header" id="preflight-cmyk-header">Won't convert to CMYK — stays RGB:</span>
+          <div class="preflight-list" id="preflight-cmyk"></div>
+        </div>
+      </div>
+      </div><!-- /#pdf-body -->
+
+      <!-- TIFF · raster export: crop marks / bleed don't apply — only the resolution -->
+      <div id="tiff-panel" hidden>
+        <div class="export-bleed-row">
+          <span class="checkbox-text export-res-label">Resolution</span>
+          <div class="inputWrap cropmarks-bleed" id="tiff-dpi-wrap">
+            <input type="number" id="tiff-dpi-input" class="inputField cropmarks-bleed-input" min="72" max="1200" step="10" value="300" aria-label="Export resolution in DPI">
+            <span class="cropmarks-unit">dpi</span>
           </div>
         </div>
       </div>
@@ -561,20 +570,59 @@
       _exportRgbFrames = [];
     }
   }
+
+  // Confirm a clean export with a success toast — timed to land AFTER the file reaches disk,
+  // never before. FSA writes are already flushed (we awaited writable.close()), so confirm
+  // immediately. The downloadFile path hands the blob to the browser/OS save dialog, which
+  // fires NO completion event; the only signal that the dialog closed is the plugin window
+  // regaining focus. So we wait for focus to return AFTER a blur (dialog opened → closed). If
+  // no dialog ever steals focus (a silent save to the default download folder → no blur), a
+  // short fallback confirms it instead. Either way the toast never shows while the dialog is up.
+  function confirmExportSaved() {
+    const message = 'Artwork exported successfully';
+    const say = () => { try { if (document.getElementById('toast-container')) showToast(message); } catch (_) {} };
+    // Show a short beat AFTER we decide to, so the toast's slide-in animation plays on a fresh
+    // paint once the save dialog has fully closed and the window has repainted — otherwise the
+    // animation runs unseen behind the dialog and the toast just "appears".
+    const show = () => { if (_exportToastTimer) clearTimeout(_exportToastTimer); _exportToastTimer = setTimeout(say, 400); };
+    if (_exportToastTimer) { clearTimeout(_exportToastTimer); _exportToastTimer = null; }
+    if (_exportUsedFSA) { show(); return; }   // already written to disk
+    let blurred = false, done = false;
+    const onBlur = () => { blurred = true; };
+    const onFocus = () => { if (blurred) finish(); };   // dialog opened then closed → saved
+    const finish = () => {
+      if (done) return; done = true;
+      window.removeEventListener('blur', onBlur);
+      window.removeEventListener('focus', onFocus);
+      show();
+    };
+    window.addEventListener('blur', onBlur);
+    window.addEventListener('focus', onFocus);
+    // No dialog appeared (no blur) → the file already went to the default location. If it DID
+    // blur (dialog still open), don't fire — wait for the focus that means it closed.
+    _exportToastTimer = setTimeout(() => { if (!blurred) finish(); }, 900);
+  }
+
   let _exportFmt = null, _exportLookup = null;
   let _exportCancelled = false;
   let _exportUsedFSA = false;   // true if at least one file was confirmed written via FSA
+  let _exportToastTimer = null; // pending success-toast fallback (download path — see confirmExportSaved)
   let _dirHandle = null;        // persisted folder handle (multi-file) — prompt once per session
   let _singleFileHandle = null; // one-shot handle from showSaveFilePicker (single file)
   let _pendingFiles = [];       // accumulates files for ZIP when FSA is unavailable (multi-file)
   let _cropMarks = false;       // add crop/trim marks to the CMYK PDF (print) — off by default
   let _regMarks = false;        // add registration (plate-alignment) targets — off by default
+  let _colorBars = false;       // add CMYK colour bars + grayscale wedge in the top slug — off by default
   let _pageInfo = false;        // print the file name + timestamp in the slug — off by default
   let _bleedOn = false;         // add a bleed margin around the trim — off by default
   let _bleedMm = 3;             // configurable bleed amount, in millimetres (used only when _bleedOn)
   let _downsample = false;      // downsample embedded images on PDF export — off by default
   let _downsampleDpi = 300;     // target resolution for downsampling, in DPI (used only when _downsample)
   let _tiffDpi = 300;           // TIFF raster export resolution, in DPI
+  let _exportFormat = "pdf";    // chosen in the export overflow — drives the modal title + layout
+  let _hasImages = false;       // does the selection contain any raster image? (gates the Image-quality tab)
+  let _activeTab = "marks";     // PDF modal tab: "marks" | "quality"
+  let _pendingOpen = false;     // a PDF open is waiting on the image scan before revealing the modal
 
   // ── Minimal ZIP builder (store/no-compression) for multi-file fallback ──
   function _buildZip(files) {
@@ -1257,27 +1305,41 @@
   //   imgCsRefs — objects used as an image's /ColorSpace; the ICC-strip pass must
   //               leave these intact, or the image's colour space stops matching its
   //               data (this was the "images vanish" bug: [ /ICCBased 6 0 R ] → /DeviceGray).
-  function classifyImages(objs, iccRgb) {
+  // Both RGB and GRAYSCALE images are converted (grayscale photos were the "left as RGB"
+  // case in the wild). Images used as a soft mask (/SMask) carry alpha, not colour, so they
+  // are excluded and left as DeviceGray. Indexed / already-CMYK / exotic spaces are left alone.
+  function classifyImages(objs, iccRgb, iccGray) {
     const allImg = new Set(), imgNums = new Set(), imgCsRefs = new Set();
-    function isRgb(dict) {
-      if (/\/ColorSpace\s*\/DeviceRGB/.test(dict)) return true;
+    // Objects referenced as another image's soft mask — never colour-convert these.
+    const smaskTargets = new Set();
+    for (const [, o] of Object.entries(objs))
+      if (o.type === 'stream' && /\/Subtype\s*\/Image/.test(o.dict)) {
+        const m = o.dict.match(/\/SMask\s+(\d+)\s+0\s+R/);
+        if (m) smaskTargets.add(+m[1]);
+      }
+    // 'rgb' | 'gray' | 'other', resolving one indirect /ColorSpace hop and the ICC N value.
+    function colourModel(dict) {
+      if (/\/ColorSpace\s*\/(?:DeviceRGB|CalRGB)\b/.test(dict)) return 'rgb';
+      if (/\/ColorSpace\s*\/(?:DeviceGray|CalGray)\b/.test(dict)) return 'gray';
       let m = dict.match(/\/ColorSpace\s*\[\s*\/ICCBased\s+(\d+)\s+0\s+R/);
-      if (m && iccRgb.has(+m[1])) return true;
+      if (m) { if (iccRgb.has(+m[1])) return 'rgb'; if (iccGray.has(+m[1])) return 'gray'; }
       m = dict.match(/\/ColorSpace\s+(\d+)\s+0\s+R/);
       if (m) {
         imgCsRefs.add(+m[1]);
         const co = objs[+m[1]], cb = co ? (co.type === 'plain' ? (co.body || '') : co.dict) : '';
-        if (/\/DeviceRGB/.test(cb)) return true;
+        if (/\/(?:DeviceRGB|CalRGB)\b/.test(cb)) return 'rgb';
+        if (/\/(?:DeviceGray|CalGray)\b/.test(cb)) return 'gray';
         const im = cb.match(/\/ICCBased\s+(\d+)\s+0\s+R/);
-        if (im && iccRgb.has(+im[1])) return true;
+        if (im) { if (iccRgb.has(+im[1])) return 'rgb'; if (iccGray.has(+im[1])) return 'gray'; }
       }
-      for (const i of iccRgb) if (dict.includes(i + ' 0 R')) return true;
-      return false;
+      return 'other';
     }
     for (const [n, o] of Object.entries(objs))
       if (o.type === 'stream' && /\/Subtype\s*\/Image/.test(o.dict)) {
         allImg.add(+n);
-        if (isRgb(o.dict)) imgNums.add(+n);
+        if (smaskTargets.has(+n)) continue;                 // a mask — leave as DeviceGray
+        const model = colourModel(o.dict);
+        if (model === 'rgb' || model === 'gray') imgNums.add(+n);
       }
     return { allImg, imgNums, imgCsRefs };
   }
@@ -1432,13 +1494,70 @@
   // image is re-decoded/resampled to the smaller pixel grid and its /Width /Height
   // are rewritten. Images with no known placement, or already at/under `dpi`, are
   // left at full resolution (downsampling never enlarges).
+  // Undo a FlateDecode /DecodeParms predictor so the inflated bytes become raw samples. PNG
+  // predictors (10–15) prefix each row with a filter-type byte; the TIFF predictor (2) is a
+  // horizontal difference. No-op when there's no predictor. Handles the common 8-bit case.
+  function undoFlatePredictor(objs, dict, d, w) {
+    const pm = dict.match(/\/DecodeParms\s*(<<[\s\S]*?>>|\d+\s+0\s+R)/);
+    if (!pm) return d;
+    let pd = pm[1];
+    if (!pd.startsWith('<<')) { const ref = objs[parseInt(pd)]; pd = ref ? (ref.body || ref.dict || '') : ''; }
+    const num = (re, def) => { const m = pd.match(re); return m ? +m[1] : def; };
+    const predictor = num(/\/Predictor\s+(\d+)/, 1);
+    if (predictor <= 1) return d;
+    const colors = num(/\/Colors\s+(\d+)/, 1), bpc = num(/\/BitsPerComponent\s+(\d+)/, 8), columns = num(/\/Columns\s+(\d+)/, w);
+    const bpp = Math.max(1, Math.ceil(colors * bpc / 8));
+    const rowLen = Math.ceil(colors * bpc * columns / 8);
+    if (!rowLen) return d;
+    if (predictor === 2) {   // TIFF horizontal differencing (8-bit)
+      const out = d.slice();
+      for (let base = 0; base < out.length; base += rowLen)
+        for (let i = bpp; i < rowLen && base + i < out.length; i++) out[base + i] = (out[base + i] + out[base + i - bpp]) & 0xFF;
+      return out;
+    }
+    const rows = Math.floor(d.length / (rowLen + 1));   // PNG: each row is 1 filter byte + rowLen
+    const out = new Uint8Array(rowLen * rows);
+    const paeth = (a, b, c) => { const p = a + b - c, pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c); return (pa <= pb && pa <= pc) ? a : (pb <= pc ? b : c); };
+    let pos = 0;
+    for (let r = 0; r < rows; r++) {
+      const ft = d[pos++], co = r * rowLen, po = (r - 1) * rowLen;
+      for (let i = 0; i < rowLen; i++) {
+        const raw = d[pos++], a = i >= bpp ? out[co + i - bpp] : 0, b = r > 0 ? out[po + i] : 0, c = (r > 0 && i >= bpp) ? out[po + i - bpp] : 0;
+        out[co + i] = (ft === 1 ? raw + a : ft === 2 ? raw + b : ft === 3 ? raw + ((a + b) >> 1) : ft === 4 ? raw + paeth(a, b, c) : raw) & 0xFF;
+      }
+    }
+    return out;
+  }
+  // Collapse 16-bit samples to 8-bit (keep the high byte) when /BitsPerComponent is 16.
+  function flateSamplesTo8bit(dict, d) {
+    const m = dict.match(/\/BitsPerComponent\s+(\d+)/);
+    if (!m || +m[1] !== 16) return d;
+    const out = new Uint8Array(d.length >> 1);
+    for (let i = 0; i < out.length; i++) out[i] = d[i * 2];   // big-endian: high byte first
+    return out;
+  }
+
   async function convertRgbImagesToCmyk(objs, imgNums, colorLookup, ds) {
+    // Every image left as RGB, with the reason — logged so a print operator (or we) can see
+    // exactly WHY, instead of a bare count. Read by the export handler via _lastPdfImageFailures.
+    const failures = [];
+    const dictInfo = (dict) => {
+      const fm = dict.match(/\/Filter\s*(\/\w+|\[[^\]]*\])/);
+      const csm = dict.match(/\/ColorSpace\s*(\/\w+|\[[^\]]*\]|\d+\s+0\s+R)/);
+      const bpc = dict.match(/\/BitsPerComponent\s+(\d+)/);
+      return { filter: fm ? fm[1].replace(/\s+/g, ' ').trim() : '(none)',
+               colorSpace: csm ? csm[1].replace(/\s+/g, ' ').trim() : '(none)',
+               bpc: bpc ? +bpc[1] : null, predictor: /\/Predictor\s+(\d+)/.test(dict) };
+    };
     let unconverted = 0;
     for (const n of imgNums) {
-      const obj = objs[n]; if (!obj || obj.type !== 'stream') { unconverted++; continue; }
+      const obj = objs[n];
+      const info = (obj && obj.dict) ? dictInfo(obj.dict) : { filter: '(none)', colorSpace: '(none)', bpc: null, predictor: false };
+      const fail = (reason, w, h) => { unconverted++; failures.push({ obj: +n, w: w || 0, h: h || 0, reason, ...info }); };
+      if (!obj || obj.type !== 'stream') { fail('not an image stream'); continue; }
       const wm = obj.dict.match(/\/Width\s+(\d+)/), hm = obj.dict.match(/\/Height\s+(\d+)/);
-      if (!wm || !hm) { unconverted++; continue; }
-      const w = parseInt(wm[1]), h = parseInt(hm[1]); if (!w || !h) { unconverted++; continue; }
+      if (!wm || !hm) { fail('missing /Width or /Height'); continue; }
+      const w = parseInt(wm[1]), h = parseInt(hm[1]); if (!w || !h) { fail('zero dimensions', w, h); continue; }
       // Target pixel size: shrink to the requested DPI at the image's on-page size.
       // Never enlarge (downsampling only) and never drop below 1px.
       let tw = w, th = h;
@@ -1456,18 +1575,33 @@
         const smRef = obj.dict.match(/\/SMask\s+(\d+)\s+0\s+R/);
         if (smRef && !(await downsampleGrayImage(objs[+smRef[1]], tw, th))) { tw = w; th = h; shrink = false; }
       }
-      let rgba = null;
+      let rgba = null, why = null;
       try {
-        if (/\/DCTDecode\b/.test(obj.dict)) rgba = await decodeImageToRgba(obj.streamRaw, tw, th, 'image/jpeg');
-        else if (obj.isFlate) {
-          const d = await inflateBuf(obj.streamRaw);
+        if (/\/DCTDecode\b/.test(obj.dict)) {
+          rgba = await decodeImageToRgba(obj.streamRaw, tw, th, 'image/jpeg');
+          if (!rgba) why = 'JPEG decode returned no pixels';
+        } else if (obj.isFlate) {
+          let d = await inflateBuf(obj.streamRaw);
+          d = undoFlatePredictor(objs, obj.dict, d, w);   // strip a PNG/TIFF predictor if present
+          d = flateSamplesTo8bit(obj.dict, d);            // 16-bit → 8-bit
+          const px = w * h;
+          // Expand the raw samples to RGBA. Handle the channel counts Figma actually emits at
+          // 8bpc: RGBA(4), RGB(3), DeviceGray(1) and Gray+Alpha(2). Grayscale replicates the one
+          // sample across R/G/B — DeviceGray images were the "left as RGB" case in the wild.
           let full = null;
-          if (d.length === w * h * 4) full = d;
-          else if (d.length === w * h * 3) { full = new Uint8Array(w * h * 4); for (let i = 0, j = 0; i < d.length; i += 3, j += 4) { full[j] = d[i]; full[j+1] = d[i+1]; full[j+2] = d[i+2]; full[j+3] = 255; } }
+          if (d.length === px * 4) full = d;
+          else if (d.length === px * 3) { full = new Uint8Array(px * 4); for (let i = 0, j = 0; i < d.length; i += 3, j += 4) { full[j] = d[i]; full[j+1] = d[i+1]; full[j+2] = d[i+2]; full[j+3] = 255; } }
+          else if (d.length === px) { full = new Uint8Array(px * 4); for (let i = 0, j = 0; i < px; i++, j += 4) { const g = d[i]; full[j] = g; full[j+1] = g; full[j+2] = g; full[j+3] = 255; } }
+          else if (d.length === px * 2) { full = new Uint8Array(px * 4); for (let i = 0, j = 0; i < d.length; i += 2, j += 4) { const g = d[i]; full[j] = g; full[j+1] = g; full[j+2] = g; full[j+3] = d[i+1]; } }
           if (full) rgba = shrink ? resizeRgbaNearest(full, w, h, tw, th) : full;
+          else why = info.predictor
+            ? 'FlateDecode uses a predictor (row filters) — not yet supported'
+            : `pixel data is ${d.length} bytes, not a whole multiple of ${w}×${h} — likely 16-bit or indexed (bpc=${info.bpc || '?'}, cs=${info.colorSpace})`;
+        } else {
+          why = `filter ${info.filter} isn't decodable here`;
         }
-      } catch (e) { rgba = null; }
-      if (!rgba) { unconverted++; continue; } // undecodable → left intact (RGB); warn the user
+      } catch (e) { rgba = null; why = 'decode threw: ' + ((e && e.message) || e); }
+      if (!rgba) { fail(why || 'undecodable', w, h); continue; } // left intact (RGB); warn the user
       const cmyk = new Uint8Array(tw * th * 4);
       for (let p = 0, q = 0; p < tw * th * 4; p += 4, q += 4) {
         const c = rgbPixelToCmyk(rgba[p], rgba[p+1], rgba[p+2], colorLookup);
@@ -1484,7 +1618,58 @@
       }
       obj.dict = obj.dict.replace(/\/Length\s+\d+(\s+0\s+R)?/, '/Length ' + obj.streamRaw.length);
     }
+    // Expose the per-image reasons for this frame (read by the export handler) and log them, so
+    // "2 images couldn't be converted" is explainable instead of a mystery.
+    window._lastPdfImageFailures = failures;
+    if (failures.length) {
+      try {
+        console.warn('[tokens-to-ink] Left as RGB (could not convert to CMYK):\n' +
+          failures.map(f => `  • obj #${f.obj}  ${f.w}×${f.h}px  filter=${f.filter}  colorspace=${f.colorSpace}` +
+            `${f.bpc ? `  ${f.bpc}bpc` : ''}${f.predictor ? '  +predictor' : ''}\n      → ${f.reason}`).join('\n'));
+      } catch (_) { /* console may be unavailable */ }
+    }
     return unconverted;
+  }
+
+  // Content-stream ops for the registration targets — a circle + long crosshair centred on each
+  // of the four sides, out past the bleed, stroked in registration colour (all four plates).
+  function registrationOps(t, b, f, wgt, R, CROSS, OFF) {
+    const seg = [], cx = (t.x0 + t.x1) / 2, cy = (t.y0 + t.y1) / 2, k = R * 0.5523;
+    const target = (x, y) => {
+      seg.push(`${f(x + R)} ${f(y)} m`);
+      seg.push(`${f(x + R)} ${f(y + k)} ${f(x + k)} ${f(y + R)} ${f(x)} ${f(y + R)} c`);
+      seg.push(`${f(x - k)} ${f(y + R)} ${f(x - R)} ${f(y + k)} ${f(x - R)} ${f(y)} c`);
+      seg.push(`${f(x - R)} ${f(y - k)} ${f(x - k)} ${f(y - R)} ${f(x)} ${f(y - R)} c`);
+      seg.push(`${f(x + k)} ${f(y - R)} ${f(x + R)} ${f(y - k)} ${f(x + R)} ${f(y)} c`);
+      seg.push(`${f(x - CROSS)} ${f(y)} m ${f(x + CROSS)} ${f(y)} l`);   // horizontal crosshair
+      seg.push(`${f(x)} ${f(y - CROSS)} m ${f(x)} ${f(y + CROSS)} l`);   // vertical crosshair
+    };
+    target(cx, t.y1 + b + OFF);   // top
+    target(cx, t.y0 - b - OFF);   // bottom
+    target(t.x0 - b - OFF, cy);   // left
+    target(t.x1 + b + OFF, cy);   // right
+    return `q 1 1 1 1 K ${f(wgt)} w\n${seg.join('\n')}\nS Q\n`;
+  }
+
+  // Content-stream ops for the top-slug colour bars: a left K-tint grayscale wedge and a right
+  // CMYK bar (process colours, their overprints, K, then C/M/Y and grey tints) as flat
+  // DeviceCMYK fills, with a hairline registration-colour frame. Returns null if the trim is too
+  // narrow to hold both strips.
+  function colorBarOps(t, barBottomY, f, wgt) {
+    const wedge = [1, .9, .8, .7, .6, .5, .4, .3, .2, .1, 0];
+    const bar = [[0,0,1,0],[0,1,0,0],[1,0,0,0],[1,1,0,0],[1,0,1,0],[0,1,1,0],[0,0,0,1],[0,0,.5,0],[0,.5,0,0],[.5,0,0,0],[0,0,0,.5]];
+    const n = wedge.length;                          // 11 patches per strip
+    const CENTER_GAP = 50, INSET = 3 * 72 / 25.4;    // 3 mm padding from each trim edge; centre gap for the reg target
+    const SW = Math.min(18, Math.floor(((t.x1 - t.x0 - CENTER_GAP) / 2 - INSET) / n));  // double size, shrunk to fit
+    if (SW < 6) return null;                         // too narrow to be legible → skip
+    const groupW = n * SW;
+    const cbY = barBottomY;                          // strip sits ABOVE barBottomY (the crop-mark tip), clear of the art
+    const ops = [];
+    const swatch = (x, c) => ops.push(`${f(c[0])} ${f(c[1])} ${f(c[2])} ${f(c[3])} k ${f(x)} ${f(cbY)} ${SW} ${SW} re f`);
+    let lx = t.x0 + INSET; for (const kt of wedge) { swatch(lx, [0, 0, 0, kt]); lx += SW; }
+    let rx = t.x1 - INSET - groupW; for (const c of bar) { swatch(rx, c); rx += SW; }
+    const bd = `1 1 1 1 K ${f(wgt)} w ${f(t.x0 + INSET)} ${f(cbY)} ${groupW} ${SW} re S ${f(t.x1 - INSET - groupW)} ${f(cbY)} ${groupW} ${SW} re S`;
+    return `q ${ops.join('\n')}\n${bd}\nQ\n`;
   }
 
   // Add crop (trim) marks to a parsed PDF for print. The Figma frame IS the trim size,
@@ -1499,16 +1684,26 @@
   // (BleedBox) whether or not marks are drawn, and crop marks can be drawn with zero bleed
   // (right at the trim). The trim box is the frame's own cut line (may be smaller than the
   // page box when art spills outside the frame).
-  function addPrintMarks(objs, nums, bleedPt, trimBox, cropMarks, regMarks, pageInfo, piLeft, piRight) {
+  function addPrintMarks(objs, nums, bleedPt, trimBox, cropMarks, regMarks, pageInfo, piLeft, piRight, colorBars) {
     const b = Math.max(0, bleedPt || 0);
     const LEN = 18, WGT = 0.25;
     const REG_R = 4, REG_CROSS = 13, REG_OFF = 13; // InDesign-style target: small circle, long crosshair reaching well past it
-    let M = b;                                     // margin the page box must add on every side
-    if (cropMarks) M = Math.max(M, b + LEN + 4);
-    if (regMarks)  M = Math.max(M, b + REG_OFF + REG_CROSS);
-    // Page info sits in the slug BELOW whatever marks are present, so it never overlaps them.
-    if (pageInfo)  M = Math.max(M, b + Math.max(cropMarks ? LEN + 4 : 0, regMarks ? REG_OFF + REG_CROSS : 0) + 12);
-    if (M <= 0) return 0;                          // nothing to do (no bleed, no marks)
+    // One fixed print slug: the page enlarges ONCE to hold every mark. Each edge grows only as
+    // far as the mark that lives on it needs — the sides for crop + registration, the TOP also
+    // for the colour bars, the BOTTOM also for the file-info line — so adding one mark never
+    // re-grows the rest.
+    const cropReach = cropMarks ? (b + LEN + 4) : b;
+    const regReach  = regMarks  ? (b + REG_OFF + REG_CROSS) : b;
+    const baseMargin = Math.max(b, cropReach, regReach);
+    const PI_SZ = 11;
+    const hasSlug = !!(pageInfo && (piLeft || piRight));
+    // File info sits WITHIN the bottom mark band — between the corner crop marks and the centred
+    // registration target — so it doesn't grow the page when marks are present. With no marks it
+    // needs a thin band of its own. Colour bars reserve top room for a double-size (18pt) swatch.
+    const Mtop    = Math.max(baseMargin, colorBars ? ((cropMarks ? b + LEN : b + 4) + 20) : 0);   // bars sit above the crop marks
+    const Mbottom = Math.max(baseMargin, hasSlug ? (b + PI_SZ + 6) : 0);
+    const Mside   = baseMargin;
+    if (baseMargin <= 0 && !hasSlug && !colorBars) return 0;   // nothing to add
     const f = (v) => (Math.round(v * 1000) / 1000).toString();
     const toBytes = (s) => { const u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i) & 0xFF; return u; };
     const escPdf = (str) => String(str).replace(/[\\()]/g, (c) => '\\' + c);
@@ -1551,26 +1746,13 @@
           v(t.x0, t.y1 + b, t.y1 + b + LEN); v(t.x1, t.y1 + b, t.y1 + b + LEN);  // above TL / TR
           contents += ` ${addStream(toBytes(`q 1 1 1 1 K ${f(WGT)} w\n${seg.join('\n')}\nS Q\n`))} 0 R`;
         }
-        // ── Registration marks (optional): a target (circle + crosshair) centred on each side,
-        // out past the bleed, stroked in registration colour so it prints on every plate. ──
-        if (regMarks) {
-          const seg = [];
-          const cx = (t.x0 + t.x1) / 2, cy = (t.y0 + t.y1) / 2;
-          const k = REG_R * 0.5523;                 // cubic-bézier handle length for a circle
-          const target = (x, y) => {
-            seg.push(`${f(x + REG_R)} ${f(y)} m`);
-            seg.push(`${f(x + REG_R)} ${f(y + k)} ${f(x + k)} ${f(y + REG_R)} ${f(x)} ${f(y + REG_R)} c`);
-            seg.push(`${f(x - k)} ${f(y + REG_R)} ${f(x - REG_R)} ${f(y + k)} ${f(x - REG_R)} ${f(y)} c`);
-            seg.push(`${f(x - REG_R)} ${f(y - k)} ${f(x - k)} ${f(y - REG_R)} ${f(x)} ${f(y - REG_R)} c`);
-            seg.push(`${f(x + k)} ${f(y - REG_R)} ${f(x + REG_R)} ${f(y - k)} ${f(x + REG_R)} ${f(y)} c`);
-            seg.push(`${f(x - REG_CROSS)} ${f(y)} m ${f(x + REG_CROSS)} ${f(y)} l`);   // horizontal crosshair
-            seg.push(`${f(x)} ${f(y - REG_CROSS)} m ${f(x)} ${f(y + REG_CROSS)} l`);   // vertical crosshair
-          };
-          target(cx, t.y1 + b + REG_OFF);   // top
-          target(cx, t.y0 - b - REG_OFF);   // bottom
-          target(t.x0 - b - REG_OFF, cy);   // left
-          target(t.x1 + b + REG_OFF, cy);   // right
-          contents += ` ${addStream(toBytes(`q 1 1 1 1 K ${f(WGT)} w\n${seg.join('\n')}\nS Q\n`))} 0 R`;
+        // ── Registration marks (optional): a target centred on each side, past the bleed. ──
+        if (regMarks) contents += ` ${addStream(toBytes(registrationOps(t, b, f, WGT, REG_R, REG_CROSS, REG_OFF)))} 0 R`;
+        // ── Colour bars (optional): InDesign-style control strips in the top slug, sitting ABOVE
+        // the crop marks (bar bottom at the crop-mark tip) so they stay clear of the artwork. ──
+        if (colorBars) {
+          const cb = colorBarOps(t, t.y1 + (cropMarks ? (b + LEN) : (b + 4)), f, WGT);
+          if (cb) contents += ` ${addStream(toBytes(cb))} 0 R`;
         }
         // ── Page information (optional): file name (left) + timestamp (right) in the bottom
         // slug, the way InDesign prints it. Needs a font — declare the standard Helvetica
@@ -1583,10 +1765,14 @@
             resObj.body = /\/Font\s*<</.test(resObj.body)
               ? resObj.body.replace(/\/Font\s*<</, `/Font << /HB ${fontNum} 0 R`)
               : resObj.body.replace('<<', `<< /Font << /HB ${fontNum} 0 R >>`);
-            const SZ = 6, ly = t.y0 - M + 5;                 // 6pt text, near the very bottom edge (below the marks)
+            // 11pt text, vertically centred in the bottom mark band so it sits between the corner
+            // crop marks and the centred registration target (filename left, timestamp right).
+            // Bottom-align the text with the crop marks: baseline at the crop-mark tip, lifted 2 mm.
+            const SZ = PI_SZ, ly = t.y0 - (cropMarks ? (b + LEN) : Mbottom) + 2 * 72 / 25.4;
+            const PAD = 5 * 72 / 25.4;   // 5 mm inset from the trim edge, both sides
             let ops = `q 1 1 1 1 k BT /HB ${SZ} Tf\n`;
-            if (piLeft)  ops += `1 0 0 1 ${f(t.x0)} ${f(ly)} Tm (${escPdf(piLeft)}) Tj\n`;
-            if (piRight) { const rw = SZ * 0.5 * String(piRight).length; ops += `1 0 0 1 ${f(t.x1 - rw)} ${f(ly)} Tm (${escPdf(piRight)}) Tj\n`; }
+            if (piLeft)  ops += `1 0 0 1 ${f(t.x0 + PAD)} ${f(ly)} Tm (${escPdf(piLeft)}) Tj\n`;
+            if (piRight) { const rw = SZ * 0.5 * String(piRight).length; ops += `1 0 0 1 ${f(t.x1 - PAD - rw)} ${f(ly)} Tm (${escPdf(piRight)}) Tj\n`; }
             ops += `ET Q\n`;
             contents += ` ${addStream(toBytes(ops))} 0 R`;
           }
@@ -1597,8 +1783,8 @@
       }
       // ── Page box = trim ± bleed ± mark length. The real clip above bounds the artwork to
       // the bleed box; the MediaBox then frames that plus the room the marks need. ──
-      const nx0 = t.x0 - M, ny0 = t.y0 - M;
-      const nx1 = t.x1 + M, ny1 = t.y1 + M;
+      const nx0 = t.x0 - Mside, ny0 = t.y0 - Mbottom;   // sides / bottom (file-info) slug
+      const nx1 = t.x1 + Mside, ny1 = t.y1 + Mtop;       // top slug (grows for the colour bars)
       body = body.replace(/\/MediaBox\s*\[[^\]]*\]/,
         `/MediaBox [ ${f(nx0)} ${f(ny0)} ${f(nx1)} ${f(ny1)} ]`);
       if (!/\/TrimBox/.test(body))
@@ -1682,10 +1868,10 @@
     }
 
     // ── Classify objects ──
-    const iccRgb=new Set();
+    const iccRgb=new Set(),iccGray=new Set();
     for(const[n,o]of Object.entries(objs))
-      if(o.type==='stream'&&/\/N\s+3\b/.test(o.dict))iccRgb.add(+n);
-    const {allImg,imgNums,imgCsRefs}=classifyImages(objs,iccRgb);
+      if(o.type==='stream'){ if(/\/N\s+3\b/.test(o.dict))iccRgb.add(+n); else if(/\/N\s+1\b/.test(o.dict))iccGray.add(+n); }
+    const {allImg,imgNums,imgCsRefs}=classifyImages(objs,iccRgb,iccGray);
 
     // ── Collect SMask Form XObject refs ──
     // Mask XObjects referenced by /SMask << /G N 0 R >> must be kept intact:
@@ -1984,7 +2170,7 @@
     window._lastPdfImagesUnconverted = await convertRgbImagesToCmyk(objs,imgNums,colorLookup,ds);
 
     // ── Crop / trim marks (print) — added last so they emit as clean DeviceCMYK ──
-    if(opts&&(opts.cropMarks||opts.regMarks||opts.pageInfo||opts.bleedPt>0))addPrintMarks(objs,nums,opts.bleedPt,opts.trimBox,opts.cropMarks,opts.regMarks,opts.pageInfo,opts.pageInfoLeft,opts.pageInfoRight);
+    if(opts&&(opts.cropMarks||opts.regMarks||opts.pageInfo||opts.colorBars||opts.bleedPt>0))addPrintMarks(objs,nums,opts.bleedPt,opts.trimBox,opts.cropMarks,opts.regMarks,opts.pageInfo,opts.pageInfoLeft,opts.pageInfoRight,opts.colorBars);
 
     // ── Rebuild PDF ──
     const parts=[],newOff={};
@@ -2178,59 +2364,102 @@
         parent.postMessage({ pluginMessage: { type: "focus-node", nodeId: btn.dataset.nodeId } }, "*"));
     });
   }
-  // Low-res image list — the export pre-flight warning for images below the target dpi.
-  function renderPreflightImages(msg) {
-    const iSec = document.getElementById("preflight-images-section");
-    const iList = document.getElementById("preflight-images");
-    const hdr = document.getElementById("preflight-images-header");
-    if (!iSec || !iList) return;
-    // Only surface the low-res list where downsampling applies (PDF + toggle on), and only
-    // when there's actually something below target — otherwise no warning at all.
-    const target = msg.target || _downsampleDpi;
-    const isPdf = document.getElementById("format-pdf").classList.contains("selected");
-    const imgs = (isPdf && _downsample) ? (msg.images || []) : [];
-    if (imgs.length) {
-      // "won't improve": downsampling only reduces resolution, so it can never raise a
-      // below-target image up to the target (the header always reflects the CURRENT dpi).
-      if (hdr) hdr.textContent = `Images under ${target} dpi:`;
-      iList.innerHTML = imgs.map((im) => preflightRow(im.id, im.name, im.meta)).join("");
-      wirePreflightFocus(iList);
-      iSec.hidden = false;
+  // Reconcile the export-modal layout with the current format, whether the selection has
+  // images, and which PDF tab is active. The "Marks and bleeds" / "Image quality" segmented
+  // control shows ONLY when the selection actually contains images — with no images there's
+  // nothing to downsample, so just the marks/bleeds group shows and the tabs stay hidden. TIFF
+  // is resolution-only: no tabs, no marks/bleeds, just the resolution panel.
+  function applyExportLayout() {
+    const tabs = document.getElementById("export-tabs");
+    const tabMarks = document.getElementById("tab-marks");
+    const tabQuality = document.getElementById("tab-quality");
+    const tiffPanel = document.getElementById("tiff-panel");
+    const pdfBody = document.getElementById("pdf-body");
+    const mBtn = document.getElementById("tab-marks-btn");
+    const qBtn = document.getElementById("tab-quality-btn");
+    if (!tabs || !tabMarks || !tabQuality || !tiffPanel) return;
+    const pdf = _exportFormat === "pdf";
+    tiffPanel.hidden = pdf;
+    if (!pdf) { tabs.hidden = true; tabMarks.hidden = true; tabQuality.hidden = true; if (pdfBody) pdfBody.classList.remove("stacked"); return; }
+    if (!_hasImages) _activeTab = "marks";   // no image-quality tab without images
+    tabs.hidden = !_hasImages;
+    const marks = _activeTab === "marks";
+    tabMarks.hidden = !marks;
+    tabQuality.hidden = marks;
+    // Lock the modal height only when BOTH tabs exist — the stacked grid reserves the taller
+    // tab's height so switching doesn't resize the modal.
+    if (pdfBody) pdfBody.classList.toggle("stacked", _hasImages);
+    if (mBtn) mBtn.classList.toggle("selected", marks);
+    if (qBtn) qBtn.classList.toggle("selected", !marks);
+    if (!tabs.hidden && typeof updateSegPill === "function") updateSegPill(tabs);
+  }
+  // Fill one pre-flight list section (name + meta + focus button per row). Hidden when empty.
+  function fillPreflightSection(secId, listId, rows) {
+    const sec = document.getElementById(secId), list = document.getElementById(listId);
+    if (!sec || !list) return;
+    if (rows && rows.length) {
+      list.innerHTML = rows.map((r) => preflightRow(r.id, r.name, r.meta)).join("");
+      wirePreflightFocus(list);
+      sec.hidden = false;
     } else {
-      iList.innerHTML = "";
-      iSec.hidden = true;
+      list.innerHTML = "";
+      sec.hidden = true;
     }
   }
-  // Clear the low-res warning immediately (no scan round-trip) — used when downsampling is
-  // switched off or the format changes away from PDF.
-  function hidePreflightImages() {
-    const iSec = document.getElementById("preflight-images-section");
-    const iList = document.getElementById("preflight-images");
-    if (iSec) iSec.hidden = true;
-    if (iList) iList.innerHTML = "";
+  // The scan reports whether the selection has any images (drives the tab reveal + the pending
+  // open). Sent early — before the slower list scans — so the modal opens without waiting.
+  function applyPreflightSelection(hasImages) {
+    _hasImages = !!hasImages;
+    applyExportLayout();
+    // If a PDF open was waiting on this, reveal the modal now — the tabs are already in their
+    // final state, so the segmented control never pops in after the modal appears.
+    if (_pendingOpen && typeof window.__finishExportOpen === "function") window.__finishExportOpen();
   }
-  // Drop the pre-flight warning when the modal opens, so a reopen after scanning a different
+  // The full pre-flight result: the low-res list (only when downsampling applies) and the
+  // "won't convert to CMYK" list (always, whenever any image will stay RGB).
+  function renderPreflightImages(msg) {
+    if (typeof msg.hasImages === "boolean") applyPreflightSelection(msg.hasImages);
+    // Low-res list: only where downsampling applies (PDF + toggle on) and something is below.
+    // The header always reflects the CURRENT dpi target.
+    const target = msg.target || _downsampleDpi;
+    const imgs = (_exportFormat === "pdf" && _downsample) ? (msg.images || []) : [];
+    const hdr = document.getElementById("preflight-images-header");
+    if (hdr && imgs.length) hdr.textContent = `Images under ${target} dpi:`;
+    fillPreflightSection("preflight-images-section", "preflight-images", imgs);
+    // Un-convertible list: independent of downsampling (the CMYK conversion always runs).
+    const bad = (_exportFormat === "pdf") ? (msg.unconvertible || []) : [];
+    fillPreflightSection("preflight-cmyk-section", "preflight-cmyk", bad);
+  }
+  // Clear a warning immediately (no scan round-trip) — used when downsampling is switched off.
+  function hidePreflightImages() { fillPreflightSection("preflight-images-section", "preflight-images", []); }
+  function hidePreflightCmyk() { fillPreflightSection("preflight-cmyk-section", "preflight-cmyk", []); }
+  // Drop the pre-flight warnings when the modal opens, so a reopen after scanning a different
   // selection never flashes the previous selection's images before the fresh scan returns.
   function clearPreflight() {
     hidePreflightImages();
+    hidePreflightCmyk();
   }
   window.__renderPreflightImages = renderPreflightImages;
+  window.__applyPreflightSelection = applyPreflightSelection;
 
-  // Export modal — the shared DS modal shell. Holds the format choice and the
-  // print options (crop marks + bleed). Crop-mark state lives in _cropMarks/
-  // _bleedMm and is persisted by code.js via clientStorage; format is session-only.
+  // Export modal — the shared DS modal shell. The title mirrors the format picked in the
+  // overflow ("PDF CMYK Vector" / "TIFF CMYK Raster"). PDF splits into two tabs — "Marks and
+  // bleeds" and "Image quality" — but the segmented control only appears when the selection
+  // actually has images (otherwise there's nothing to downsample). TIFF is resolution-only.
+  // Print state lives in _cropMarks/_bleedMm/… (persisted by code.js); format is session-only.
   (function initExportModal() {
     const modal   = document.getElementById("export-modal");
     const openBtn = document.getElementById("export-btn");
     const cancel  = document.getElementById("export-cancel-btn");
     const confirm = document.getElementById("export-confirm-btn");
-    const fmtPdf  = document.getElementById("format-pdf");
-    const fmtTiff = document.getElementById("format-tiff");
-    const desc    = document.getElementById("export-format-desc");
+    const title   = document.getElementById("export-modal-title");
     const confirmLabel = document.getElementById("export-confirm-label");
-    const printField = document.getElementById("export-print");
+    const tabs    = document.getElementById("export-tabs");
+    const tabMarksBtn   = document.getElementById("tab-marks-btn");
+    const tabQualityBtn = document.getElementById("tab-quality-btn");
     const toggle  = document.getElementById("cropmarks-toggle");
     const regmarks = document.getElementById("regmarks-toggle");
+    const colorbars = document.getElementById("colorbars-toggle");
     const pageinfo = document.getElementById("pageinfo-toggle");
     const bleedOn = document.getElementById("bleed-toggle");
     const bleed   = document.getElementById("bleed-input");
@@ -2238,68 +2467,56 @@
     const downsample = document.getElementById("downsample-toggle");
     const dpi     = document.getElementById("dpi-input");
     const dpiWrap = document.getElementById("dpi-wrap");
-    const pdfOptions  = document.getElementById("pdf-options");
-    const tiffOptions = document.getElementById("tiff-options");
-    const tiffDpi     = document.getElementById("tiff-dpi-input");
+    const tiffDpi = document.getElementById("tiff-dpi-input");
     if (!modal || !openBtn || !confirm || !toggle || !bleedOn || !bleed || !downsample || !dpi || !tiffDpi) return;
 
-    let _exportFormat = "pdf";
     let closeTimer = null;
-    const DESCS = { pdf: "Vector artwork, CMYK colour.", tiff: "Flattened raster, CMYK colour." };
+    const TITLES = { pdf: "PDF CMYK Vector", tiff: "TIFF CMYK Raster" };
     const LABELS = { pdf: "Export PDF", tiff: "Export TIFF" };
 
-    // Print options are format-specific: PDF gets crop marks, bleed and image
-    // downsampling; TIFF is a raster export, so it only gets a resolution. The blocks
-    // are swapped (not dimmed) so each format shows only what applies. Within the PDF
-    // block, the bleed/downsample amounts are editable only once their own box is on.
-    const syncPrint = () => {
-      const isPdf = _exportFormat === "pdf";
-      pdfOptions.hidden = !isPdf;
-      tiffOptions.hidden = isPdf;
-      const bleedEditable = _bleedOn;
-      bleed.disabled = !bleedEditable;
-      wrap.classList.toggle("inputWrap--disabled", !bleedEditable);
-      const dpiEditable = _downsample;
-      dpi.disabled = !dpiEditable;
-      dpiWrap.classList.toggle("inputWrap--disabled", !dpiEditable);
+    // Enable/disable the amount inputs from their own toggles (dimmed, not hidden). The panel
+    // layout itself (tabs / marks / quality / tiff) is reconciled by applyExportLayout().
+    const syncInputs = () => {
+      bleed.disabled = !_bleedOn;
+      wrap.classList.toggle("inputWrap--disabled", !_bleedOn);
+      dpi.disabled = !_downsample;
+      dpiWrap.classList.toggle("inputWrap--disabled", !_downsample);
     };
-    const fmtControl = document.getElementById("export-format");
-    const moveSegPill = () => { if (typeof updateSegPill === "function") updateSegPill(fmtControl); };
-    const selectFormat = (fmt) => {
+    const setFormat = (fmt) => {
       _exportFormat = fmt;
-      fmtPdf.classList.toggle("selected",  fmt === "pdf");
-      fmtTiff.classList.toggle("selected", fmt === "tiff");
-      desc.textContent = DESCS[fmt];
+      _activeTab = "marks";                       // always land on the first tab
+      title.textContent = TITLES[fmt];
       confirmLabel.textContent = LABELS[fmt];
-      moveSegPill();
-      syncPrint();
-      if (fmt !== "pdf") hidePreflightImages();   // TIFF: no downsampling, so no low-res warning
-      requestPreflight();   // format change flips whether the low-res list applies
+      syncInputs();
+      applyExportLayout();
     };
     const persist = () => parent.postMessage({ pluginMessage: {
-      type: "save-settings", cropMarks: _cropMarks, regMarks: _regMarks, pageInfo: _pageInfo, bleedOn: _bleedOn, bleedMm: _bleedMm,
+      type: "save-settings", cropMarks: _cropMarks, regMarks: _regMarks, colorBars: _colorBars, pageInfo: _pageInfo, bleedOn: _bleedOn, bleedMm: _bleedMm,
       downsample: _downsample, downsampleDpi: _downsampleDpi, tiffDpi: _tiffDpi,
     } }, "*");
 
-    // Ask code.js to scan the selection for output sizes (+ low-res images when downsampling).
-    // Only while the modal is open — avoids scanning on plugin load.
+    // Ask code.js to scan the selection: always reports whether it has images (drives the tab
+    // reveal); also lists low-res images when downsampling is on. Runs while the modal is open,
+    // or while a PDF open is pending (we detect images BEFORE showing the modal).
     let _preflightTimer = null;
     const requestPreflight = () => {
-      if (!modal.classList.contains("is-open")) return;
+      if (!modal.classList.contains("is-open") && !_pendingOpen) return;
       parent.postMessage({ pluginMessage: {
         type: "preflight-request", dpi: _downsampleDpi, scanImages: _exportFormat === "pdf" && _downsample,
       } }, "*");
     };
     const requestPreflightSoon = () => { if (_preflightTimer) clearTimeout(_preflightTimer); _preflightTimer = setTimeout(requestPreflight, 250); };
 
-    fmtPdf.addEventListener("click", () => selectFormat("pdf"));
-    fmtTiff.addEventListener("click", () => selectFormat("tiff"));
+    // Tab switching (PDF only, and only when the control is visible).
+    tabMarksBtn.addEventListener("click", () => { _activeTab = "marks"; applyExportLayout(); });
+    tabQualityBtn.addEventListener("click", () => { _activeTab = "quality"; applyExportLayout(); });
     toggle.addEventListener("change", () => { _cropMarks = toggle.checked; persist(); });
     regmarks.addEventListener("change", () => { _regMarks = regmarks.checked; persist(); });
+    colorbars.addEventListener("change", () => { _colorBars = colorbars.checked; persist(); });
     pageinfo.addEventListener("change", () => { _pageInfo = pageinfo.checked; persist(); });
-    bleedOn.addEventListener("change", () => { _bleedOn = bleedOn.checked; syncPrint(); persist(); });
+    bleedOn.addEventListener("change", () => { _bleedOn = bleedOn.checked; syncInputs(); persist(); });
     downsample.addEventListener("change", () => {
-      _downsample = downsample.checked; syncPrint(); persist();
+      _downsample = downsample.checked; syncInputs(); persist();
       if (_downsample) requestPreflight(); else hidePreflightImages();   // off → clear the warning now
     });
     bleed.addEventListener("input", () => {
@@ -2329,6 +2546,7 @@
       s = s || {};
       _cropMarks = !!s.cropMarks;
       _regMarks = !!s.regMarks;
+      _colorBars = !!s.colorBars;
       _pageInfo = !!s.pageInfo;
       _bleedOn = !!s.bleedOn;
       _downsample = !!s.downsample;
@@ -2337,23 +2555,45 @@
       if (typeof s.tiffDpi === "number" && s.tiffDpi > 0) _tiffDpi = s.tiffDpi;
       toggle.checked = _cropMarks;
       regmarks.checked = _regMarks;
+      colorbars.checked = _colorBars;
       pageinfo.checked = _pageInfo;
       bleedOn.checked = _bleedOn;
       downsample.checked = _downsample;
       bleed.value = String(_bleedMm);
       dpi.value = String(_downsampleDpi);
       tiffDpi.value = String(_tiffDpi);
-      syncPrint();
+      syncInputs();
     };
 
-    const openModal = () => {
+    const positionPill = () => {
+      if (!tabs.hidden && typeof updateSegPill === "function") updateSegPill(tabs);
+    };
+    // Two-step open. For PDF we run the (cheap, property-only) image scan FIRST and reveal the
+    // modal only once we know whether the selection has images — so the segmented control is
+    // already in its final state when the modal appears, never popping in afterwards. TIFF has
+    // no tabs, so it opens immediately. A short fallback timer opens anyway if the scan is slow.
+    let _pendingOpenTimer = null;
+    const finishOpen = () => {
+      _pendingOpen = false;
+      if (_pendingOpenTimer) { clearTimeout(_pendingOpenTimer); _pendingOpenTimer = null; }
+      applyExportLayout();                           // reflect the now-known hasImages…
+      if (!modal.classList.contains("is-open")) modal.classList.add("is-open");
+      requestAnimationFrame(positionPill);           // …then place the pill once measured
+    };
+    window.__finishExportOpen = finishOpen;
+    const beginOpen = (fmt) => {
       if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; modal.classList.remove("is-closing"); }
+      if (_pendingOpenTimer) { clearTimeout(_pendingOpenTimer); _pendingOpenTimer = null; }
+      setFormat(fmt);                     // title, confirm label, _activeTab = "marks"
       clearPreflight();                   // drop any content from a previous selection
-      modal.classList.add("is-open");
-      requestAnimationFrame(moveSegPill); // position the pill once the modal is laid out
-      // Preflight (image-size scan for downsampling) is a PDF-only concern — TIFF never runs it,
-      // so the PDF and TIFF paths stay fully separated once a format is chosen in the overflow.
-      if (_exportFormat === "pdf") requestPreflight();
+      _hasImages = false;                 // unknown until the fresh scan answers
+      if (fmt === "pdf") {
+        _pendingOpen = true;
+        requestPreflight();               // detect images before showing (PDF-only concern)
+        _pendingOpenTimer = setTimeout(finishOpen, 400);   // open anyway if the scan stalls
+      } else {
+        finishOpen();                     // TIFF: no image gating needed
+      }
     };
     window.__closeExportModal = () => {
       if (!modal.classList.contains("is-open")) return;
@@ -2362,7 +2602,7 @@
     };
 
     // The export button opens the DS format-picker overflow (PDF vs TIFF); picking a format
-    // opens the modal with only that format's options — PDF and TIFF logic stay separated.
+    // opens the modal titled for that format — PDF and TIFF logic stay separated.
     const overflow = document.getElementById("export-overflow");
     const closeOverflow = () => { overflow.hidden = true; };
     openBtn.addEventListener("click", (e) => {
@@ -2373,9 +2613,8 @@
     overflow.querySelectorAll(".overflowList").forEach((item) => {
       item.addEventListener("click", (e) => {
         e.stopPropagation();
-        selectFormat(item.dataset.format);
         closeOverflow();
-        openModal();
+        beginOpen(item.dataset.format);
       });
     });
     document.addEventListener("click", (e) => { if (!e.target.closest("#export-picker")) closeOverflow(); });
@@ -2388,7 +2627,7 @@
     });
     confirm.addEventListener("click", () => startExport(_exportFormat));
 
-    selectFormat("pdf");
+    setFormat("pdf");
     parent.postMessage({ pluginMessage: { type: "get-settings" } }, "*");
   })();
 
@@ -2566,6 +2805,7 @@
       return;
     }
 
+    if (msg.type === "preflight-selection") { applyPreflightSelection(msg.hasImages); return; }
     if (msg.type === "preflight-images") { renderPreflightImages(msg); return; }
 
     if (msg.type === "external-vars-resolved") {
@@ -3075,7 +3315,7 @@
           const pad = (n) => String(n).padStart(2, "0");
           const stamp = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
           fileBytes = await convertPdfToCmyk(msg.pdfBytes, _exportLookup,
-            { cropMarks: _cropMarks, regMarks: _regMarks, bleedPt: _bleedOn ? _bleedMm * 72 / 25.4 : 0,
+            { cropMarks: _cropMarks, regMarks: _regMarks, colorBars: _colorBars, bleedPt: _bleedOn ? _bleedMm * 72 / 25.4 : 0,
               downsample: _downsample, downsampleDpi: _downsampleDpi, trimBox: msg.trimBox,
               pageInfo: _pageInfo,
               pageInfoLeft: [msg.fileName, msg.frameName].filter(Boolean).join("  ·  "),
@@ -3131,8 +3371,11 @@
           }
           // A batch that ends on a SUCCESS must still report any earlier failures,
           // otherwise a frame that failed mid-batch is dropped from the print output
-          // with no warning.
+          // with no warning. Only when the whole batch was clean do we confirm success —
+          // and that confirmation waits until the file is actually saved (see below).
+          const clean = _exportFailures.length === 0 && _exportRgbImages === 0;
           reportExportFailures();
+          if (clean) confirmExportSaved();
         }
       } catch (err) {
         if (_exportCancelled) return;

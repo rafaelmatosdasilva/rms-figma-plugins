@@ -114,12 +114,27 @@ describe('tokens-to-ink — crop marks', () => {
     // A standard Helvetica font is declared and registered in the page resources as /HB.
     expect(out).toMatch(/\/BaseFont\s*\/Helvetica/);
     expect(out).toMatch(/\/Font\s*<<\s*\/HB\s+\d+\s+0\s+R/);
-    // The text is drawn (BT … Tj … ET) at 6pt in registration colour.
-    expect(out).toMatch(/BT[\s\S]*\/HB 6 Tf/);
+    // The text is drawn (BT … Tj … ET) at 11pt in registration colour.
+    expect(out).toMatch(/BT[\s\S]*\/HB 11 Tf/);
     expect(out).toMatch(/\(My Catalog  ·  Sapphire Mini\)\s*Tj/);
     expect(out).toMatch(/\(09\/08\/2026 10:01\)\s*Tj/);
-    // The page grew to make slug room.
-    expect(parseFloat(mediaBox(out)[3])).toBeGreaterThan(64);
+    // The page grew DOWNWARD (bottom edge only) to make the slug band.
+    expect(parseFloat(mediaBox(out)[2])).toBeLessThan(0);   // y0 pushed below 0
+    expect(parseFloat(mediaBox(out)[4])).toBe(64);          // top (y1) unchanged
+  });
+
+  it('prints file information within the bottom mark band — no page growth when marks are present', async () => {
+    ui = bootUI();
+    const marks = { cropMarks: true, regMarks: true, bleedPt: 0 };
+    const without = latin1(await ui.window.convertPdfToCmyk(pdfBytes(), {}, marks));
+    const withInfo = latin1(await ui.window.convertPdfToCmyk(pdfBytes(), {}, {
+      ...marks, pageInfo: true, pageInfoLeft: 'Doc', pageInfoRight: '10:00',
+    }));
+    const box = (s) => mediaBox(s).slice(1, 5).map(Number);   // [x0, y0, x1, y1]
+    // The file info fits between the corner crop marks and the centred registration target, so
+    // the MediaBox is identical with and without it — the marks' margin already holds the text.
+    expect(box(withInfo)).toEqual(box(without));
+    expect(withInfo).toMatch(/\/HB 11 Tf/);                   // 11pt text
   });
 
   it('escapes parentheses in page-info text so the PDF string stays valid', async () => {
@@ -128,6 +143,31 @@ describe('tokens-to-ink — crop marks', () => {
       pageInfo: true, bleedPt: 0, pageInfoLeft: 'File (v2)', pageInfoRight: '',
     }));
     expect(out).toMatch(/\(File \\\(v2\\\)\)\s*Tj/);
+  });
+
+  it('draws colour bars (CMYK swatches + a grayscale wedge) in the top slug, growing only the top', async () => {
+    ui = bootUI();
+    // A trim wide enough to hold both strips (2×99 + 60). Sits inside a larger page box.
+    const trimBox = { x0: 0, y0: 0, x1: 300, y1: 200 };
+    const out = latin1(await ui.window.convertPdfToCmyk(pdfBytes(), {}, { colorBars: true, bleedPt: 0, trimBox }));
+    // Solid process colours as flat DeviceCMYK fills: cyan (1 0 0 0), magenta, yellow, and K.
+    expect(out).toMatch(/1 0 0 0 k/);          // cyan swatch
+    expect(out).toMatch(/0 1 0 0 k/);          // magenta swatch
+    expect(out).toMatch(/0 0 1 0 k/);          // yellow swatch
+    expect(out).toMatch(/0 0 0 1 k/);          // solid black swatch
+    expect(out).toMatch(/0 0 0 0\.5 k/);       // a 50% grey tint from the wedge
+    expect(out).toMatch(/\bre f\b/);           // swatches are filled rectangles
+    // The colour bars live in the TOP slug — the top grows, the trim is unchanged.
+    const mb = mediaBox(out);
+    expect(parseFloat(mb[4])).toBeGreaterThan(200);   // y1 (top) extended for the bars
+    expect(parseFloat(mb[2])).toBe(0);                // y0 (bottom) untouched (no bottom marks)
+  });
+
+  it('skips colour bars on a frame too narrow to hold them', async () => {
+    ui = bootUI();
+    // The fixture trim is only 64pt wide — far below 2×99+60, so the bars are omitted.
+    const out = latin1(await ui.window.convertPdfToCmyk(pdfBytes(), {}, { colorBars: true, bleedPt: 0 }));
+    expect(out).not.toMatch(/1 0 0 0 k/);
   });
 
   it('leaves the page untouched when both crop marks and bleed are off', async () => {

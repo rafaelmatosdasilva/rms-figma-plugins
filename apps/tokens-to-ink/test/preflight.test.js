@@ -45,9 +45,24 @@ describe('tokens-to-ink UI — export pre-flight', () => {
     ui = loadUI(UI);
     openModal(ui);
     enableDownsample(ui);
-    ui.click('#format-tiff');
-    ui.receive(imagesMsg({ images: [{ id: 'i1', name: 'hero', meta: 'x' }] }));
+    openModalTiff(ui);   // re-pick TIFF from the format overflow
+    ui.receive(imagesMsg({ hasImages: true, images: [{ id: 'i1', name: 'hero', meta: 'x' }] }));
     expect(ui.$('#preflight-images-section').hidden).toBe(true);
+    expect(ui.$('#tiff-panel').hidden).toBe(false);   // TIFF shows the resolution panel…
+    expect(ui.$('#export-tabs').hidden).toBe(true);   // …and never the tabs
+  });
+
+  it('reveals the Image-quality tab only when the selection has images', () => {
+    ui = loadUI(UI);
+    openModal(ui);
+    // No images → no segmented control, just the marks/bleeds group.
+    ui.receive(imagesMsg({ hasImages: false, images: [] }));
+    expect(ui.$('#export-tabs').hidden).toBe(true);
+    expect(ui.$('#tab-marks').hidden).toBe(false);
+
+    // Images present → the "Marks and bleeds" / "Image quality" control appears.
+    ui.receive(imagesMsg({ hasImages: true, images: [] }));
+    expect(ui.$('#export-tabs').hidden).toBe(false);
   });
 
   it('hides the image section when the list is empty (no warning if nothing is below)', () => {
@@ -117,6 +132,35 @@ describe('tokens-to-ink UI — export pre-flight', () => {
     const rows = ui.$$('#preflight-images .preflight-row');
     expect(rows).toHaveLength(1);
     expect(rows[0].textContent).toContain('new.jpg');
+  });
+
+  it('lists images that will stay RGB (independent of downsample) and focuses on click', () => {
+    ui = loadUI(UI);
+    openModal(ui);
+    const bad = [{ id: 'b1', name: 'logo.jpg', meta: 'CMYK JPEG' }];
+
+    // Shown even with downsample OFF — the CMYK conversion always runs.
+    ui.receive(imagesMsg({ hasImages: true, unconvertible: bad }));
+    expect(ui.$('#preflight-cmyk-section').hidden).toBe(false);
+    const rows = ui.$$('#preflight-cmyk .preflight-row');
+    expect(rows).toHaveLength(1);
+    expect(rows[0].textContent).toContain('logo.jpg');
+    expect(rows[0].textContent).toContain('CMYK JPEG');
+
+    ui.click(rows[0].querySelector('.preflight-focus-btn'));
+    expect(ui.sentOf('focus-node').pop()).toMatchObject({ type: 'focus-node', nodeId: 'b1' });
+    expect(ui.errors).toEqual([]);
+  });
+
+  it('hides the RGB-warning list when none are reported, and for TIFF', () => {
+    ui = loadUI(UI);
+    openModal(ui);
+    ui.receive(imagesMsg({ hasImages: true, unconvertible: [] }));
+    expect(ui.$('#preflight-cmyk-section').hidden).toBe(true);
+
+    openModalTiff(ui);   // TIFF has no CMYK-vector conversion
+    ui.receive(imagesMsg({ hasImages: true, unconvertible: [{ id: 'b1', name: 'logo.jpg', meta: 'CMYK JPEG' }] }));
+    expect(ui.$('#preflight-cmyk-section').hidden).toBe(true);
   });
 
   it('escapes a malicious layer name — it cannot inject markup', () => {

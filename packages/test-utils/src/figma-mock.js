@@ -85,7 +85,13 @@ export function makeFigmaMock(scene = {}) {
     getImageByHash(hash) {
       const size = (scene.images || {})[hash];
       if (!size) return null;
-      return { hash, async getSizeAsync() { return { width: size.width, height: size.height }; } };
+      return {
+        hash,
+        async getSizeAsync() { return { width: size.width, height: size.height }; },
+        // Raw stored bytes (as Figma keeps them: PNG/JPEG). scene.images[hash].bytes is a
+        // Uint8Array; absent → an empty buffer, like an image with no retrievable bytes.
+        async getBytesAsync() { return size.bytes ? Uint8Array.from(size.bytes) : new Uint8Array(0); },
+      };
     },
     // The manifests declare documentAccess:"dynamic-page", under which Figma REMOVES
     // the synchronous by-id lookups — calling them throws. The mock mirrors that so a
