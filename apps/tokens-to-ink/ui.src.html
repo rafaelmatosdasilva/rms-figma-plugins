@@ -499,6 +499,11 @@
             <span class="cropmarks-unit">dpi</span>
           </div>
         </div>
+        <label class="checkbox">
+          <input type="checkbox" id="tiff-zip-toggle" class="checkbox-input" checked>
+          <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
+          <span class="checkbox-text">Compress (lossless ZIP)</span>
+        </label>
       </div>
     </div>
     <div class="modal-footer">
@@ -619,6 +624,7 @@
   let _downsample = false;      // downsample embedded images on PDF export — off by default
   let _downsampleDpi = 300;     // target resolution for downsampling, in DPI (used only when _downsample)
   let _tiffDpi = 300;           // TIFF raster export resolution, in DPI
+  let _tiffZip = true;          // compress the TIFF losslessly (Adobe Deflate) — on by default
   let _exportFormat = "pdf";    // chosen in the export overflow — drives the modal title + layout
   let _hasImages = false;       // does the selection contain any raster image? (gates the Image-quality tab)
   let _activeTab = "marks";     // PDF modal tab: "marks" | "quality"
@@ -1218,6 +1224,30 @@
     return [cb, mb, yb, kb];
   }
 
+  // Fast path for the per-pixel image loops. buildCmykLut turns the export colour map into a
+  // packed-int (0xRRGGBB → [c,m,y,k]) table ONCE; writeCmyk then converts a pixel straight into
+  // the output buffer with no per-pixel hex string or array allocation. The old rgbPixelToCmyk
+  // built both for EVERY pixel, which dominated large-image exports. Output is byte-identical.
+  function buildCmykLut(cl) {
+    const lut = new Map();
+    if (cl) for (const hex in cl) {
+      const h = hex.replace('#', '');
+      if (!/^[0-9a-fA-F]{6}$/.test(h)) continue;
+      const m = cl[hex];
+      lut.set(parseInt(h, 16), [Math.round(m.c * 2.55), Math.round(m.m * 2.55), Math.round(m.y * 2.55), Math.round(m.k * 2.55)]);
+    }
+    return lut;
+  }
+  function writeCmyk(out, o, r, g, b, lut) {
+    const hit = lut.get((r << 16) | (g << 8) | b);
+    if (hit) { out[o] = hit[0]; out[o + 1] = hit[1]; out[o + 2] = hit[2]; out[o + 3] = hit[3]; return; }
+    if (r === 0 && g === 0 && b === 0) { out[o] = 0; out[o + 1] = 0; out[o + 2] = 0; out[o + 3] = 255; return; }
+    const rn = r / 255, gn = g / 255, bn = b / 255, k = 1 - Math.max(rn, gn, bn), ik = 1 - k;
+    let c = Math.round((1 - rn - k) / ik * 255), m = Math.round((1 - gn - k) / ik * 255), y = Math.round((1 - bn - k) / ik * 255);
+    if (c <= 3) c = 0; if (m <= 3) m = 0; if (y <= 3) y = 0;
+    out[o] = c; out[o + 1] = m; out[o + 2] = y; out[o + 3] = Math.round(k * 255);
+  }
+
   // Load PNG into canvas and return raw RGBA pixel data
   function loadPngToCanvas(png, w, h, whiteBg) {
     return new Promise(resolve => {
@@ -1252,6 +1282,7 @@
             const cv = document.getElementById("convert-canvas");
             cv.width = w; cv.height = h;
             const ctx = cv.getContext("2d");
+            ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";   // best downscale
             ctx.clearRect(0, 0, w, h);
             ctx.drawImage(im, 0, 0, w, h);
             URL.revokeObjectURL(url);
@@ -1418,32 +1449,45 @@
     return sizes;
   }
 
-  // Nearest-neighbour downsample of an RGBA buffer (fallback for raw FlateDecode
-  // pixel images; the DCTDecode path re-decodes at the target size via canvas, which
-  // resamples with smoothing). Only ever called to shrink, never to enlarge.
-  function resizeRgbaNearest(rgba, w, h, tw, th) {
-    const out = new Uint8Array(tw * th * 4);
-    for (let y = 0; y < th; y++) {
-      const sy = Math.min(h - 1, Math.floor((y * h) / th));
-      for (let x = 0; x < tw; x++) {
-        const sx = Math.min(w - 1, Math.floor((x * w) / tw));
-        const si = (sy * w + sx) * 4, di = (y * tw + x) * 4;
-        out[di] = rgba[si]; out[di+1] = rgba[si+1]; out[di+2] = rgba[si+2]; out[di+3] = rgba[si+3];
+  // Area-average (box filter) downsample of an RGBA buffer — every source pixel is binned into its
+  // target cell and the cell is averaged, so shrinking stays smooth and artefact-free (InDesign's
+  // "Average Downsampling") instead of the aliased look of nearest-neighbour. Used for raw
+  // FlateDecode pixel images; the DCTDecode path re-decodes at the target size via canvas, which
+  // already resamples with smoothing. Only ever called to shrink, never to enlarge — so every
+  // target cell receives at least one source pixel.
+  function resizeRgbaBox(rgba, w, h, tw, th) {
+    const cells = tw * th, acc = new Float64Array(cells * 4), cnt = new Uint32Array(cells);
+    for (let y = 0; y < h; y++) {
+      const ty = Math.min(th - 1, (y * th / h) | 0);
+      for (let x = 0; x < w; x++) {
+        const tx = Math.min(tw - 1, (x * tw / w) | 0);
+        const si = (y * w + x) * 4, ai = (ty * tw + tx) * 4;
+        acc[ai] += rgba[si]; acc[ai+1] += rgba[si+1]; acc[ai+2] += rgba[si+2]; acc[ai+3] += rgba[si+3];
+        cnt[ty * tw + tx]++;
       }
+    }
+    const out = new Uint8Array(cells * 4);
+    for (let i = 0; i < cells; i++) {
+      const c = cnt[i] || 1, ai = i * 4;
+      out[ai] = (acc[ai] / c + 0.5) | 0; out[ai+1] = (acc[ai+1] / c + 0.5) | 0;
+      out[ai+2] = (acc[ai+2] / c + 0.5) | 0; out[ai+3] = (acc[ai+3] / c + 0.5) | 0;
     }
     return out;
   }
 
-  // Nearest-neighbour downsample of a single-channel (grey) buffer.
-  function resizeGrayNearest(g, w, h, tw, th) {
-    const out = new Uint8Array(tw * th);
-    for (let y = 0; y < th; y++) {
-      const sy = Math.min(h - 1, Math.floor((y * h) / th));
-      for (let x = 0; x < tw; x++) {
-        const sx = Math.min(w - 1, Math.floor((x * w) / tw));
-        out[y * tw + x] = g[sy * w + sx];
+  // Area-average (box filter) downsample of a single-channel (grey) buffer — the /SMask companion
+  // to resizeRgbaBox, so the mask stays smooth in lockstep with its base image.
+  function resizeGrayBox(g, w, h, tw, th) {
+    const cells = tw * th, acc = new Float64Array(cells), cnt = new Uint32Array(cells);
+    for (let y = 0; y < h; y++) {
+      const ty = Math.min(th - 1, (y * th / h) | 0);
+      for (let x = 0; x < w; x++) {
+        const tx = Math.min(tw - 1, (x * tw / w) | 0), ti = ty * tw + tx;
+        acc[ti] += g[y * w + x]; cnt[ti]++;
       }
     }
+    const out = new Uint8Array(cells);
+    for (let i = 0; i < cells; i++) out[i] = (acc[i] / (cnt[i] || 1) + 0.5) | 0;
     return out;
   }
 
@@ -1467,8 +1511,8 @@
         for (let i = 0, j = 0; i < gray.length; i++, j += 4) gray[i] = rgba[j];
       } else if (obj.isFlate) {
         const d = await inflateBuf(obj.streamRaw);
-        if (d.length === w * h) gray = resizeGrayNearest(d, w, h, tw, th);
-        else if (d.length === w * h * 4) { const g0 = new Uint8Array(w * h); for (let i = 0, j = 0; i < g0.length; i++, j += 4) g0[i] = d[j]; gray = resizeGrayNearest(g0, w, h, tw, th); }
+        if (d.length === w * h) gray = resizeGrayBox(d, w, h, tw, th);
+        else if (d.length === w * h * 4) { const g0 = new Uint8Array(w * h); for (let i = 0, j = 0; i < g0.length; i++, j += 4) g0[i] = d[j]; gray = resizeGrayBox(g0, w, h, tw, th); }
       }
     } catch (e) { gray = null; }
     if (!gray) return false;
@@ -1550,6 +1594,7 @@
                bpc: bpc ? +bpc[1] : null, predictor: /\/Predictor\s+(\d+)/.test(dict) };
     };
     let unconverted = 0;
+    const lut = buildCmykLut(colorLookup);   // packed-int colour table, built once for all pixels
     for (const n of imgNums) {
       const obj = objs[n];
       const info = (obj && obj.dict) ? dictInfo(obj.dict) : { filter: '(none)', colorSpace: '(none)', bpc: null, predictor: false };
@@ -1593,7 +1638,7 @@
           else if (d.length === px * 3) { full = new Uint8Array(px * 4); for (let i = 0, j = 0; i < d.length; i += 3, j += 4) { full[j] = d[i]; full[j+1] = d[i+1]; full[j+2] = d[i+2]; full[j+3] = 255; } }
           else if (d.length === px) { full = new Uint8Array(px * 4); for (let i = 0, j = 0; i < px; i++, j += 4) { const g = d[i]; full[j] = g; full[j+1] = g; full[j+2] = g; full[j+3] = 255; } }
           else if (d.length === px * 2) { full = new Uint8Array(px * 4); for (let i = 0, j = 0; i < d.length; i += 2, j += 4) { const g = d[i]; full[j] = g; full[j+1] = g; full[j+2] = g; full[j+3] = d[i+1]; } }
-          if (full) rgba = shrink ? resizeRgbaNearest(full, w, h, tw, th) : full;
+          if (full) rgba = shrink ? resizeRgbaBox(full, w, h, tw, th) : full;
           else why = info.predictor
             ? 'FlateDecode uses a predictor (row filters) — not yet supported'
             : `pixel data is ${d.length} bytes, not a whole multiple of ${w}×${h} — likely 16-bit or indexed (bpc=${info.bpc || '?'}, cs=${info.colorSpace})`;
@@ -1603,10 +1648,7 @@
       } catch (e) { rgba = null; why = 'decode threw: ' + ((e && e.message) || e); }
       if (!rgba) { fail(why || 'undecodable', w, h); continue; } // left intact (RGB); warn the user
       const cmyk = new Uint8Array(tw * th * 4);
-      for (let p = 0, q = 0; p < tw * th * 4; p += 4, q += 4) {
-        const c = rgbPixelToCmyk(rgba[p], rgba[p+1], rgba[p+2], colorLookup);
-        cmyk[q] = c[0]; cmyk[q+1] = c[1]; cmyk[q+2] = c[2]; cmyk[q+3] = c[3];
-      }
+      for (let p = 0, q = 0; p < tw * th * 4; p += 4, q += 4) writeCmyk(cmyk, q, rgba[p], rgba[p+1], rgba[p+2], lut);
       obj.streamRaw = await deflateBuf(cmyk);
       obj.dict = obj.dict.replace(/\/ColorSpace\s*(\/\w+|\[[^\]]*\]|\d+\s+0\s+R)/, '/ColorSpace /DeviceCMYK');
       obj.dict = obj.dict.replace(/\/Filter\s*(\/\w+|\[[^\]]*\])/, '/Filter /FlateDecode');
@@ -2217,12 +2259,16 @@
 
   // ── TIFF: CMYK+Alpha at the chosen DPI (default 300) ──────────────
 
-  function buildCmykaTiff(data,w,h,dpi) {
+  // zip=true → Adobe Deflate (tag 8, zlib), lossless and widely supported → much smaller files.
+  // zip=false → uncompressed (tag 1). Single strip either way. Async because deflate is.
+  async function buildCmykaTiff(data,w,h,dpi,zip) {
     const res = Math.round(dpi) || 300;
-    const pxSz=w*h*5, nT=15, iO=8, iSz=2+(nT*12)+4, eO=iO+iSz;
+    const strip = zip ? await deflateBuf(data) : data;   // compressed (or raw) strip bytes
+    const stripLen = strip.length, compression = zip ? 8 : 1;
+    const nT=15, iO=8, iSz=2+(nT*12)+4, eO=iO+iSz;
     // Extra data: BitsPerSample (5 shorts = 10 bytes) + XRes (8) + YRes (8)
     const bO=eO, xO=bO+10, yO=xO+8, sO=yO+8;
-    const buf=new ArrayBuffer(sO+pxSz), v=new DataView(buf), b=new Uint8Array(buf);
+    const buf=new ArrayBuffer(sO+stripLen), v=new DataView(buf), b=new Uint8Array(buf);
     let p=0;
     const w16=x=>{v.setUint16(p,x,true);p+=2;}, w32=x=>{v.setUint32(p,x,true);p+=4;};
     function t(tag,type,cnt,val){w16(tag);w16(type);w32(cnt);if(type===3&&cnt===1){w16(val);w16(0);}else{w32(val);}}
@@ -2230,12 +2276,12 @@
     t(256,4,1,w);           // ImageWidth
     t(257,4,1,h);           // ImageLength
     t(258,3,5,bO);          // BitsPerSample → offset (5 shorts: 8,8,8,8,8)
-    t(259,3,1,1);           // Compression: None
+    t(259,3,1,compression); // Compression: 1 = none, 8 = Adobe Deflate (zlib)
     t(262,3,1,5);           // PhotometricInterpretation: CMYK
     t(273,4,1,sO);          // StripOffsets
     t(277,3,1,5);           // SamplesPerPixel: 5 (CMYK+A)
     t(278,4,1,h);           // RowsPerStrip
-    t(279,4,1,pxSz);        // StripByteCounts
+    t(279,4,1,stripLen);    // StripByteCounts (compressed length when zipped)
     t(282,5,1,xO);          // XResolution → offset (RATIONAL 300/1)
     t(283,5,1,yO);          // YResolution → offset (RATIONAL 300/1)
     t(284,3,1,1);           // PlanarConfiguration: chunky
@@ -2248,8 +2294,8 @@
     // XResolution res/1, YResolution res/1
     p=xO; w32(res);w32(1);
     p=yO; w32(res);w32(1);
-    // Pixel data
-    b.set(data, sO);
+    // Pixel data (compressed or raw)
+    b.set(strip, sO);
     return new Uint8Array(buf);
   }
 
@@ -2258,6 +2304,7 @@
   async function convertImageToCmyka(png, w, h, cl) {
     const rgba = await loadPngToCanvas(png, w, h, false);
     const out = new Uint8Array(w * h * 5);
+    const lut = buildCmykLut(cl);   // packed-int colour table, built once for all pixels
     for (let i = 0, j = 0; i < rgba.length; i += 4, j += 5) {
       const a = rgba[i + 3];
       if (a === 0) { out[j] = out[j+1] = out[j+2] = out[j+3] = out[j+4] = 0; }
@@ -2268,8 +2315,8 @@
           g = Math.min(255, Math.round(g * 255 / a));
           b = Math.min(255, Math.round(b * 255 / a));
         }
-        const c = rgbPixelToCmyk(r, g, b, cl);
-        out[j] = c[0]; out[j+1] = c[1]; out[j+2] = c[2]; out[j+3] = c[3]; out[j+4] = a;
+        writeCmyk(out, j, r, g, b, lut);   // CMYK into j..j+3
+        out[j+4] = a;
       }
     }
     return out;
@@ -2468,6 +2515,7 @@
     const dpi     = document.getElementById("dpi-input");
     const dpiWrap = document.getElementById("dpi-wrap");
     const tiffDpi = document.getElementById("tiff-dpi-input");
+    const tiffZip = document.getElementById("tiff-zip-toggle");
     if (!modal || !openBtn || !confirm || !toggle || !bleedOn || !bleed || !downsample || !dpi || !tiffDpi) return;
 
     let closeTimer = null;
@@ -2492,7 +2540,7 @@
     };
     const persist = () => parent.postMessage({ pluginMessage: {
       type: "save-settings", cropMarks: _cropMarks, regMarks: _regMarks, colorBars: _colorBars, pageInfo: _pageInfo, bleedOn: _bleedOn, bleedMm: _bleedMm,
-      downsample: _downsample, downsampleDpi: _downsampleDpi, tiffDpi: _tiffDpi,
+      downsample: _downsample, downsampleDpi: _downsampleDpi, tiffDpi: _tiffDpi, tiffZip: _tiffZip,
     } }, "*");
 
     // Ask code.js to scan the selection: always reports whether it has images (drives the tab
@@ -2541,6 +2589,7 @@
       persist();
     });
     tiffDpi.addEventListener("blur", () => { tiffDpi.value = String(_tiffDpi); });
+    if (tiffZip) tiffZip.addEventListener("change", () => { _tiffZip = tiffZip.checked; persist(); });
     // Called when code.js sends back the persisted settings.
     window.__applyExportSettings = (s) => {
       s = s || {};
@@ -2553,6 +2602,7 @@
       if (typeof s.bleedMm === "number" && s.bleedMm >= 0) _bleedMm = s.bleedMm;
       if (typeof s.downsampleDpi === "number" && s.downsampleDpi > 0) _downsampleDpi = s.downsampleDpi;
       if (typeof s.tiffDpi === "number" && s.tiffDpi > 0) _tiffDpi = s.tiffDpi;
+      if (typeof s.tiffZip === "boolean") _tiffZip = s.tiffZip;
       toggle.checked = _cropMarks;
       regmarks.checked = _regMarks;
       colorbars.checked = _colorBars;
@@ -2562,6 +2612,7 @@
       bleed.value = String(_bleedMm);
       dpi.value = String(_downsampleDpi);
       tiffDpi.value = String(_tiffDpi);
+      if (tiffZip) tiffZip.checked = _tiffZip;
       syncInputs();
     };
 
@@ -3325,7 +3376,7 @@
           fileName = `${safe}_CMYK.pdf`; fileMime = "application/pdf";
         } else {
           const cmyka = await convertImageToCmyka(msg.pngBytes, msg.width, msg.height, _exportLookup);
-          fileBytes = buildCmykaTiff(cmyka, msg.width, msg.height, msg.dpi);
+          fileBytes = await buildCmykaTiff(cmyka, msg.width, msg.height, msg.dpi, _tiffZip);
           fileName = `${safe}_CMYK.tiff`; fileMime = "image/tiff";
         }
         // Disambiguate against earlier files this batch so same-named items don't

@@ -78,6 +78,119 @@ describe('tokens-to-ink — grayscale images convert to CMYK', () => {
   });
 });
 
+describe('tokens-to-ink — downsample resampling (area-average)', () => {
+  it('resizeRgbaBox averages a 2×2 checkerboard to mid-grey (not one nearest corner)', () => {
+    ui = bootUI();
+    // Opaque black/white checkerboard: BL/TR black, BR/TL white → 1×1 average = 128s.
+    const src = new Uint8Array([
+      255,255,255,255, /**/ 0,0,0,255,
+      0,0,0,255,       /**/ 255,255,255,255,
+    ]);
+    const out = ui.window.resizeRgbaBox(src, 2, 2, 1, 1);
+    expect([...out]).toEqual([128, 128, 128, 255]);   // averaged — nearest would give 0 or 255
+  });
+
+  it('resizeGrayBox averages a single-channel buffer', () => {
+    ui = bootUI();
+    const out = ui.window.resizeGrayBox(new Uint8Array([0, 255, 255, 0]), 2, 2, 1, 1);
+    expect([...out]).toEqual([128]);
+  });
+
+  it('resizeRgbaBox preserves dimensions and downscales cleanly to a smaller grid', () => {
+    ui = bootUI();
+    const src = new Uint8Array(4 * 4 * 4).fill(200);   // flat colour
+    const out = ui.window.resizeRgbaBox(src, 4, 4, 2, 2);
+    expect(out.length).toBe(2 * 2 * 4);
+    expect([...out]).toEqual(new Array(16).fill(200));  // flat stays flat
+  });
+});
+
+describe('tokens-to-ink — TIFF compression', () => {
+  const readTiffTags = (u8) => {
+    const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+    const ifd = dv.getUint32(4, true), n = dv.getUint16(ifd, true), tags = {};
+    for (let i = 0; i < n; i++) {
+      const e = ifd + 2 + i * 12, tag = dv.getUint16(e, true), type = dv.getUint16(e + 2, true), cnt = dv.getUint32(e + 4, true);
+      tags[tag] = (type === 3 && cnt === 1) ? dv.getUint16(e + 8, true) : dv.getUint32(e + 8, true);
+    }
+    return tags;
+  };
+  const inflate = async (u8) => {
+    const ds = new DecompressionStream('deflate');
+    const w = ds.writable.getWriter(); w.write(u8); w.close();
+    return new Uint8Array(await new Response(ds.readable).arrayBuffer());
+  };
+  const pixels = () => { const px = new Uint8Array(2 * 2 * 5); for (let i = 0; i < px.length; i++) px[i] = (i * 7) & 255; return px; };
+
+  it('uncompressed: Compression tag = 1 and the strip is the raw pixels', async () => {
+    ui = bootUI();
+    const px = pixels();
+    const tiff = await ui.window.buildCmykaTiff(px, 2, 2, 300, false);
+    const tags = readTiffTags(tiff);
+    expect(tags[259]).toBe(1);          // Compression: none
+    expect(tags[279]).toBe(px.length);  // StripByteCounts = raw size
+    expect([...tiff.slice(tags[273], tags[273] + tags[279])]).toEqual([...px]);
+  });
+
+  it('ZIP: Compression tag = 8 and the strip inflates back to the pixels (lossless)', async () => {
+    ui = bootUI();
+    const px = pixels();
+    const tiff = await ui.window.buildCmykaTiff(px, 2, 2, 300, true);
+    const tags = readTiffTags(tiff);
+    expect(tags[259]).toBe(8);          // Adobe Deflate (zlib)
+    const strip = tiff.slice(tags[273], tags[273] + tags[279]);
+    expect([...(await inflate(strip))]).toEqual([...px]);   // round-trips exactly
+  });
+});
+
+describe('tokens-to-ink — CMYK pixel conversion (fast-path parity)', () => {
+  it('writeCmyk is byte-identical to the reference rgbPixelToCmyk, with and without a lookup', () => {
+    ui = bootUI();
+    const { rgbPixelToCmyk, buildCmykLut, writeCmyk } = ui.window;
+    expect(typeof writeCmyk).toBe('function');
+    const lookups = [
+      null,
+      { '#FF0000': { c: 0, m: 96, y: 90, k: 0 }, '#123456': { c: 80, m: 50, y: 20, k: 10 }, '#000000': { c: 0, m: 0, y: 0, k: 100 } },
+    ];
+    const out = new Uint8Array(4);
+    for (const cl of lookups) {
+      const lut = buildCmykLut(cl);
+      const mism = [];
+      const check = (r, g, b) => {
+        const ref = rgbPixelToCmyk(r, g, b, cl);
+        writeCmyk(out, 0, r, g, b, lut);
+        if (out[0] !== ref[0] || out[1] !== ref[1] || out[2] !== ref[2] || out[3] !== ref[3]) {
+          if (mism.length < 3) mism.push({ rgb: [r, g, b], ref, got: [...out] });
+        }
+      };
+      for (let r = 0; r <= 255; r += 17) for (let g = 0; g <= 255; g += 17) for (let b = 0; b <= 255; b += 17) check(r, g, b);
+      [[255, 0, 0], [0x12, 0x34, 0x56], [0, 0, 0], [255, 255, 255]].forEach(([r, g, b]) => check(r, g, b));
+      expect(mism).toEqual([]);   // 4099 colours per lookup — zero divergence
+    }
+  });
+
+  it('convertImageToCmyka maps known pixels to CMYK+alpha (TIFF path)', async () => {
+    ui = bootUI();
+    // Stub the canvas decode (jsdom has none): 2×2 = red, black, white, fully transparent.
+    ui.window.loadPngToCanvas = async () => new Uint8Array([
+      255, 0, 0, 255, /**/ 0, 0, 0, 255, /**/ 255, 255, 255, 255, /**/ 0, 0, 0, 0,
+    ]);
+    const out = await ui.window.convertImageToCmyka(new Uint8Array([1]), 2, 2, null);
+    expect([...out.slice(0, 5)]).toEqual([0, 255, 255, 0, 255]);   // red   → C0 M255 Y255 K0, opaque
+    expect([...out.slice(5, 10)]).toEqual([0, 0, 0, 255, 255]);    // black → K255, opaque
+    expect([...out.slice(10, 15)]).toEqual([0, 0, 0, 0, 255]);     // white → all 0, opaque
+    expect([...out.slice(15, 20)]).toEqual([0, 0, 0, 0, 0]);       // transparent → all 0
+  });
+
+  it('convertImageToCmyka honours an exact colour-lookup match', async () => {
+    ui = bootUI();
+    ui.window.loadPngToCanvas = async () => new Uint8Array([255, 0, 0, 255]);   // 1×1 red, opaque
+    const out = await ui.window.convertImageToCmyka(new Uint8Array([1]), 1, 1, { '#FF0000': { c: 10, m: 20, y: 30, k: 40 } });
+    // 10/20/30/40 % → ×2.55 → 26/51/77/102, alpha kept.
+    expect([...out.slice(0, 5)]).toEqual([26, 51, 77, 102, 255]);
+  });
+});
+
 describe('tokens-to-ink — CMYK PDF keeps images', () => {
   it('does not clobber an image ICCBased colour space to /DeviceGray', async () => {
     ui = bootUI();

@@ -506,6 +506,7 @@ figma.ui.onmessage = async (msg) => {
         downsample: !!s.downsample,
         downsampleDpi: typeof s.downsampleDpi === 'number' ? s.downsampleDpi : 300,
         tiffDpi: typeof s.tiffDpi === 'number' ? s.tiffDpi : 300,
+        tiffZip: s.tiffZip !== false,
       });
     }
     return;
@@ -522,6 +523,7 @@ figma.ui.onmessage = async (msg) => {
       downsample: !!msg.downsample,
       downsampleDpi: typeof msg.downsampleDpi === 'number' ? msg.downsampleDpi : 300,
       tiffDpi: typeof msg.tiffDpi === 'number' ? msg.tiffDpi : 300,
+      tiffZip: msg.tiffZip !== false,
     });
     return;
   }

@@ -228,9 +228,9 @@ describe('tokens-to-ink UI — export', () => {
 
   it('writes the chosen resolution into the TIFF XResolution tag', async () => {
     ui = loadUI(UI);
-    // 2×2 CMYK+alpha buffer (5 bytes/px); we only assert the resolution tag here.
+    // 2×2 CMYK+alpha buffer (5 bytes/px); uncompressed so the tag offsets are stable.
     const px = new Uint8Array(2 * 2 * 5);
-    const tiff = ui.window.buildCmykaTiff(px, 2, 2, 600);
+    const tiff = await ui.window.buildCmykaTiff(px, 2, 2, 600, false);
     const dv = new DataView(tiff.buffer, tiff.byteOffset, tiff.byteLength);
     // Little-endian TIFF: walk the IFD, find XResolution (tag 282), read its RATIONAL.
     const ifd = dv.getUint32(4, true), n = dv.getUint16(ifd, true);
