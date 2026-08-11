@@ -12,9 +12,11 @@ import {
   effectiveImageDpi,
 } from '@rms/core';
 
-figma.showUI(__html__, { width: 600, height: 600 });
+// Start compact — the UI auto-fits the height to the number of variables (autoHeight), so the
+// window never opens with dead space and grows to content after the first scan.
+figma.showUI(__html__, { width: 600, height: 220 });
 
-const handleResizeMsg = attachWindowResize(figma, { defaultW: 600, defaultH: 600, minW: 320, minH: 200 });
+const handleResizeMsg = attachWindowResize(figma, { defaultW: 600, defaultH: 220, minW: 320, minH: 200, autoHeight: true });
 
 let _exportCancelled = false;
 let _exportState = null; // { selection, format, colorLookup, tiffDpi } — persists across ack messages
@@ -139,11 +141,14 @@ async function buildColorLookup(colorVariables, allVariablesById) {
     const hex = rgbToHex(colorValue.r, colorValue.g, colorValue.b);
     const cmykStr = parseDescTag(cv.description, "cmyk");
     const manual = cmykStr ? parseCmykString(cmykStr) : null;
+    const pantone = parseDescTag(cv.description, "pantone") || null;
     if (manual) {
-      lookup[hex] = manual;
+      lookup[hex] = { ...manual, pantone };
       hasManual.add(hex);
     } else if (!hasManual.has(hex)) {
-      lookup[hex] = rgbToCmyk(colorValue.r, colorValue.g, colorValue.b);
+      lookup[hex] = { ...rgbToCmyk(colorValue.r, colorValue.g, colorValue.b), pantone };
+    } else if (pantone && lookup[hex] && !lookup[hex].pantone) {
+      lookup[hex].pantone = pantone;   // keep the manual CMYK, but pick up a Pantone if it had none
     }
   }
   return lookup;
@@ -507,6 +512,8 @@ figma.ui.onmessage = async (msg) => {
         downsampleDpi: typeof s.downsampleDpi === 'number' ? s.downsampleDpi : 300,
         tiffDpi: typeof s.tiffDpi === 'number' ? s.tiffDpi : 300,
         tiffZip: s.tiffZip !== false,
+        preserveSpot: s.preserveSpot !== false,
+        pdfx: s.pdfx !== false,
       });
     }
     return;
@@ -524,6 +531,8 @@ figma.ui.onmessage = async (msg) => {
       downsampleDpi: typeof msg.downsampleDpi === 'number' ? msg.downsampleDpi : 300,
       tiffDpi: typeof msg.tiffDpi === 'number' ? msg.tiffDpi : 300,
       tiffZip: msg.tiffZip !== false,
+      preserveSpot: msg.preserveSpot !== false,
+      pdfx: msg.pdfx !== false,
     });
     return;
   }

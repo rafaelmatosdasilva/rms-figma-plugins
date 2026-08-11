@@ -105,6 +105,75 @@ describe('tokens-to-ink — downsample resampling (area-average)', () => {
   });
 });
 
+// A tiny valid PDF with one solid vector fill (0.2 0.4 0.6 rg → #336699) and an indirect,
+// empty-ish /Resources object (5 0 obj) so spot injection has somewhere to write /ColorSpace.
+function buildVectorPdf() {
+  const content = enc('0.2 0.4 0.6 rg 0 0 10 10 re f\n');
+  return concatU8([
+    enc('%PDF-1.7\n'),
+    enc('1 0 obj<< /Type /Catalog /Pages 2 0 R >>endobj\n'),
+    enc('2 0 obj<< /Type /Pages /Kids [3 0 R] /Count 1 >>endobj\n'),
+    enc('3 0 obj<< /Type /Page /Parent 2 0 R /MediaBox [0 0 64 64] /Resources 5 0 R /Contents 4 0 R >>endobj\n'),
+    enc(`4 0 obj<< /Length ${content.length} >>stream\n`), content, enc('\nendstream endobj\n'),
+    enc('5 0 obj<< /ProcSet [ /PDF ] >>endobj\n'),
+    enc('trailer<< /Root 1 0 R /Size 6 >>\nstartxref\n0\n%%EOF'),
+  ]);
+}
+
+describe('tokens-to-ink — PDF/X-4 press-ready', () => {
+  it('embeds an ICC output intent, XMP identifier, per-page TrimBox and /ID when pdfx is on', async () => {
+    ui = bootUI();
+    const out = latin1(await ui.window.convertPdfToCmyk(buildVectorPdf(), {}, { pdfx: true }));
+    expect(out.startsWith('%PDF-1.6')).toBe(true);                       // X-4 needs 1.6
+    expect(out).toMatch(/\/OutputIntents \[ << \/Type \/OutputIntent \/S \/GTS_PDFX/);
+    expect(out).toMatch(/\/DestOutputProfile \d+ 0 R/);
+    expect(out).toMatch(/\/N 4 \/Filter \/FlateDecode/);                 // the CMYK ICC profile stream
+    expect(out).toMatch(/\/Type \/Metadata \/Subtype \/XML/);
+    expect(out).toMatch(/PDF\/X-4/);                                     // XMP identifier
+    expect(out).toMatch(/\/TrimBox \[0 0 64 64\]/);                      // every page gets a TrimBox
+    expect(out).toMatch(/\/ID \[ <[0-9a-f]{32}> <[0-9a-f]{32}> \]/);
+  });
+
+  it('stays a plain PDF 1.4 with no output intent when pdfx is off', async () => {
+    ui = bootUI();
+    const out = latin1(await ui.window.convertPdfToCmyk(buildVectorPdf(), {}, { pdfx: false }));
+    expect(out.startsWith('%PDF-1.4')).toBe(true);
+    expect(out).not.toMatch(/\/OutputIntents/);
+    expect(out).not.toMatch(/\/GTS_PDFX/);
+    expect(out).not.toMatch(/\/ID \[/);
+  });
+});
+
+describe('tokens-to-ink — Pantone spot colours', () => {
+  const LOOKUP = { '#336699': { c: 80, m: 40, y: 0, k: 5, pantone: '485 C' } };
+
+  it('emits a Separation spot for a Pantone-tagged fill when preserveSpot is on', async () => {
+    ui = bootUI();
+    const out = latin1(await ui.window.convertPdfToCmyk(buildVectorPdf(), LOOKUP, { preserveSpot: true }));
+    // Separation colour space with the PDF-name-encoded ink and a Type-2 tint transform to CMYK.
+    expect(out).toMatch(/\/Separation\s*\/PANTONE#20485#20C\s*\/DeviceCMYK/);
+    expect(out).toMatch(/\/FunctionType 2[\s\S]*\/C1 \[ 0\.8 0\.4 0 0\.05 \]/);
+    // The fill selects the spot at full tint, and the spot is registered in the page Resources.
+    expect(out).toMatch(/\/Spot1 cs 1 scn/);
+    expect(out).toMatch(/\/ColorSpace\s*<<\s*\/Spot1 \d+ 0 R/);
+    expect(out).not.toMatch(/0\.8 0\.4 0 0\.05 k/);   // not flattened to process CMYK
+  });
+
+  it('flattens the same fill to process CMYK when preserveSpot is off', async () => {
+    ui = bootUI();
+    const out = latin1(await ui.window.convertPdfToCmyk(buildVectorPdf(), LOOKUP, { preserveSpot: false }));
+    expect(out).not.toMatch(/\/Separation/);
+    expect(out).toMatch(/0\.8 0\.4 0 0\.05 k/);        // the fill is process CMYK
+  });
+
+  it('leaves a non-Pantone fill as process CMYK even with preserveSpot on', async () => {
+    ui = bootUI();
+    const out = latin1(await ui.window.convertPdfToCmyk(buildVectorPdf(), { '#336699': { c: 80, m: 40, y: 0, k: 5 } }, { preserveSpot: true }));
+    expect(out).not.toMatch(/\/Separation/);
+    expect(out).toMatch(/0\.8 0\.4 0 0\.05 k/);
+  });
+});
+
 describe('tokens-to-ink — TIFF compression', () => {
   const readTiffTags = (u8) => {
     const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);

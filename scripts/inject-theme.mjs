@@ -49,5 +49,15 @@ if (!src.includes('<!--@UI-->')) {
 
 let out = src.replace('<!--@THEME-->', `<style>\n${theme}\n</style>`);
 out     = out.replace('<!--@UI-->',    `<script>\n${uiShared}\n</script>`);
+
+// Optional: bundle a CMYK ICC profile (base64, pre-deflated) for PDF/X output intents. Injected
+// only when the template opts in with <!--@ICC--> and the plugin ships the asset — a no-op for
+// plugins without either, so this stays generic.
+if (src.includes('<!--@ICC-->')) {
+  const iccPath = join(root, dirname(srcRel), 'src', 'icc-fogra39.b64');
+  const icc = existsSync(iccPath) ? readFileSync(iccPath, 'utf8').trim() : '';
+  out = out.replace('<!--@ICC-->', icc ? `<script>window.__ICC_FOGRA39=${JSON.stringify(icc)}</script>` : '');
+}
+
 writeFileSync(join(root, outRel), out);
 process.stdout.write(`  \u2713 theme + ui-shared (minified) \u2192 ${outRel}\n`);

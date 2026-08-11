@@ -308,7 +308,10 @@
     min-width: 172px;
   }
   .export-overflow[hidden] { display: none; }
-  .export-modal-card { width: 300px; }
+  .export-modal-card { width: 300px; display: flex; flex-direction: column; max-height: calc(100vh - 24px); }
+  /* Keep the title + footer pinned and scroll the options when the modal is taller than the plugin
+     window — so a short window never clips the modal, and the plugin is never resized to fit it. */
+  .export-modal-card > .modal-slot { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
   /* Each panel stacks its rows with the slot's spacing; only the active one shows. Class-based
      (not id) so the stacking override below can win on specificity. */
   .tab-panel, #tiff-panel { display: flex; flex-direction: column; gap: var(--gap-l); width: 100%; }
@@ -316,6 +319,9 @@
   /* The DS .segmented-control sets its own display, which beats the UA [hidden] rule — restore
      hiding for the tabs when the selection has no images (or the format is TIFF). */
   #export-tabs[hidden] { display: none; }
+  /* Checkbox with a secondary description line (e.g. Preserve Pantone colors). */
+  .export-spot-field { display: flex; flex-direction: column; gap: var(--gap-xs); width: 100%; }
+  .export-hint { font-size: var(--s-size); color: var(--text-secondary); line-height: 1.35; padding-left: 26px; }
   /* When the selection has images, the two PDF tabs share one grid cell so the modal keeps the
      height of the TALLER tab and never resizes as you switch between them. The inactive tab is
      kept in layout (visibility:hidden) rather than removed, so its height stays reserved. */
@@ -462,6 +468,22 @@
           <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
           <span class="checkbox-text">File information</span>
         </label>
+        <div class="export-spot-field">
+          <label class="checkbox">
+            <input type="checkbox" id="preservespot-toggle" class="checkbox-input" checked>
+            <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
+            <span class="checkbox-text">Preserve Pantone colors</span>
+          </label>
+          <span class="export-hint">Keep assigned Pantone colors as Spot Colors. Turn off to use their CMYK values.</span>
+        </div>
+        <div class="export-spot-field">
+          <label class="checkbox">
+            <input type="checkbox" id="pdfx-toggle" class="checkbox-input" checked>
+            <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
+            <span class="checkbox-text">PDF/X-4 (press-ready)</span>
+          </label>
+          <span class="export-hint">Embed a FOGRA39 CMYK output intent so the file is press-certified. Turn off for a plain PDF 1.4.</span>
+        </div>
       </div>
 
       <!-- PDF · Image quality (only reachable when the selection has images) -->
@@ -514,6 +536,7 @@
 </div>
 
 <div id="tt"></div>
+<!--@ICC-->
 <!--@UI-->
 <script>
   // Request saved window height as soon as the UI is ready.
@@ -618,6 +641,8 @@
   let _cropMarks = false;       // add crop/trim marks to the CMYK PDF (print) — off by default
   let _regMarks = false;        // add registration (plate-alignment) targets — off by default
   let _colorBars = false;       // add CMYK colour bars + grayscale wedge in the top slug — off by default
+  let _preserveSpot = true;     // keep Pantone-tagged colours as spot separations — on by default
+  let _pdfx = true;             // export as press-ready PDF/X-4 (ICC output intent) — on by default
   let _pageInfo = false;        // print the file name + timestamp in the slug — off by default
   let _bleedOn = false;         // add a bleed margin around the trim — off by default
   let _bleedMm = 3;             // configurable bleed amount, in millimetres (used only when _bleedOn)
@@ -1839,6 +1864,84 @@
     return added;
   }
 
+  // ── Spot (Pantone) colour helpers ──────────────────────────────────
+  // Encode an arbitrary string as a PDF name body (regular chars kept; others → #XX).
+  function pdfName(s){return String(s).replace(/[^A-Za-z0-9]/g,c=>'#'+c.charCodeAt(0).toString(16).toUpperCase().padStart(2,'0'));}
+  // Register (or reuse) a spot for a Pantone-tagged colour in `usedSpots`; returns its /SpotN name.
+  function registerSpot(usedSpots, pantone, cmyk){
+    let s=usedSpots.get(pantone);
+    if(!s){ const ink=/^pantone/i.test(pantone)?pantone:('PANTONE '+pantone);
+      s={name:'/Spot'+(usedSpots.size+1),ink,cmyk}; usedSpots.set(pantone,s); }
+    return s.name;
+  }
+  // Define one indirect Separation object per used spot — [ /Separation /INK /DeviceCMYK <type-2
+  // tint fn> ], full tint mapping to the colour's CMYK — then register /SpotN in the /ColorSpace of
+  // every Page and Form XObject /Resources dict (inline or indirect, deduped) so `/SpotN cs`
+  // selections resolve. `fmtF`/`balancedDict` are passed from convertPdfToCmyk's scope.
+  function injectSpotColorSpaces(objs, nums, usedSpots, fmtF, balancedDict){
+    const addPlain=(body)=>{const nn=Math.max(...nums)+1;objs[nn]={type:'plain',body};nums.push(nn);return nn;};
+    for(const s of usedSpots.values())
+      s.obj=addPlain(`[ /Separation /${pdfName(s.ink)} /DeviceCMYK << /FunctionType 2 /Domain [ 0 1 ] /C0 [ 0 0 0 0 ] /C1 [ ${fmtF(s.cmyk.c/100)} ${fmtF(s.cmyk.m/100)} ${fmtF(s.cmyk.y/100)} ${fmtF(s.cmyk.k/100)} ] /N 1 >> ]`);
+    const spotEntries=[...usedSpots.values()].map(s=>`${s.name} ${s.obj} 0 R`).join(' ');
+    const injectResDict=(d)=>/\/ColorSpace\s*<</.test(d)
+      ? d.replace(/\/ColorSpace\s*<</,m=>m+' '+spotEntries+' ')
+      : d.replace('<<','<< /ColorSpace << '+spotEntries+' >> ');
+    const done=new Set();
+    const inject=(getText,setText)=>{
+      const text=getText(); const rm=/\/Resources\b/.exec(text); if(!rm)return;
+      let i=rm.index+10; while(i<text.length&&/\s/.test(text[i]))i++;
+      if(text.substr(i,2)==='<<'){const dict=balancedDict(text,i); if(!dict)return; setText(text.slice(0,i)+injectResDict(dict)+text.slice(i+dict.length));}
+      else{const mm=text.substr(i,30).match(/^(\d+)\s+0\s+R/); if(mm){const rn=+mm[1]; if(done.has(rn))return; done.add(rn); const ro=objs[rn]; if(ro&&ro.type==='plain')ro.body=injectResDict(ro.body);}}
+    };
+    for(const[,o]of Object.entries(objs)){
+      if(o.type==='plain'&&/\/Type\s*\/Page\b/.test(o.body)&&!/\/Type\s*\/Pages\b/.test(o.body)) inject(()=>o.body,t=>{o.body=t;});
+      else if(o.type==='stream'&&/\/Subtype\s*\/Form\b/.test(o.dict)) inject(()=>o.dict,t=>{o.dict=t;});
+    }
+  }
+
+  // Console diagnostic: which Pantone-tagged colours became spots, and which weren't found in the
+  // artwork (so a "no spot" export is explainable — usually a colour that didn't match any fill).
+  function logSpotSummary(colorLookup, usedSpots, spotSeen){
+    try{
+      const targets=Object.keys(colorLookup||{}).filter(h=>colorLookup[h]&&colorLookup[h].pantone);
+      console.log('[tokens-to-ink] Pantone spots — emitted:',[...usedSpots.values()].map(s=>s.ink),
+        '| Pantone-tagged colours in lookup:',targets.map(h=>h+'→'+colorLookup[h].pantone),
+        '| of those NOT seen in the artwork:',targets.filter(h=>!spotSeen.has(h)),
+        '| distinct fill colours seen:',[...spotSeen]);
+    }catch(_){}
+  }
+  // Two random 16-byte hex ids for the PDF/X trailer /ID (required by PDF/X).
+  function pdfxId(){ try{const b=new Uint8Array(16);(self.crypto||crypto).getRandomValues(b);return[...b].map(x=>x.toString(16).padStart(2,'0')).join('');}catch(_){return'0123456789abcdef0123456789abcdef';} }
+  // PDF/X-4: embed a CMYK ICC OUTPUT INTENT + XMP identifier, register them on the Catalog, and give
+  // every page a TrimBox. Mutates objs/nums; version bump + trailer /ID happen in the rebuild.
+  // The profile is the bundled FOGRA39 (window.__ICC_FOGRA39: base64, pre-deflated, CMYK/prtr).
+  // Returns true once the intent is embedded, false if no profile is bundled (caller stays 1.4).
+  function applyPdfX(objs, nums, trailerDict, s2b){
+    const b64=(typeof window!=='undefined'&&window.__ICC_FOGRA39)||'';
+    if(!b64) return false;
+    const addStream=(dict,raw)=>{const nn=Math.max(...nums)+1;objs[nn]={type:'stream',dict,streamRaw:raw};nums.push(nn);return nn;};
+    const icc=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));   // already zlib-deflated → FlateDecode
+    const iccNum=addStream(`<< /N 4 /Filter /FlateDecode /Length ${icc.length} >>`, icc);
+    const xmp='<?xpacket begin="" id="W5M0MpCehiHzreSzNTczkc9d"?>\n'
+      +'<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">'
+      +'<rdf:Description rdf:about="" xmlns:pdfxid="http://www.npes.org/pdfx/ns/id/" xmlns:xmp="http://ns.adobe.com/xap/1.0/">'
+      +'<pdfxid:GTS_PDFXVersion>PDF/X-4</pdfxid:GTS_PDFXVersion><xmp:CreatorTool>tokens-to-ink</xmp:CreatorTool>'
+      +'</rdf:Description></rdf:RDF></x:xmpmeta>\n<?xpacket end="w"?>';
+    const metaNum=addStream('<< /Type /Metadata /Subtype /XML /Length '+s2b(xmp).length+' >>', s2b(xmp));
+    const rm=trailerDict.match(/\/Root\s+(\d+)\s+0\s+R/);
+    const cat=rm?objs[+rm[1]]:null;
+    if(cat&&cat.type==='plain'&&!/\/OutputIntents/.test(cat.body)){
+      const oi=`/OutputIntents [ << /Type /OutputIntent /S /GTS_PDFX /OutputConditionIdentifier (FOGRA39) /Info (Coated FOGRA39 \\(ISO 12647-2:2004\\)) /DestOutputProfile ${iccNum} 0 R >> ] /Metadata ${metaNum} 0 R`;
+      cat.body=cat.body.replace('<<','<< '+oi+' ');
+    }
+    for(const[,o]of Object.entries(objs)){
+      if(o.type!=='plain'||!/\/Type\s*\/Page\b/.test(o.body)||/\/Type\s*\/Pages\b/.test(o.body)||/\/TrimBox/.test(o.body))continue;
+      const mb=o.body.match(/\/MediaBox\s*(\[[^\]]*\])/);
+      if(mb)o.body=o.body.replace(/\/MediaBox\s*\[[^\]]*\]/,m=>m+' /TrimBox '+mb[1]);
+    }
+    return true;
+  }
+
   // ── Vector PDF RGB → CMYK converter ────────────────────────────────
   // Takes Figma's native vector PDF and converts ICCBased RGB colors to
   // DeviceCMYK while preserving paths, text, images, and structure.
@@ -1847,6 +1950,11 @@
     function b2s(b,f,t){let s='';for(let i=f||0;i<(t||b.length);i++)s+=String.fromCharCode(b[i]);return s;}
     function s2b(s){const b=new Uint8Array(s.length);for(let i=0;i<s.length;i++)b[i]=s.charCodeAt(i)&0xFF;return b;}
     const pdf=b2s(raw);
+
+    // Spot (Pantone) colour bookkeeping — populated by cvtColors, emitted after the colour pass.
+    const preserveSpot = !!(opts && opts.preserveSpot);
+    const usedSpots = new Map();   // pantone → { name:'/SpotN', ink, cmyk }
+    const spotSeen = new Set();    // every distinct fill/stroke hex seen (diagnostic)
 
     // ── Parse xref ──
     const sxm=pdf.lastIndexOf('startxref');
@@ -2181,8 +2289,15 @@
       txt=txt.replace(/([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+(scn|SCN|rg|RG)\b/g,(m,rs,gs,bs,op)=>{
         const r=parseFloat(rs),g=parseFloat(gs),b=parseFloat(bs);
         if(isNaN(r)||isNaN(g)||isNaN(b)||r>1.001||g>1.001||b>1.001)return m;
-        const[c,mk,y,kv]=rgbFloatToCmykFloat(r,g,b,colorLookup);
         const isStroke=(op==='SCN'||op==='RG');
+        // Pantone-tagged solid colour → emit a spot (Separation) selection at full tint.
+        if(preserveSpot&&colorLookup){
+          const hex='#'+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(v*255))).toString(16).padStart(2,'0')).join('').toUpperCase();
+          spotSeen.add(hex);
+          const e=colorLookup[hex];
+          if(e&&e.pantone){const nm=registerSpot(usedSpots,e.pantone,{c:e.c,m:e.m,y:e.y,k:e.k});return`${nm} ${isStroke?'CS':'cs'} 1 ${isStroke?'SCN':'scn'}`;}
+        }
+        const[c,mk,y,kv]=rgbFloatToCmykFloat(r,g,b,colorLookup);
         return`${fmtF(c)} ${fmtF(mk)} ${fmtF(y)} ${fmtF(kv)} ${isStroke?'K':'k'}`;
       });
       // 1-arg gray → k/K
@@ -2205,6 +2320,10 @@
       obj.dict=obj.dict.replace(/\/Length\s+\d+(\s+0\s+R)?/,'/Length '+obj.streamRaw.length);
     }
 
+    // Spot colours: emit a Separation object per used spot and register /SpotN in every Resources.
+    if(usedSpots.size) injectSpotColorSpaces(objs, nums, usedSpots, fmtF, balancedDict);
+    if(preserveSpot) logSpotSummary(colorLookup, usedSpots, spotSeen);
+
     // ── Convert RGB raster images → DeviceCMYK (optionally downsampling to a DPI) ──
     let ds=null;
     if(opts&&opts.downsample&&opts.downsampleDpi>0)
@@ -2214,14 +2333,15 @@
     // ── Crop / trim marks (print) — added last so they emit as clean DeviceCMYK ──
     if(opts&&(opts.cropMarks||opts.regMarks||opts.pageInfo||opts.colorBars||opts.bleedPt>0))addPrintMarks(objs,nums,opts.bleedPt,opts.trimBox,opts.cropMarks,opts.regMarks,opts.pageInfo,opts.pageInfoLeft,opts.pageInfoRight,opts.colorBars);
 
+    // ── PDF/X-4 press-ready: embed the ICC output intent + XMP + per-page TrimBox ──
+    const isPdfX = !!(opts && opts.pdfx) && applyPdfX(objs, nums, trailerDict, s2b);
+
     // ── Rebuild PDF ──
     const parts=[],newOff={};
-    // Set version to PDF 1.4 — the highest version fully supported by
-    // Illustrator CS6. 1.4 introduced transparency, so all Figma features
-    // are representable. Using a higher version caused CS6 to choke on
-    // cross-reference streams and advanced transparency operators.
+    // Default version is PDF 1.4 — the highest fully supported by Illustrator CS6. PDF/X-4 needs 1.6
+    // (it permits the transparency Figma emits), so the bump is scoped to the press-ready toggle.
     const hEnd=pdf.indexOf('\n',pdf.indexOf('\n')+1)+1;
-    const hdrStr=pdf.substring(0,hEnd).replace(/%PDF-[\d.]+/,'%PDF-1.4');
+    const hdrStr=pdf.substring(0,hEnd).replace(/%PDF-[\d.]+/, isPdfX?'%PDF-1.6':'%PDF-1.4');
     parts.push(s2b(hdrStr));
     const maxObj=Math.max(...nums);
 
@@ -2241,7 +2361,8 @@
     let xr='xref\n0 '+(maxObj+1)+'\n0000000000 65535 f \n';
     for(let i=1;i<=maxObj;i++)
       xr+=newOff[i]!=null?newOff[i].toString().padStart(10,'0')+' 00000 n \n':'0000000000 00000 f \n';
-    const nTr=trailerDict.replace(/\/Size\s+\d+/,'/Size '+(maxObj+1)).replace(/\/Prev\s+\d+/,'');
+    let nTr=trailerDict.replace(/\/Size\s+\d+/,'/Size '+(maxObj+1)).replace(/\/Prev\s+\d+/,'');
+    if(isPdfX&&!/\/ID\s*\[/.test(nTr)){const id=pdfxId();nTr+=` /ID [ <${id}> <${id}> ]`;}   // PDF/X requires /ID
     xr+='trailer\n<<'+nTr+'>>\nstartxref\n'+xrS+'\n%%EOF';
     parts.push(s2b(xr));
 
@@ -2507,6 +2628,8 @@
     const toggle  = document.getElementById("cropmarks-toggle");
     const regmarks = document.getElementById("regmarks-toggle");
     const colorbars = document.getElementById("colorbars-toggle");
+    const preservespot = document.getElementById("preservespot-toggle");
+    const pdfxToggle = document.getElementById("pdfx-toggle");
     const pageinfo = document.getElementById("pageinfo-toggle");
     const bleedOn = document.getElementById("bleed-toggle");
     const bleed   = document.getElementById("bleed-input");
@@ -2539,7 +2662,7 @@
       applyExportLayout();
     };
     const persist = () => parent.postMessage({ pluginMessage: {
-      type: "save-settings", cropMarks: _cropMarks, regMarks: _regMarks, colorBars: _colorBars, pageInfo: _pageInfo, bleedOn: _bleedOn, bleedMm: _bleedMm,
+      type: "save-settings", cropMarks: _cropMarks, regMarks: _regMarks, colorBars: _colorBars, preserveSpot: _preserveSpot, pdfx: _pdfx, pageInfo: _pageInfo, bleedOn: _bleedOn, bleedMm: _bleedMm,
       downsample: _downsample, downsampleDpi: _downsampleDpi, tiffDpi: _tiffDpi, tiffZip: _tiffZip,
     } }, "*");
 
@@ -2561,6 +2684,8 @@
     toggle.addEventListener("change", () => { _cropMarks = toggle.checked; persist(); });
     regmarks.addEventListener("change", () => { _regMarks = regmarks.checked; persist(); });
     colorbars.addEventListener("change", () => { _colorBars = colorbars.checked; persist(); });
+    if (preservespot) preservespot.addEventListener("change", () => { _preserveSpot = preservespot.checked; persist(); });
+    if (pdfxToggle) pdfxToggle.addEventListener("change", () => { _pdfx = pdfxToggle.checked; persist(); });
     pageinfo.addEventListener("change", () => { _pageInfo = pageinfo.checked; persist(); });
     bleedOn.addEventListener("change", () => { _bleedOn = bleedOn.checked; syncInputs(); persist(); });
     downsample.addEventListener("change", () => {
@@ -2596,6 +2721,8 @@
       _cropMarks = !!s.cropMarks;
       _regMarks = !!s.regMarks;
       _colorBars = !!s.colorBars;
+      if (typeof s.preserveSpot === "boolean") _preserveSpot = s.preserveSpot;
+      if (typeof s.pdfx === "boolean") _pdfx = s.pdfx;
       _pageInfo = !!s.pageInfo;
       _bleedOn = !!s.bleedOn;
       _downsample = !!s.downsample;
@@ -2606,6 +2733,8 @@
       toggle.checked = _cropMarks;
       regmarks.checked = _regMarks;
       colorbars.checked = _colorBars;
+      if (preservespot) preservespot.checked = _preserveSpot;
+      if (pdfxToggle) pdfxToggle.checked = _pdfx;
       pageinfo.checked = _pageInfo;
       bleedOn.checked = _bleedOn;
       downsample.checked = _downsample;
@@ -2871,7 +3000,8 @@
     }
 
     if (msg.type === "restore-height") {
-      window._manualH = msg.height;
+      // Height is content-driven now (auto-fits the variable count) — a saved height must NOT lock
+      // it, or few tokens leave empty space. Ignored on purpose; width is remembered by Figma.
       return;
     }
 
@@ -3350,13 +3480,22 @@
           document.querySelectorAll('.cmyk-group[data-hex]').forEach(group => {
             const hex = (group.dataset.hex || '').toUpperCase();
             if (!hex) return;
+            const entry = { ...(_exportLookup[hex] || {}) };
             const boxes = group.querySelectorAll('.cmyk-box');
-            if (boxes.length !== 4) return;
-            const [c, m, y, k] = Array.from(boxes).map(b => {
-              const v = parseInt(b.value, 10);
-              return isNaN(v) ? 0 : Math.max(0, Math.min(100, v));
-            });
-            _exportLookup[hex] = { c, m, y, k };
+            if (boxes.length === 4) {
+              const [c, m, y, k] = Array.from(boxes).map(b => {
+                const v = parseInt(b.value, 10);
+                return isNaN(v) ? 0 : Math.max(0, Math.min(100, v));
+              });
+              entry.c = c; entry.m = m; entry.y = y; entry.k = k;   // live CMYK from the table
+            }
+            // Read the LIVE Pantone from the same colour row (shared data-idx) so a just-edited or
+            // not-yet-persisted Pantone still exports as a spot — matching how the CMYK boxes work.
+            const idx = group.dataset.idx;
+            const pw = idx ? document.querySelector('.output-text-wrap[data-output-type="pantone"][data-idx="' + idx + '"] .output-text-input') : null;
+            const pv = pw && typeof pw.value === 'string' ? pw.value.trim() : '';
+            entry.pantone = pv || entry.pantone || null;
+            _exportLookup[hex] = entry;
           });
         }
 
@@ -3366,7 +3505,7 @@
           const pad = (n) => String(n).padStart(2, "0");
           const stamp = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
           fileBytes = await convertPdfToCmyk(msg.pdfBytes, _exportLookup,
-            { cropMarks: _cropMarks, regMarks: _regMarks, colorBars: _colorBars, bleedPt: _bleedOn ? _bleedMm * 72 / 25.4 : 0,
+            { cropMarks: _cropMarks, regMarks: _regMarks, colorBars: _colorBars, preserveSpot: _preserveSpot, pdfx: _pdfx, bleedPt: _bleedOn ? _bleedMm * 72 / 25.4 : 0,
               downsample: _downsample, downsampleDpi: _downsampleDpi, trimBox: msg.trimBox,
               pageInfo: _pageInfo,
               pageInfoLeft: [msg.fileName, msg.frameName].filter(Boolean).join("  ·  "),
@@ -3456,7 +3595,7 @@
 
   // ── Auto-resize plugin window to content ─────────────────────────────
   (function () {
-    const MIN_H = 100;
+    const MIN_H = 100, MAX_H = 900;   // above MAX_H the token list scrolls rather than growing further
 
     // Shared content-height measurement — also used as drag minimum.
     window._contentHeight = function () {
@@ -3471,12 +3610,13 @@
         if (table) h += table.scrollHeight;
         h += 48;
       }
-      return Math.max(h, MIN_H);
+      return Math.min(Math.max(h, MIN_H), MAX_H);
     };
 
     function sendHeight() {
-      // Skip mid-drag, and skip entirely once user has manually set a height.
-      if (window._manualResizing || window._manualH) return;
+      // Height always tracks the content (≈ the number of variables) so there's no empty space;
+      // only skip mid-drag. Width stays whatever the user/Figma set.
+      if (window._manualResizing) return;
       parent.postMessage({ pluginMessage: { type: 'ui-resize', width: window.innerWidth, height: window._contentHeight() } }, '*');
     }
     window._notifyResize = sendHeight;
@@ -3490,8 +3630,9 @@
     sendHeight();
   })();
 
-  // Override default constraints for this plugin.
-  initWindowResize({ minW: 320, minH: 200 });
+  // Width is manually resizable; height auto-fits the content (edges:'right' drops the bottom
+  // drag-handle, which would otherwise set a manual height that snaps back on the next re-render).
+  initWindowResize({ minW: 320, minH: 200, edges: 'right' });
 </script>
 
 </body>

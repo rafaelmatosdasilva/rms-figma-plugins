@@ -157,7 +157,8 @@ describe('tokens-to-ink — export', () => {
     await send({ type: 'export-request', format: 'pdf' });
     await send({ type: 'export-frames' });
 
-    expect(lastOf('export-data').colorLookup['#FF0000']).toEqual({ c: 5, m: 95, y: 90, k: 2 });
+    // Manual CMYK wins; entries also carry a pantone field (null here — no Pantone tag).
+    expect(lastOf('export-data').colorLookup['#FF0000']).toMatchObject({ c: 5, m: 95, y: 90, k: 2 });
   });
 
   it('ignores an acknowledgement when no export is running', async () => {
