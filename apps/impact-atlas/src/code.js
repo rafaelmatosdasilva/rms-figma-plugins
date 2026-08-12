@@ -13,6 +13,10 @@ let _collById            = new Map(); // id → Collection
 let _descendantCounts    = new Map(); // varId → unique descendant count
 let _componentsByVarId   = new Map(); // varId → Set<componentId>
 let _componentById       = new Map(); // componentId → { name, type, pageName, pageId }
+// setId → [{ id, key, remote, name, varIds:Set }] — one entry per VARIANT CHILD that binds
+// a variable. Additive to the rollup above (which still maps varId → the parent set id); used
+// only to place the specific affected variant instead of the set's default. See collectComponentBindings.
+let _variantsByComp      = new Map();
 let _componentIndexBuilt = false;     // true after first index build
 let _componentBrowserCache = null;    // cached result for component browser (all components)
 let _indexBuildPromise   = null;      // in-progress buildComponentIndex promise (deduplicates concurrent calls)
@@ -512,9 +516,63 @@ function collectNodeVarIds(node, varIds) {
   }
 }
 
+// Climb from a descendant of a COMPONENT_SET up to the variant CHILD it lives under
+// (the node whose direct parent is the set). Returns null when `descendant` is bound
+// directly on the set itself (e.g. a set-level componentPropertyDefinitions binding),
+// which isn't attributable to any single variant.
+function owningVariant(descendant, setNode) {
+  let n = descendant;
+  while (n && n.parent && n.parent !== setNode) n = n.parent;
+  return (n && n.parent === setNode) ? n : null;
+}
+
+// Collect a component's bound variable ids EXACTLY as the old inline loops did
+// (node itself + every binding-capable descendant, unioned), and — for COMPONENT_SETs
+// only — additionally group descendant bindings by the variant child that carries them.
+// Returns { varIds:Set, perVariant:Map<childId,{child,varIds:Set}>, descOk:boolean }. The
+// `varIds` union is byte-identical to before, so the impact index/score are unchanged;
+// `perVariant` is the new, purely additive signal used to place the affected variant.
+// `descOk` is false when the descendant read threw (a remote master whose subtree can't be
+// walked) — the usage scan uses it to fall back to the instance subtree, exactly as before.
+function collectComponentBindings(node) {
+  const varIds = new Set();
+  collectNodeVarIds(node, varIds); // set-level bindings (componentPropertyDefinitions) — not variant-specific
+  const isSet = node.type === 'COMPONENT_SET';
+  const perVariant = isSet ? new Map() : null;
+  let descendants = [], descOk = true;
+  try { descendants = node.findAllWithCriteria({ types: BINDING_TYPES }); } catch (_) { descOk = false; }
+  for (let i = 0; i < descendants.length; i++) {
+    const d = descendants[i];
+    const local = isSet ? new Set() : varIds; // only need per-node ids separately for sets
+    collectNodeVarIds(d, local);
+    if (!isSet) continue;
+    if (local.size === 0) continue;
+    for (const id of local) varIds.add(id);
+    const child = owningVariant(d, node);
+    if (!child) continue; // binding sits on the set node itself → set-level, no variant
+    let slot = perVariant.get(child.id);
+    if (!slot) { slot = { child, varIds: new Set() }; perVariant.set(child.id, slot); }
+    for (const id of local) slot.varIds.add(id);
+  }
+  return { varIds, perVariant, descOk };
+}
+
+// Store the per-variant grouping for a set (no-op for plain components / set-level-only sets).
+function recordVariants(setId, perVariant) {
+  if (!perVariant || perVariant.size === 0) return;
+  _variantsByComp.set(setId, [...perVariant.values()].map((v) => ({
+    id: v.child.id,
+    key: v.child.key || null,
+    remote: v.child.remote === true,
+    name: v.child.name,
+    varIds: v.varIds,
+  })));
+}
+
 function _populateIndexFromCache(browserComponents) {
   _componentsByVarId = new Map();
   _componentById     = new Map();
+  _variantsByComp    = new Map(); // browser cache carries no variant data → placement falls back to default
   for (const comp of browserComponents) {
     _componentById.set(comp.nodeId, { name: comp.nodeName, type: comp.nodeType, pageName: comp.pageName, pageId: comp.pageId, isRemote: !!comp.isRemote });
     for (const bv of (comp.boundVars || [])) {
@@ -553,6 +611,7 @@ function _seedRemoteVarsFromCache(remoteVars, remoteColls) {
 async function buildComponentIndex() {
   _componentsByVarId    = new Map();
   _componentById        = new Map();
+  _variantsByComp       = new Map();
   _componentBrowserCache = null; // invalidate browser cache whenever index is rebuilt
 
   // Load + scan pages one at a time to keep progress responsive and allow cancellation
@@ -569,15 +628,8 @@ async function buildComponentIndex() {
     for (const c of comps) {
       // Skip variant children of a COMPONENT_SET — they're scanned as part of the set
       if (c.type === 'COMPONENT' && c.parent && c.parent.type === 'COMPONENT_SET') continue;
-      const node   = c;
-      const varIds = new Set();
-
-      // The component itself (componentPropertyDefinitions live here)
-      collectNodeVarIds(node, varIds);
-
-      // All binding-capable descendants in one native call
-      const descendants = node.findAllWithCriteria({ types: BINDING_TYPES });
-      for (let i = 0; i < descendants.length; i++) collectNodeVarIds(descendants[i], varIds);
+      const node = c;
+      const { varIds, perVariant } = collectComponentBindings(node);
 
       if (varIds.size === 0) continue;
 
@@ -590,6 +642,7 @@ async function buildComponentIndex() {
         if (!_componentsByVarId.has(varId)) _componentsByVarId.set(varId, new Set());
         _componentsByVarId.get(varId).add(node.id);
       }
+      recordVariants(node.id, perVariant);
     }
 
     await yieldTick();
@@ -634,12 +687,7 @@ async function buildComponentIndex() {
 
           if (_componentById.has(cacheKey) || libCompCache.has(cacheKey)) continue;
 
-          const varIds = new Set();
-          try {
-            collectNodeVarIds(cacheNode, varIds);
-            const desc = cacheNode.findAllWithCriteria({ types: BINDING_TYPES });
-            for (let d = 0; d < desc.length; d++) collectNodeVarIds(desc[d], varIds);
-          } catch (_) {}
+          const { varIds, perVariant } = collectComponentBindings(cacheNode);
 
           libCompCache.set(cacheKey, varIds);
           // Only a genuinely remote master is a library component. This pass also reaches
@@ -649,6 +697,7 @@ async function buildComponentIndex() {
           try { isRemoteComp = cacheNode.remote === true; } catch (_) {}
           if (varIds.size > 0 && isRemoteComp) {
             _componentById.set(cacheKey, { name: cacheNode.name, type: cacheNode.type, pageName: 'Library', pageId: null, isRemote: true });
+            recordVariants(cacheKey, perVariant);
             for (const varId of varIds) {
               if (!_componentsByVarId.has(varId)) _componentsByVarId.set(varId, new Set());
               _componentsByVarId.get(varId).add(cacheKey);
@@ -693,6 +742,7 @@ async function buildComponentIndex() {
 async function buildLocalComponentIndex() {
   _componentsByVarId    = new Map();
   _componentById        = new Map();
+  _variantsByComp       = new Map();
   _componentBrowserCache = null;
 
   // Load + scan pages one at a time to keep progress responsive and allow cancellation
@@ -709,11 +759,8 @@ async function buildLocalComponentIndex() {
     for (const c of comps) {
       if (c.type === 'COMPONENT' && c.parent && c.parent.type === 'COMPONENT_SET') continue;
 
-      const node   = c;
-      const varIds = new Set();
-      collectNodeVarIds(node, varIds);
-      const descendants = node.findAllWithCriteria({ types: BINDING_TYPES });
-      for (let i = 0; i < descendants.length; i++) collectNodeVarIds(descendants[i], varIds);
+      const node = c;
+      const { varIds, perVariant } = collectComponentBindings(node);
 
       if (varIds.size === 0) continue;
       // Only register bindings to local variables — external bindings require Full scan
@@ -724,6 +771,7 @@ async function buildLocalComponentIndex() {
         if (!_componentsByVarId.has(varId)) _componentsByVarId.set(varId, new Set());
         _componentsByVarId.get(varId).add(node.id);
       }
+      recordVariants(node.id, perVariant);
     }
 
     await yieldTick();
@@ -809,10 +857,22 @@ function lookupComponents(variableIds, selectedId) {
       return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
     });
 
+    // Which variant CHILDREN of this set actually carry one of the affected vars — so
+    // placement can drop the affected variant(s) instead of the set's default. Empty for
+    // plain components and for set-level bindings (no single variant owns them) → the
+    // placer falls back to the default variant, exactly as before.
+    let variants = [];
+    const vrecs = _variantsByComp.get(cid);
+    if (vrecs) {
+      variants = vrecs
+        .filter(v => { for (const id of v.varIds) if (varSet.has(id)) return true; return false; })
+        .map(v => ({ id: v.id, key: v.key, remote: v.remote, label: v.name }));
+    }
+
     components.push({
       nodeId: cid, nodeName: meta.name, nodeType: meta.type,
       pageName: meta.pageName, pageId: meta.pageId,
-      boundCount: varSet.size, boundVars,
+      boundCount: varSet.size, boundVars, variants,
     });
   }
 
@@ -1545,8 +1605,25 @@ async function removeBoardsPageIfCreatedEmpty(page, created) {
 
 // Local masters instance directly; library ones are imported by key first.
 // Returns null when the component can't be resolved — the caller skips it
-// instead of failing the whole run.
-async function instantiateComponent(nodeId) {
+// instead of failing the whole run. When `variant` (a specific variant CHILD of the set,
+// as resolved by lookupComponents) is given, that variant is instantiated so the affected
+// state is visible on the board — instead of the set's default. Falls back to the default
+// variant if the variant can't be resolved.
+async function instantiateComponent(nodeId, variant) {
+  if (variant && (variant.key || variant.id)) {
+    let vc = null;
+    if (variant.remote && variant.key) {
+      try { vc = await figma.importComponentByKeyAsync(variant.key); } catch (_) {}
+    }
+    if (!vc && variant.id) {
+      try { vc = await figma.getNodeByIdAsync(variant.id); } catch (_) {}
+    }
+    if (vc && vc.type === 'COMPONENT') {
+      if (vc.remote && vc.key) { try { vc = await figma.importComponentByKeyAsync(vc.key); } catch (_) {} }
+      try { return vc.createInstance(); } catch (_) {}
+    }
+    // couldn't resolve the variant → fall through to the set's default below
+  }
   let comp = null;
   try { comp = await figma.getNodeByIdAsync(nodeId); } catch (_) { return null; }
   if (!comp) return null;
@@ -1561,13 +1638,26 @@ async function instantiateComponent(nodeId) {
 }
 
 
+// Expand affected components into placement units — one per AFFECTED variant so a set whose
+// token touches several states drops one instance per affected variant (never just the
+// default); components with no variant info place once, in their default state. Sorted by
+// name (variant label as tiebreaker) so a set's states sit together in a stable order.
+function buildPlacementUnits(all) {
+  const units = [];
+  for (const c of all) {
+    const vs = Array.isArray(c.variants) ? c.variants : [];
+    if (vs.length === 0) units.push({ nodeId: c.nodeId, name: c.name, variant: null });
+    else for (const v of vs) units.push({ nodeId: c.nodeId, name: c.name, variant: v });
+  }
+  units.sort((a, b) =>
+    String(a.name || '').localeCompare(String(b.name || '')) ||
+    String((a.variant && a.variant.label) || '').localeCompare(String((b.variant && b.variant.label) || '')));
+  return units;
+}
+
 async function handlePlaceComponents(msg) {
   const all   = (msg && Array.isArray(msg.components)) ? msg.components : [];
-  const list  = all.slice(0, MAX_PLACE);
-  // Group by name so related components (and their variants) sit together on the
-  // board. The slice above already kept the most-impactful ones; this only
-  // reorders how those are laid out.
-  list.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+  const list  = buildPlacementUnits(all).slice(0, MAX_PLACE);
   const total = list.length;
   let section = null;
   let page = null, pageCreated = false; // hoisted so the catch can clean up too
@@ -1615,7 +1705,7 @@ async function handlePlaceComponents(msg) {
     const startTs = Date.now();
 
     for (let i = 0; i < total; i++) {
-      const instance = await instantiateComponent(list[i].nodeId);
+      const instance = await instantiateComponent(list[i].nodeId, list[i].variant);
       if (instance) {
         board.appendChild(instance);
         instances.push(instance);
@@ -1836,6 +1926,7 @@ async function handleUsageScan(msg) {
     // Pass 1 below augments this with library components actually used on canvas.
     _componentById     = new Map();
     _componentsByVarId = new Map();
+    _variantsByComp    = new Map();
     const localMasterByKey = new Map();
     for (const page of pages) {
       const masters = page.findAllWithCriteria({ types: ['COMPONENT', 'COMPONENT_SET'] });
@@ -1843,10 +1934,7 @@ async function handleUsageScan(msg) {
         if (m.type === 'COMPONENT' && m.parent && m.parent.type === 'COMPONENT_SET') continue; // roll up to the set
         if (!m.remote && m.key && !localMasterByKey.has(m.key)) localMasterByKey.set(m.key, m);
 
-        const mVarIds = new Set();
-        collectNodeVarIds(m, mVarIds);
-        const mDesc = m.findAllWithCriteria({ types: BINDING_TYPES });
-        for (let d = 0; d < mDesc.length; d++) collectNodeVarIds(mDesc[d], mVarIds);
+        const { varIds: mVarIds, perVariant: mPerVariant } = collectComponentBindings(m);
         if (mVarIds.size === 0) continue;
 
         const mRemote = !!m.remote;
@@ -1856,6 +1944,7 @@ async function handleUsageScan(msg) {
           pageId:   mRemote ? null : page.id,
           isRemote: mRemote,
         });
+        recordVariants(m.id, mPerVariant);
         for (const vid of mVarIds) {
           if (!_componentsByVarId.has(vid)) _componentsByVarId.set(vid, new Set());
           _componentsByVarId.get(vid).add(m.id);
@@ -1962,15 +2051,8 @@ async function handleUsageScan(msg) {
           const cacheKey = cacheNode.id;
 
           if (!compCache.has(cacheKey)) {
-            const varIds = new Set();
-            let mcOk = false;
-            try {
-              collectNodeVarIds(cacheNode, varIds);
-              const desc = cacheNode.findAllWithCriteria({ types: BINDING_TYPES });
-              for (let d = 0; d < desc.length; d++) collectNodeVarIds(desc[d], varIds);
-              mcOk = true;
-            } catch (_) {}
-            if (!mcOk) {
+            const { varIds, perVariant, descOk } = collectComponentBindings(cacheNode);
+            if (!descOk) {
               // Fallback: scan instance subtree (explicit overrides only)
               collectNodeVarIds(inst, varIds);
               try {
@@ -2001,6 +2083,7 @@ async function handleUsageScan(msg) {
               // external library" badge. Skip it rather than mislabel a deleted component.
               if (isRemote || pageId !== null) {
                 _componentById.set(cacheKey, { name: cacheNode.name, type: cacheNode.type, pageName, pageId, isRemote });
+                recordVariants(cacheKey, perVariant);
                 for (const vid of varIds) {
                   if (!_componentsByVarId.has(vid)) _componentsByVarId.set(vid, new Set());
                   _componentsByVarId.get(vid).add(cacheKey);

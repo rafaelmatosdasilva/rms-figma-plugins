@@ -4029,7 +4029,7 @@ function buildPlacePayload() {
       title:    c.nodeName,
       subtitle: cTokens + (cTokens === 1 ? ' bound token' : ' bound tokens') + '  ·  ' + today,
       date:     today,
-      components: [{ nodeId: c.nodeId, name: c.nodeName }],
+      components: [{ nodeId: c.nodeId, name: c.nodeName, variants: c.variants || [] }],
     };
   }
 
@@ -4037,7 +4037,7 @@ function buildPlacePayload() {
 
   var name  = _currentChain.self ? _currentChain.self.name : 'Token';
   var comps = _currentComponents.map(function (comp) {
-    return { nodeId: comp.nodeId, name: comp.nodeName };
+    return { nodeId: comp.nodeId, name: comp.nodeName, variants: comp.variants || [] };
   });
   return {
     title:    name,

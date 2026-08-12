@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { fileURLToPath } from 'node:url';
 import {
-  loadPlugin, makeVar, makeCollection, makePage, makeComponent,
+  loadPlugin, makeVar, makeCollection, makePage, makeComponent, makeComponentSet,
 } from '@rms/test-utils';
 
 const ENTRY = fileURLToPath(new URL('../src/code.js', import.meta.url));
@@ -123,6 +123,119 @@ describe('impact-atlas — place components', () => {
     const done = lastOf('place-done');
     expect(done.placed).toBe(2);
     expect(done.skipped).toBe(1);
+  });
+
+  it('places ONLY the affected variant — one of four states — and none of the others', async () => {
+    // Four states; the token binds on exactly ONE of them (focus). The other three
+    // (default, hover, active) must never be instanced.
+    const token = makeVar('v1', 'button/ring');
+    const mkChild = (state, boundToV1) => {
+      const child = makeComponent(`State=${state}`, {
+        id: `b-${state}`, width: 120, height: 40, fills: paint,
+        ...(boundToV1 ? { boundVariables: { fills: [{ id: 'v1' }] } } : {}),
+      });
+      child.createInstance = () => makeComponent(`Btn/${state} instance`, { type: 'INSTANCE', width: 120, height: 40 });
+      return child;
+    };
+    const dflt = mkChild('default', false);
+    const set = makeComponentSet('Btn', {
+      id: 'set-btn',
+      children: [dflt, mkChild('hover', false), mkChild('focus', true), mkChild('active', false)],
+    });
+    set.defaultVariant = dflt;
+
+    const { figma, send, lastOf } = await loadPlugin(ENTRY, {
+      variables: [token],
+      collections: [makeCollection('coll-1', 'Tokens')],
+      pages: [makePage('Page 1', [set])],
+    });
+    await send({ type: 'init' });
+    await send({ type: 'analyze', variableId: 'v1' });
+
+    const entry = lastOf('chain-result').components.find((c) => c.nodeId === 'set-btn');
+    expect(entry.variants.map((v) => v.id)).toEqual(['b-focus']); // only the affected one
+
+    const payload = [{ nodeId: entry.nodeId, name: entry.nodeName, variants: entry.variants }];
+    await send({ type: 'place-components', title: 'button/ring', date: 'd', components: payload });
+
+    expect(lastOf('place-done').placed).toBe(1);
+    const names = figma._created.sections[0].findAllWithCriteria({ types: ['INSTANCE'] }).map((i) => i.name);
+    expect(names).toEqual(['Btn/focus instance']); // exactly the affected variant, nothing else
+  });
+
+  it('places the AFFECTED variants of a set, never its default', async () => {
+    // A Button set whose token binds only on the hover + focus states (not default).
+    const token = makeVar('v1', 'button/background');
+    const mkChild = (state, boundToV1) => {
+      const child = makeComponent(`State=${state}`, {
+        id: `btn-${state}`, width: 120, height: 40, fills: paint,
+        ...(boundToV1 ? { boundVariables: { fills: [{ id: 'v1' }] } } : {}),
+      });
+      child.createInstance = () => makeComponent(`Button/${state} instance`, { type: 'INSTANCE', width: 120, height: 40 });
+      return child;
+    };
+    const dflt = mkChild('default', false);
+    const set = makeComponentSet('Button', { id: 'set-button', children: [dflt, mkChild('hover', true), mkChild('focus', true)] });
+    set.defaultVariant = dflt; // fallback target that must NOT be used here
+
+    const { figma, send, lastOf } = await loadPlugin(ENTRY, {
+      variables: [token],
+      collections: [makeCollection('coll-1', 'Tokens')],
+      pages: [makePage('Page 1', [set])],
+    });
+    await send({ type: 'init' });
+    await send({ type: 'analyze', variableId: 'v1' });
+
+    // The affected-components list carries the affected variants (hover + focus, not default).
+    const comps = lastOf('chain-result').components;
+    const entry = comps.find((c) => c.nodeId === 'set-button');
+    expect(entry.variants.map((v) => v.id).sort()).toEqual(['btn-focus', 'btn-hover']);
+
+    // Place using exactly what the UI would forward.
+    const payload = comps.map((c) => ({ nodeId: c.nodeId, name: c.nodeName, variants: c.variants }));
+    await send({ type: 'place-components', title: 'button/background', date: 'd', components: payload });
+
+    expect(lastOf('place-done').placed).toBe(2);
+    const instances = figma._created.sections[0].findAllWithCriteria({ types: ['INSTANCE'] });
+    const names = instances.map((i) => i.name).sort();
+    expect(names).toEqual(['Button/focus instance', 'Button/hover instance']);
+    expect(names.some((n) => /default/i.test(n))).toBe(false);
+  });
+
+  it('places one default instance when the binding is set-level (no variant owns it)', async () => {
+    // The token sits on the set's componentPropertyDefinitions — not attributable to any
+    // single variant — so placement falls back to one default instance.
+    const token = makeVar('v1', 'card/color');
+    const mkChild = (state) => {
+      const child = makeComponent(`State=${state}`, { id: `card-${state}`, width: 200, height: 100, fills: paint });
+      child.createInstance = () => makeComponent(`Card/${state} instance`, { type: 'INSTANCE', width: 200, height: 100 });
+      return child;
+    };
+    const dflt = mkChild('default');
+    const set = makeComponentSet('Card', {
+      id: 'set-card',
+      componentPropertyDefinitions: { Color: { type: 'VARIANT', boundVariables: { value: { id: 'v1' } } } },
+      children: [dflt, mkChild('hover')],
+    });
+    set.defaultVariant = dflt;
+
+    const { figma, send, lastOf } = await loadPlugin(ENTRY, {
+      variables: [token],
+      collections: [makeCollection('coll-1', 'Tokens')],
+      pages: [makePage('Page 1', [set])],
+    });
+    await send({ type: 'init' });
+    await send({ type: 'analyze', variableId: 'v1' });
+
+    const entry = lastOf('chain-result').components.find((c) => c.nodeId === 'set-card');
+    expect(entry.variants).toEqual([]); // set-level → no per-variant expansion
+
+    const payload = [{ nodeId: entry.nodeId, name: entry.nodeName, variants: entry.variants }];
+    await send({ type: 'place-components', title: 'card/color', date: 'd', components: payload });
+
+    expect(lastOf('place-done').placed).toBe(1);
+    const instances = figma._created.sections[0].findAllWithCriteria({ types: ['INSTANCE'] });
+    expect(instances.map((i) => i.name)).toEqual(['Card/default instance']);
   });
 
   it('cleans up the page it created when the run is cancelled', async () => {
