@@ -3000,8 +3000,7 @@
     }
 
     if (msg.type === "restore-height") {
-      // Height is content-driven now (auto-fits the variable count) — a saved height must NOT lock
-      // it, or few tokens leave empty space. Ignored on purpose; width is remembered by Figma.
+      window._manualH = msg.height;
       return;
     }
 
@@ -3595,36 +3594,27 @@
 
   // ── Auto-resize plugin window to content ─────────────────────────────
   (function () {
-    const MIN_H = 100, MAX_H = 900;   // above MAX_H the token list scrolls rather than growing further
+    const MIN_H = 100;
 
     // Shared content-height measurement — also used as drag minimum.
-    // NB: #progress-container is a fixed full-viewport overlay (position:fixed; inset:0), and
-    // .empty-state / #results-ui are flex:1 boxes that stretch to the window — measuring any of
-    // them would feed the current window height back into the target and never shrink. So we sum
-    // only NATURAL content: the fixed actionbar plus either the table's rows (≈ variable count) or
-    // the empty-state's inner (non-stretched) content.
     window._contentHeight = function () {
-      const resultsUi = document.getElementById('results-ui');
-      if (!resultsUi || resultsUi.style.display === 'none') return MIN_H;
       let h = 0;
-      const bar   = document.getElementById('actionbar');
-      if (bar) h += bar.offsetHeight;
-      const empty = document.getElementById('no-colors-state');
-      if (empty && empty.style.display !== 'none') {
-        const inner = empty.querySelector('.empty-state-content');
-        h += (inner ? inner.offsetHeight : 0) + 64;   // .empty-state vertical padding (32 × 2)
-      } else {
+      const resultsUi  = document.getElementById('results-ui');
+      const progCont   = document.getElementById('progress-container');
+      if (progCont  && progCont.offsetHeight)  h += progCont.offsetHeight;
+      if (resultsUi && resultsUi.style.display !== 'none') {
+        const bar   = document.getElementById('actionbar');
         const table = document.querySelector('.color-table');
+        if (bar)   h += bar.offsetHeight;
         if (table) h += table.scrollHeight;
+        h += 48;
       }
-      h += 48;   // divider + top/bottom breathing room
-      return Math.min(Math.max(h, MIN_H), MAX_H);
+      return Math.max(h, MIN_H);
     };
 
     function sendHeight() {
-      // Height always tracks the content (≈ the number of variables) so there's no empty space;
-      // only skip mid-drag. Width stays whatever the user/Figma set.
-      if (window._manualResizing) return;
+      // Skip mid-drag, and skip entirely once user has manually set a height.
+      if (window._manualResizing || window._manualH) return;
       parent.postMessage({ pluginMessage: { type: 'ui-resize', width: window.innerWidth, height: window._contentHeight() } }, '*');
     }
     window._notifyResize = sendHeight;
@@ -3638,9 +3628,8 @@
     sendHeight();
   })();
 
-  // Width is manually resizable; height auto-fits the content (edges:'right' drops the bottom
-  // drag-handle, which would otherwise set a manual height that snaps back on the next re-render).
-  initWindowResize({ minW: 320, minH: 200, edges: 'right' });
+  // Override default constraints for this plugin.
+  initWindowResize({ minW: 320, minH: 200 });
 </script>
 
 </body>

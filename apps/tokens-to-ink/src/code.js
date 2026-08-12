@@ -12,11 +12,9 @@ import {
   effectiveImageDpi,
 } from '@rms/core';
 
-// Start compact — the UI auto-fits the height to the number of variables (autoHeight), so the
-// window never opens with dead space and grows to content after the first scan.
-figma.showUI(__html__, { width: 600, height: 220 });
+figma.showUI(__html__, { width: 600, height: 600 });
 
-const handleResizeMsg = attachWindowResize(figma, { defaultW: 600, defaultH: 220, minW: 320, minH: 200, autoHeight: true });
+const handleResizeMsg = attachWindowResize(figma, { defaultW: 600, defaultH: 600, minW: 320, minH: 200 });
 
 let _exportCancelled = false;
 let _exportState = null; // { selection, format, colorLookup, tiffDpi } — persists across ack messages
