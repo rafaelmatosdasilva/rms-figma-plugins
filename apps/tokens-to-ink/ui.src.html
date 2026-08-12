@@ -3598,18 +3598,26 @@
     const MIN_H = 100, MAX_H = 900;   // above MAX_H the token list scrolls rather than growing further
 
     // Shared content-height measurement — also used as drag minimum.
+    // NB: #progress-container is a fixed full-viewport overlay (position:fixed; inset:0), and
+    // .empty-state / #results-ui are flex:1 boxes that stretch to the window — measuring any of
+    // them would feed the current window height back into the target and never shrink. So we sum
+    // only NATURAL content: the fixed actionbar plus either the table's rows (≈ variable count) or
+    // the empty-state's inner (non-stretched) content.
     window._contentHeight = function () {
+      const resultsUi = document.getElementById('results-ui');
+      if (!resultsUi || resultsUi.style.display === 'none') return MIN_H;
       let h = 0;
-      const resultsUi  = document.getElementById('results-ui');
-      const progCont   = document.getElementById('progress-container');
-      if (progCont  && progCont.offsetHeight)  h += progCont.offsetHeight;
-      if (resultsUi && resultsUi.style.display !== 'none') {
-        const bar   = document.getElementById('actionbar');
+      const bar   = document.getElementById('actionbar');
+      if (bar) h += bar.offsetHeight;
+      const empty = document.getElementById('no-colors-state');
+      if (empty && empty.style.display !== 'none') {
+        const inner = empty.querySelector('.empty-state-content');
+        h += (inner ? inner.offsetHeight : 0) + 64;   // .empty-state vertical padding (32 × 2)
+      } else {
         const table = document.querySelector('.color-table');
-        if (bar)   h += bar.offsetHeight;
         if (table) h += table.scrollHeight;
-        h += 48;
       }
+      h += 48;   // divider + top/bottom breathing room
       return Math.min(Math.max(h, MIN_H), MAX_H);
     };
 
