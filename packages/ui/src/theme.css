@@ -19,6 +19,7 @@
     --radius-md:      12px;  /* cards (radii/card) */
     --radius-toast:   24px;  /* toasts (radii/toast = 24px, aliases radii/button) */
     --radius-tooltip:  8px;  /* tooltip (radii/tooltip) */
+    --radius-checkbox: 4px;  /* checkbox box (radii/checkbox) */
 
     /* Border width */
     --icon-xsmall: 1.2px;  /* icon/xsmall stroke */
@@ -150,14 +151,14 @@
     --input-value:               var(--neutral-100);   /* input/value/filled/color N1 both */
     --input-label:               var(--neutral-400);   /* input/label/color L=N4, D→override */
     --input-icon:                var(--neutral-400);   /* input/icon/color L=N4, D→override */
-    --input-min-width:           80px;                 /* input/min-width */
     --input-auto-border: rgba(0,0,0,0.1);
     /* Action bar — gained its own DS tokens 2026-07-31 (was borrowing figmaWindowChrome).
-       Border mirrors Figma's chain actionbar/border → dividerLine/border, so it routes
-       through --border rather than straight to the primitive. Same in both modes. */
+       Border now chains actionbar/border → figmaWindowChrome/divider (rebound 2026-08):
+       light still resolves to N700 (#d6d6d6) via dividerLine, dark is chrome grey #424242. */
     --actionbar-background: var(--surface-elevation-high); /* actionbar/background → semantic/surface/elevationHigh */
-    --actionbar-border:     var(--border);       /* actionbar/border/color → dividerLine/border, both modes */
-    /* figmaWindowChrome/background, /title, /button, /divider — Figma-native chrome,
+    --figmaWindowChrome-divider: var(--neutral-700);    /* figmaWindowChrome/divider L=N700 #d6d6d6, D→#424242 (chrome grey, no primitive) */
+    --actionbar-border:     var(--figmaWindowChrome-divider); /* actionbar/border → figmaWindowChrome/divider (both modes) */
+    /* figmaWindowChrome/background, /title, /button — Figma-native chrome,
        not HTML-controllable. No CSS vars; see COVERED in parity-map.mjs. */
     /* Scrollbar */
     --scrollbar-thumb: rgba(0,0,0,0.2);
@@ -235,6 +236,7 @@
     --checkbox-border-selected:     var(--neutral-100);  /* checkbox/border/selected N100 both */
     --checkbox-icon-selected:       var(--neutral-1000); /* checkbox/icon/selected → N1000 both */
     --checkbox-text:                var(--neutral-300);  /* checkbox/text/default L=N3, D→override */
+    --checkbox-description:         var(--neutral-400);  /* checkbox/description L=N4, D→override (mirrors radioButton/description) */
     --checkbox-text-selected:       var(--neutral-100);  /* checkbox/text/selected N100 both */
     /* Loader (DS 68:52296) */
     --loader-background:  var(--neutral-1000); /* loader/background N1000 both */
@@ -257,8 +259,8 @@
       --neutral-600: #454545;
       --neutral-700: #303030;
       --neutral-800: #2b2b2b;
-      --neutral-900: #1f1f1f;
-      --neutral-1000: #171717;
+      --neutral-900: #212121;
+      --neutral-1000: #1c1c1c;
       /* Base — tokens with different primitives per mode */
       --bg-secondary: var(--neutral-900); /* dark hover surface = same as bg */
       --surface: var(--neutral-800);      /* input/background/filled Dark = N800 */
@@ -324,7 +326,7 @@
       --input-icon:  var(--neutral-200);  /* D=N2 */
       --tooltipButton-icon: var(--neutral-300); /* tooltipButton/icon Dark = N300 #bfbfbf (light uses N400 — split alias) */
       /* Node additional states */
-      --node-border-idle: var(--neutral-600); /* D=N6 */
+      --node-border-idle: var(--neutral-700); /* D=N7 #303030 (rebound from N6 2026-08) */
       --node-icon-selected:   var(--neutral-300);   /* D=N3 */
       --node-icon-idle:       var(--neutral-500);   /* Dark = N500 #5e5e5e (was N400; DS rebound via buttonList/iconPrimary) */
       --node-icon-hover:      var(--neutral-300);   /* Dark = N300 #b8b8b8 — same alias chain as selected (node/icon/hover → node/icon/selected → Neutral 300) */
@@ -345,6 +347,8 @@
       --green:  #0cdf88;
       --yellow: #f7c522;
       --bg-detail: var(--neutral-1000);  /* semantic/background Dark = N1000 */
+      --figmaWindowChrome-divider: #424242; /* figmaWindowChrome/divider Dark — chrome grey, no neutral primitive */
+      --checkbox-description: var(--neutral-300); /* checkbox/description Dark = N3 (mirrors radioButton/description) */
     }
   }
 
@@ -784,7 +788,7 @@
     border: var(--thickness) solid var(--input-border); /* input/border/default */
     border-radius: var(--radius-full);
     padding: 0 var(--padding-s);  /* padding/s = 8px LR, symmetric per DS component */
-    height: var(--button-min-height); gap: var(--gap-s); min-width: var(--input-min-width);
+    height: var(--button-min-height); gap: var(--gap-s);
     transition: border-color 0.15s ease;
   }
   .inputWrap:not(.inputWrap--readonly):hover { border-color: var(--input-border-hover); }
@@ -1001,7 +1005,7 @@
   .checkbox-input:checked + .checkbox-box {
     background: var(--checkbox-background-selected);
     border-color: var(--checkbox-border-selected);
-    border-radius: 4px;
+    border-radius: var(--radius-checkbox);
   }
   .checkbox-input:checked + .checkbox-box .checkbox-check { opacity: 1; transform: scale(1); }
   /* Own weight/line-height so the label matches the DS text style (Inter SemiBold 600,
@@ -1009,6 +1013,14 @@
   .checkbox-text { font-size: var(--m-size); font-weight: var(--m-weight); line-height: var(--m-lh); color: var(--checkbox-text); }
   .checkbox-input:checked ~ .checkbox-text { color: var(--checkbox-text-selected); }
   .checkbox-input:focus-visible + .checkbox-box { outline: var(--thickness) solid var(--input-border-focus); outline-offset: 1px; }
+  /* checkbox/description (DS checkBox Description child) — s text style, muted. */
+  .checkbox-description { font-size: var(--s-size); font-weight: var(--s-weight); line-height: var(--s-lh); color: var(--checkbox-description); }
+  /* checkBoxGroup (DS 2064:29545) — a labelled vertical stack of checkboxes.
+     Label (s style, content/secondary) sits gap/m above a Slot that stacks the
+     checkbox rows at gap/s. */
+  .checkBoxGroup { display: flex; flex-direction: column; gap: var(--gap-m); }
+  .checkBoxGroup-label { font-size: var(--s-size); font-weight: var(--s-weight); line-height: var(--s-lh); color: var(--text-secondary); }
+  .checkBoxGroup-slot { display: flex; flex-direction: column; gap: var(--gap-s); }
   .seg-status {
     width: var(--dividerSection-height); height: var(--dividerSection-height);
     border-radius: var(--radius-full);
