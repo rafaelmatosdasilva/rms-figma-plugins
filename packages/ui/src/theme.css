@@ -760,9 +760,9 @@
     align-items: center;
     align-content: center;
     gap: var(--gap-m); /* slot-content gap — DS actionBar root itemSpacing is 0 (Slot); gap/m is the content-level default */
-    padding: var(--padding-s) var(--padding-l); /* DS actionBar 138:16657: tb padding/s, lr padding/l */
+    padding: var(--padding-m) var(--padding-l); /* DS actionBar 138:16657: tb padding/m, lr padding/l (tb rebound padding/s→padding/m 2026-08) */
     margin: 0 calc(-1 * var(--padding-l));
-    min-height: 40px; /* 24px content + padding/s × 2; hugs taller when chips wrap to more rows */
+    min-height: 48px; /* 24px content + padding/m × 2; hugs taller when chips wrap to more rows */
     background: var(--actionbar-background);
     /* DS 138:16657 binds strokes to actionbar/border with strokeBottomWeight 1.5 and
        strokeAlign INSIDE — a bottom rule only, drawn inside the 40px (box-sizing is
@@ -1374,13 +1374,13 @@
      root gap gap/xl between slot groups (flattened — flex spacer separates groups; visible inter-item
      gap is the DS Content-level gap/m). Bottom divider drawn by the consumer's wrapper. */
   .statusBar {
-    height: 56px;
+    height: 48px; /* 24px content + padding/m × 2 (tb rebound padding/l→padding/m 2026-08); implemented as fixed height + 0 vertical padding */
     display: flex;
     align-items: center;
     padding: 0 var(--padding-l);
     gap: var(--gap-m);
     /* DS 789:38384 binds strokes to dividerLine/border with strokeBottomWeight 1.5
-       and strokeAlign INSIDE — a bottom rule only, inside the 56px. */
+       and strokeAlign INSIDE — a bottom rule only, inside the 48px. */
     border-bottom: var(--thickness) solid var(--border);
     flex-shrink: 0; /* fixed-height DS component — must not compress in a flex column */
   }
