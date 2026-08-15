@@ -55,6 +55,7 @@
     --gap-m:       8px;
     --gap-l:       12px;
     --gap-xl:      16px;
+    --gap-xxxl:    32px;   /* gap/xxxl */
     --padding-xxs:  2px;
     --padding-xs:  4px;
     --padding-s:   8px;
@@ -238,6 +239,15 @@
     --checkbox-text:                var(--neutral-300);  /* checkbox/text/default L=N3, D→override */
     --checkbox-description:         var(--neutral-400);  /* checkbox/description L=N4, D→override (mirrors radioButton/description) */
     --checkbox-text-selected:       var(--neutral-100);  /* checkbox/text/selected N100 both */
+    /* Card (DS 2120:62601) — bordered rounded container */
+    --card-border:                  var(--neutral-700);  /* card/border L=N7 #d6d6d6, D=N7 #303030 */
+    /* switch (DS 2120:3385) — toggle track + knob + description, On/Off states */
+    --switch-background-on:         var(--neutral-100);  /* switch/background/enabledOn L=N1 #0a0a0a, D→N2 override */
+    --switch-background-off:        var(--neutral-500);  /* switch/background/enabledOff N5 both */
+    --switch-knob-on:               var(--neutral-1000); /* switch/knob/enabledOn L=N10 #ffffff, D→N7 override */
+    --switch-knob-off:              var(--neutral-800);  /* switch/knob/enabledOff L=N8 #e8e8e8, D→N10 override */
+    --switch-description-on:        var(--neutral-100);  /* switch/description/enabledOn N1 both */
+    --switch-description-off:       var(--neutral-300);  /* switch/description/enabledOff N3 both */
     /* Loader (DS 68:52296) */
     --loader-background:  var(--neutral-1000); /* loader/background N1000 both */
     --loader-spinner:     var(--neutral-600);  /* loader/spinner L=N6, D→override */
@@ -321,6 +331,10 @@
       --emptyState-icon-neutral: var(--neutral-400);         /* Dark = N400 */
       --radioButton-border:      var(--neutral-400); /* Dark = N4 */
       --radioButton-description: var(--neutral-300); /* Dark = N3 (#b8b8b8) */
+      /* switch dark overrides (per-mode split) */
+      --switch-background-on: var(--neutral-200);  /* enabledOn Dark = N2 #dbdbdb */
+      --switch-knob-on:       var(--neutral-700);  /* knob/enabledOn Dark = N7 #303030 */
+      --switch-knob-off:      var(--neutral-1000); /* knob/enabledOff Dark = N10 #1c1c1c */
       /* Input */
       --input-label: var(--neutral-300);  /* D=N3 */
       --input-icon:  var(--neutral-200);  /* D=N2 */
@@ -1021,6 +1035,44 @@
   .checkBoxGroup { display: flex; flex-direction: column; gap: var(--gap-m); }
   .checkBoxGroup-label { font-size: var(--s-size); font-weight: var(--s-weight); line-height: var(--s-lh); color: var(--text-secondary); }
   .checkBoxGroup-slot { display: flex; flex-direction: column; gap: var(--gap-s); }
+  /* Card (DS 2120:62601) — bordered rounded container. Padding bound to gap/xl (16),
+     items stacked at gap/l (12), 1.5px card/border, radii/card (12). */
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-l);
+    padding: var(--gap-xl);
+    border: var(--thickness) solid var(--card-border);
+    border-radius: var(--radius-md);
+  }
+  /* switch (DS 2120:3385) — toggle track (46×24 pill) + sliding knob (20×16) + description,
+     with On/Off states. The hidden input drives :checked; the track/knob/label recolour and
+     the knob slides right. Track/knob dimensions are component-specific (no DS size token). */
+  .switch { display: inline-flex; align-items: center; gap: var(--gap-m); cursor: pointer; user-select: none; }
+  .switch-input { position: absolute; width: 1px; height: 1px; opacity: 0; margin: 0; pointer-events: none; }
+  .switch-track {
+    position: relative;
+    flex-shrink: 0;
+    width: 46px; height: 24px;
+    border-radius: var(--radius-full);
+    background: var(--switch-background-off);
+    transition: background 0.15s ease;
+  }
+  .switch-knob {
+    position: absolute; top: 4px; left: 4px;
+    width: 20px; height: 16px;
+    border-radius: 13px;
+    background: var(--switch-knob-off);
+    transition: transform 0.15s ease, background 0.15s ease;
+  }
+  .switch-input:checked + .switch-track { background: var(--switch-background-on); }
+  .switch-input:checked + .switch-track .switch-knob { background: var(--switch-knob-on); transform: translateX(18px); }
+  .switch-input:focus-visible + .switch-track { outline: var(--thickness) solid var(--input-border-focus); outline-offset: 2px; }
+  .switch-description { font-size: var(--m-size); font-weight: var(--m-weight); line-height: var(--m-lh); color: var(--switch-description-off); }
+  .switch-input:checked ~ .switch-content .switch-description,
+  .switch-input:checked ~ .switch-description { color: var(--switch-description-on); }
+  .switch.disabled { opacity: 0.4; pointer-events: none; }
+  .switch-content { display: inline-flex; align-items: center; gap: var(--gap-xs); }
   .seg-status {
     width: var(--dividerSection-height); height: var(--dividerSection-height);
     border-radius: var(--radius-full);
