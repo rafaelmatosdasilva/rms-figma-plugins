@@ -362,6 +362,25 @@
   .preflight-row .pf-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--m-size); }
   .preflight-row .pf-meta { flex-shrink: 0; color: var(--text-secondary); font-size: var(--s-size); white-space: nowrap; }
   .preflight-focus-btn { flex-shrink: 0; }   /* buttonTertiary icon button — "Focus in canvas" */
+
+  /* ── Inline Export screen (DS 2120:48124) ── */
+  .view-tabs-row { display: flex; justify-content: center; padding: var(--gap-m) var(--padding-l) 0; }
+  #view-tabs { width: auto; }
+  .export-panel { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .export-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: var(--padding-l); display: flex; flex-direction: column; gap: var(--gap-xl); }
+  .export-section-label { font-size: var(--s-size); font-weight: var(--s-weight); line-height: var(--s-lh); color: var(--text-secondary); }
+  .export-format { display: flex; flex-direction: column; gap: var(--gap-m); }
+  .export-format-radios { display: flex; gap: var(--gap-xxl); align-items: center; }
+  .export-cards { display: flex; gap: var(--gap-xl); align-items: stretch; }
+  .export-card-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--gap-m); }
+  .export-card-wrap .card { flex: 1; }
+  /* Each switch fills its card row so the input-pill/info sits at the far end. */
+  .card .switch { display: flex; align-self: stretch; }
+  .card .switch .switch-content { flex: 1; min-width: 0; }
+  .switch-row { display: flex; align-items: center; justify-content: space-between; gap: var(--gap-m); }
+  .switch-row .switch { flex: 1; }
+  .export-info { cursor: help; margin-left: auto; }
+  .export-actionbar { display: flex; align-items: center; justify-content: space-between; padding: var(--padding-m) var(--padding-l); border-top: var(--thickness) solid var(--border); flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -373,167 +392,120 @@
   <div id="actionbar" class="actionbar">
     <!-- source chips, rescan btn, and export picker injected by JS -->
     <div id="source-chips" style="display:flex;flex-wrap:wrap;align-items:center;gap:var(--gap-m);flex:1;min-width:0;"></div>
-    <div class="export-picker" id="export-picker" style="display:none;">
-      <button class="buttonSecondary buttonAddOutput" id="export-btn" data-tip="Export CMYK">
-        <svg width="16" height="16"><use href="#icon-download"/></svg>
-      </button>
-      <!-- Format picker (DS overflow 2004:35523) — choosing here keeps PDF/TIFF logic split
-           and opens a modal with only that format's options. -->
-      <div class="overflow export-overflow" id="export-overflow" hidden>
-        <div class="overflow-label">Export Select Artwork</div>
-        <button type="button" class="overflowList" id="export-pdf-item" data-format="pdf">
-          <svg width="16" height="16"><use href="#icon-vector"/></svg><span>PDF CMYK Vector</span>
-        </button>
-        <button type="button" class="overflowList" id="export-tiff-item" data-format="tiff">
-          <svg width="16" height="16"><use href="#icon-image"/></svg><span>TIFF CMYK Raster</span>
-        </button>
-      </div>
-    </div>
+    <!-- Export moved to the inline Colors|Export tabs (see #view-tabs). -->
     <!-- Label swaps with the selection — see the selection-count handler. -->
     <button id="rescan-btn" class="buttonPrimary">
       <svg width="16" height="16"><use href="#icon-update"/></svg><span id="rescan-label">Scan file</span>
     </button>
   </div>
   <div class="dividerLine"></div>
-  <div id="no-colors-state" class="empty-state" style="display:none;">
-    <div class="empty-state-content">
-      <svg width="56" height="56"><use href="#icon-empty-colors"/></svg>
-      <div class="empty-state-text">
-        <p class="empty-state-title">No color variables found</p>
-        <p class="empty-state-desc">The current selection has no bound color variables.</p>
-      </div>
+  <!-- Colors | Export view tabs (DS segmented control). Export replaces the old flyover+modal. -->
+  <div class="view-tabs-row" id="view-tabs-row" style="display:none;">
+    <div class="segmented-control" id="view-tabs">
+      <div class="seg-pill"></div>
+      <button type="button" id="view-colors-btn" class="selected"><svg width="16" height="16"><use href="#icon-var-color"/></svg><span class="tab-label">Colors</span></button>
+      <button type="button" id="view-export-btn"><svg width="16" height="16"><use href="#icon-export"/></svg><span class="tab-label">Export</span></button>
     </div>
   </div>
-  <div class="scroll-area">
-    <table class="color-table">
-      <colgroup>
-        <col /><col /><col />
-      </colgroup>
-      <tbody id="color-body"></tbody>
-    </table>
+
+  <!-- Colors panel — the scanned color table -->
+  <div id="colors-panel" style="display:flex; flex-direction:column; flex:1; min-height:0;">
+    <div id="no-colors-state" class="empty-state" style="display:none;">
+      <div class="empty-state-content">
+        <svg width="56" height="56"><use href="#icon-empty-colors"/></svg>
+        <div class="empty-state-text">
+          <p class="empty-state-title">No color variables found</p>
+          <p class="empty-state-desc">The current selection has no bound color variables.</p>
+        </div>
+      </div>
+    </div>
+    <div class="scroll-area">
+      <table class="color-table">
+        <colgroup>
+          <col /><col /><col />
+        </colgroup>
+        <tbody id="color-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Export panel — inline export screen (DS 2120:48124): format radios + two Cards of switches. -->
+  <div id="export-panel" class="export-panel" style="display:none;">
+    <div class="scroll-area export-scroll">
+      <div class="export-format">
+        <span class="export-section-label">Format</span>
+        <div class="export-format-radios">
+          <label class="radioButton"><input type="radio" name="export-format" id="fmt-pdf" value="pdf" checked class="radioButton-input"><span class="radioButton-circle"></span><span class="radioButton-label">PDF CMYK Vector</span></label>
+          <label class="radioButton"><input type="radio" name="export-format" id="fmt-tiff" value="tiff" class="radioButton-input"><span class="radioButton-circle"></span><span class="radioButton-label">TIFF CMYK Raster</span></label>
+        </div>
+      </div>
+      <div class="export-cards">
+        <!-- Output card -->
+        <section class="export-card-wrap" id="card-output">
+          <span class="export-section-label">Output</span>
+          <div class="card">
+            <label class="switch"><input type="checkbox" id="pdfx-toggle" class="switch-input" checked><span class="switch-track"><span class="switch-knob"></span></span><span class="switch-content"><span class="switch-description">PDF/X-4 Press-ready</span><span class="tooltipButton export-info" data-tip="Embed a FOGRA39 CMYK output intent so the file is press-certified. Turn off for a plain PDF 1.4."><svg width="12" height="12"><use href="#icon-info"/></svg></span></span></label>
+            <label class="switch"><input type="checkbox" id="preservespot-toggle" class="switch-input" checked><span class="switch-track"><span class="switch-knob"></span></span><span class="switch-content"><span class="switch-description">Preserve Pantone Colors</span><span class="tooltipButton export-info" data-tip="Keep assigned Pantone colors as Spot Colors. Turn off to use their CMYK values."><svg width="12" height="12"><use href="#icon-info"/></svg></span></span></label>
+            <div class="switch-row">
+              <label class="switch"><input type="checkbox" id="downsample-toggle" class="switch-input"><span class="switch-track"><span class="switch-knob"></span></span><span class="switch-content"><span class="switch-description">Downsample images to</span></span></label>
+              <div class="inputWrap cropmarks-bleed" id="dpi-wrap">
+                <input type="number" id="dpi-input" class="inputField cropmarks-bleed-input" min="72" max="1200" step="10" value="300" aria-label="Target resolution in DPI">
+                <span class="cropmarks-unit">dpi</span>
+              </div>
+            </div>
+            <div class="preflight-section" id="preflight-images-section" hidden>
+              <span class="preflight-header" id="preflight-images-header">Images under target dpi:</span>
+              <div class="preflight-list" id="preflight-images"></div>
+            </div>
+            <div class="preflight-section" id="preflight-cmyk-section" hidden>
+              <span class="preflight-header" id="preflight-cmyk-header">Won't convert to CMYK — stays RGB:</span>
+              <div class="preflight-list" id="preflight-cmyk"></div>
+            </div>
+          </div>
+        </section>
+        <!-- Marks and bleed card (PDF only) -->
+        <section class="export-card-wrap" id="card-marks">
+          <span class="export-section-label">Marks and bleed</span>
+          <div class="card">
+            <label class="switch"><input type="checkbox" id="cropmarks-toggle" class="switch-input"><span class="switch-track"><span class="switch-knob"></span></span><span class="switch-content"><span class="switch-description">Crop Marks</span></span></label>
+            <label class="switch"><input type="checkbox" id="regmarks-toggle" class="switch-input"><span class="switch-track"><span class="switch-knob"></span></span><span class="switch-content"><span class="switch-description">Registration Marks</span></span></label>
+            <label class="switch"><input type="checkbox" id="colorbars-toggle" class="switch-input"><span class="switch-track"><span class="switch-knob"></span></span><span class="switch-content"><span class="switch-description">Color bars</span></span></label>
+            <label class="switch"><input type="checkbox" id="pageinfo-toggle" class="switch-input"><span class="switch-track"><span class="switch-knob"></span></span><span class="switch-content"><span class="switch-description">File information</span></span></label>
+            <div class="switch-row">
+              <label class="switch"><input type="checkbox" id="bleed-toggle" class="switch-input"><span class="switch-track"><span class="switch-knob"></span></span><span class="switch-content"><span class="switch-description">Bleed</span></span></label>
+              <div class="inputWrap cropmarks-bleed" id="bleed-wrap">
+                <input type="number" id="bleed-input" class="inputField cropmarks-bleed-input" min="0" max="20" step="0.5" value="3" aria-label="Bleed in millimetres">
+                <span class="cropmarks-unit">mm</span>
+              </div>
+            </div>
+          </div>
+        </section>
+        <!-- TIFF options (shown only when TIFF selected) -->
+        <section class="export-card-wrap" id="card-tiff" hidden>
+          <span class="export-section-label">Raster</span>
+          <div class="card">
+            <div class="switch-row">
+              <span class="switch-description">Resolution</span>
+              <div class="inputWrap cropmarks-bleed" id="tiff-dpi-wrap">
+                <input type="number" id="tiff-dpi-input" class="inputField cropmarks-bleed-input" min="72" max="1200" step="10" value="300" aria-label="Export resolution in DPI">
+                <span class="cropmarks-unit">dpi</span>
+              </div>
+            </div>
+            <label class="switch"><input type="checkbox" id="tiff-zip-toggle" class="switch-input" checked><span class="switch-track"><span class="switch-knob"></span></span><span class="switch-content"><span class="switch-description">Compress (lossless ZIP)</span></span></label>
+          </div>
+        </section>
+      </div>
+    </div>
+    <div class="export-actionbar">
+      <button class="buttonSecondary" id="export-savedefault-btn"><span>Save as default</span></button>
+      <button class="buttonPrimary" id="export-confirm-btn"><svg width="16" height="16"><use href="#icon-export"/></svg><span id="export-confirm-label">Export PDF</span></button>
+    </div>
   </div>
 </div>
 
 <div id="toast-container"></div>
 <canvas id="convert-canvas" style="display:none"></canvas>
 
-<!-- Export modal — the shared DS modal shell (title → slot → footer). The slot
-     holds the format choice and print options; the shell is the design system's. -->
-<div id="export-modal" class="modal">
-  <div class="modal-overlay"></div>
-  <div class="modal-card export-modal-card">
-    <h2 class="modal-title" id="export-modal-title">PDF CMYK Vector</h2>
-    <div class="modal-slot">
-      <!-- Tabs — PDF only, and only when the selection actually has images. Otherwise there's
-           nothing to check resolution-wise, so just the marks/bleeds group shows. -->
-      <div class="segmented-control full-width" id="export-tabs" hidden>
-        <div class="seg-pill"></div>
-        <button type="button" id="tab-marks-btn" class="selected"><span class="tab-label">Marks and bleeds</span></button>
-        <button type="button" id="tab-quality-btn"><span class="tab-label">Image quality</span></button>
-      </div>
-
-      <!-- PDF panels — the two tabs share a grid cell (see .pdf-body.stacked) so the modal
-           doesn't resize when switching between "Marks and bleeds" and "Image quality". -->
-      <div id="pdf-body" class="pdf-body">
-      <!-- PDF · Marks and bleeds -->
-      <div id="tab-marks" class="tab-panel">
-        <label class="checkbox">
-          <input type="checkbox" id="cropmarks-toggle" class="checkbox-input">
-          <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
-          <span class="checkbox-text">Crop marks</span>
-        </label>
-        <div class="export-bleed-row">
-          <label class="checkbox">
-            <input type="checkbox" id="bleed-toggle" class="checkbox-input">
-            <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
-            <span class="checkbox-text">Bleed</span>
-          </label>
-          <div class="inputWrap cropmarks-bleed" id="bleed-wrap">
-            <input type="number" id="bleed-input" class="inputField cropmarks-bleed-input" min="0" max="20" step="0.5" value="3" aria-label="Bleed in millimetres">
-            <span class="cropmarks-unit">mm</span>
-          </div>
-        </div>
-        <label class="checkbox">
-          <input type="checkbox" id="regmarks-toggle" class="checkbox-input">
-          <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
-          <span class="checkbox-text">Registration marks</span>
-        </label>
-        <label class="checkbox">
-          <input type="checkbox" id="colorbars-toggle" class="checkbox-input">
-          <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
-          <span class="checkbox-text">Color bars</span>
-        </label>
-        <label class="checkbox">
-          <input type="checkbox" id="pageinfo-toggle" class="checkbox-input">
-          <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
-          <span class="checkbox-text">File information</span>
-        </label>
-        <div class="export-spot-field">
-          <label class="checkbox">
-            <input type="checkbox" id="preservespot-toggle" class="checkbox-input" checked>
-            <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
-            <span class="checkbox-text">Preserve Pantone colors</span>
-          </label>
-          <span class="export-hint">Keep assigned Pantone colors as Spot Colors. Turn off to use their CMYK values.</span>
-        </div>
-        <div class="export-spot-field">
-          <label class="checkbox">
-            <input type="checkbox" id="pdfx-toggle" class="checkbox-input" checked>
-            <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
-            <span class="checkbox-text">PDF/X-4 (press-ready)</span>
-          </label>
-          <span class="export-hint">Embed a FOGRA39 CMYK output intent so the file is press-certified. Turn off for a plain PDF 1.4.</span>
-        </div>
-      </div>
-
-      <!-- PDF · Image quality (only reachable when the selection has images) -->
-      <div id="tab-quality" class="tab-panel" hidden>
-        <div class="export-bleed-row">
-          <label class="checkbox">
-            <input type="checkbox" id="downsample-toggle" class="checkbox-input">
-            <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
-            <span class="checkbox-text">Downsample images to</span>
-          </label>
-          <div class="inputWrap cropmarks-bleed" id="dpi-wrap">
-            <input type="number" id="dpi-input" class="inputField cropmarks-bleed-input" min="72" max="1200" step="10" value="300" aria-label="Target resolution in DPI">
-            <span class="cropmarks-unit">dpi</span>
-          </div>
-        </div>
-        <div class="preflight-section" id="preflight-images-section" hidden>
-          <span class="preflight-header" id="preflight-images-header">Images under target dpi:</span>
-          <div class="preflight-list" id="preflight-images"></div>
-        </div>
-        <!-- Images that will stay RGB in the CMYK file (couldn't be converted). Independent of
-             downsampling — the conversion always runs — so this shows whenever any are found. -->
-        <div class="preflight-section" id="preflight-cmyk-section" hidden>
-          <span class="preflight-header" id="preflight-cmyk-header">Won't convert to CMYK — stays RGB:</span>
-          <div class="preflight-list" id="preflight-cmyk"></div>
-        </div>
-      </div>
-      </div><!-- /#pdf-body -->
-
-      <!-- TIFF · raster export: crop marks / bleed don't apply — only the resolution -->
-      <div id="tiff-panel" hidden>
-        <div class="export-bleed-row">
-          <span class="checkbox-text export-res-label">Resolution</span>
-          <div class="inputWrap cropmarks-bleed" id="tiff-dpi-wrap">
-            <input type="number" id="tiff-dpi-input" class="inputField cropmarks-bleed-input" min="72" max="1200" step="10" value="300" aria-label="Export resolution in DPI">
-            <span class="cropmarks-unit">dpi</span>
-          </div>
-        </div>
-        <label class="checkbox">
-          <input type="checkbox" id="tiff-zip-toggle" class="checkbox-input" checked>
-          <span class="checkbox-box"><svg class="checkbox-check" viewBox="0 0 16 16" fill="none"><path d="M3.81 8.435L6.31 10.935L12.185 5.06" stroke="currentColor" stroke-width="2"/></svg></span>
-          <span class="checkbox-text">Compress (lossless ZIP)</span>
-        </label>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="buttonSecondary" id="export-cancel-btn"><span>Cancel</span></button>
-      <button class="buttonPrimary" id="export-confirm-btn"><span id="export-confirm-label">Export PDF</span></button>
-    </div>
-  </div>
-</div>
 
 <div id="tt"></div>
 <!--@ICC-->
@@ -2451,7 +2423,6 @@
   // ── Export ──────────────────────────────────────────────────────────
 
   function setExportBusy(busy) {
-    document.getElementById("export-btn").disabled = busy;
     document.getElementById("export-confirm-btn").disabled = busy;
   }
 
@@ -2537,29 +2508,16 @@
   // control shows ONLY when the selection actually contains images — with no images there's
   // nothing to downsample, so just the marks/bleeds group shows and the tabs stay hidden. TIFF
   // is resolution-only: no tabs, no marks/bleeds, just the resolution panel.
+  // Show the right cards for the chosen format: PDF → Output + Marks-and-bleed; TIFF → the
+  // raster card only (marks/bleed and CMYK image options don't apply to a full-frame raster).
   function applyExportLayout() {
-    const tabs = document.getElementById("export-tabs");
-    const tabMarks = document.getElementById("tab-marks");
-    const tabQuality = document.getElementById("tab-quality");
-    const tiffPanel = document.getElementById("tiff-panel");
-    const pdfBody = document.getElementById("pdf-body");
-    const mBtn = document.getElementById("tab-marks-btn");
-    const qBtn = document.getElementById("tab-quality-btn");
-    if (!tabs || !tabMarks || !tabQuality || !tiffPanel) return;
     const pdf = _exportFormat === "pdf";
-    tiffPanel.hidden = pdf;
-    if (!pdf) { tabs.hidden = true; tabMarks.hidden = true; tabQuality.hidden = true; if (pdfBody) pdfBody.classList.remove("stacked"); return; }
-    if (!_hasImages) _activeTab = "marks";   // no image-quality tab without images
-    tabs.hidden = !_hasImages;
-    const marks = _activeTab === "marks";
-    tabMarks.hidden = !marks;
-    tabQuality.hidden = marks;
-    // Lock the modal height only when BOTH tabs exist — the stacked grid reserves the taller
-    // tab's height so switching doesn't resize the modal.
-    if (pdfBody) pdfBody.classList.toggle("stacked", _hasImages);
-    if (mBtn) mBtn.classList.toggle("selected", marks);
-    if (qBtn) qBtn.classList.toggle("selected", !marks);
-    if (!tabs.hidden && typeof updateSegPill === "function") updateSegPill(tabs);
+    const out = document.getElementById("card-output");
+    const marks = document.getElementById("card-marks");
+    const tiff = document.getElementById("card-tiff");
+    if (out) out.hidden = !pdf;
+    if (marks) marks.hidden = !pdf;
+    if (tiff) tiff.hidden = pdf;
   }
   // Fill one pre-flight list section (name + meta + focus button per row). Hidden when empty.
   function fillPreflightSection(secId, listId, rows) {
@@ -2578,10 +2536,6 @@
   // open). Sent early — before the slower list scans — so the modal opens without waiting.
   function applyPreflightSelection(hasImages) {
     _hasImages = !!hasImages;
-    applyExportLayout();
-    // If a PDF open was waiting on this, reveal the modal now — the tabs are already in their
-    // final state, so the segmented control never pops in after the modal appears.
-    if (_pendingOpen && typeof window.__finishExportOpen === "function") window.__finishExportOpen();
   }
   // The full pre-flight result: the low-res list (only when downsampling applies) and the
   // "won't convert to CMYK" list (always, whenever any image will stay RGB).
@@ -2615,16 +2569,17 @@
   // bleeds" and "Image quality" — but the segmented control only appears when the selection
   // actually has images (otherwise there's nothing to downsample). TIFF is resolution-only.
   // Print state lives in _cropMarks/_bleedMm/… (persisted by code.js); format is session-only.
-  (function initExportModal() {
-    const modal   = document.getElementById("export-modal");
-    const openBtn = document.getElementById("export-btn");
-    const cancel  = document.getElementById("export-cancel-btn");
+  (function initExportPanel() {
     const confirm = document.getElementById("export-confirm-btn");
-    const title   = document.getElementById("export-modal-title");
     const confirmLabel = document.getElementById("export-confirm-label");
-    const tabs    = document.getElementById("export-tabs");
-    const tabMarksBtn   = document.getElementById("tab-marks-btn");
-    const tabQualityBtn = document.getElementById("tab-quality-btn");
+    const saveDefault = document.getElementById("export-savedefault-btn");
+    const fmtPdf  = document.getElementById("fmt-pdf");
+    const fmtTiff = document.getElementById("fmt-tiff");
+    const exportPanel = document.getElementById("export-panel");
+    const colorsPanel = document.getElementById("colors-panel");
+    const viewTabs = document.getElementById("view-tabs");
+    const colorsBtn = document.getElementById("view-colors-btn");
+    const exportViewBtn = document.getElementById("view-export-btn");
     const toggle  = document.getElementById("cropmarks-toggle");
     const regmarks = document.getElementById("regmarks-toggle");
     const colorbars = document.getElementById("colorbars-toggle");
@@ -2639,14 +2594,13 @@
     const dpiWrap = document.getElementById("dpi-wrap");
     const tiffDpi = document.getElementById("tiff-dpi-input");
     const tiffZip = document.getElementById("tiff-zip-toggle");
-    if (!modal || !openBtn || !confirm || !toggle || !bleedOn || !bleed || !downsample || !dpi || !tiffDpi) return;
+    if (!confirm || !exportPanel || !toggle || !bleedOn || !bleed || !downsample || !dpi || !tiffDpi) return;
 
-    let closeTimer = null;
-    const TITLES = { pdf: "PDF CMYK Vector", tiff: "TIFF CMYK Raster" };
     const LABELS = { pdf: "Export PDF", tiff: "Export TIFF" };
+    const exportVisible = () => exportPanel.style.display !== "none";
 
-    // Enable/disable the amount inputs from their own toggles (dimmed, not hidden). The panel
-    // layout itself (tabs / marks / quality / tiff) is reconciled by applyExportLayout().
+    // Enable/disable the amount inputs from their own toggles (dimmed, not hidden). The card
+    // layout (which cards show for the format) is reconciled by applyExportLayout().
     const syncInputs = () => {
       bleed.disabled = !_bleedOn;
       wrap.classList.toggle("inputWrap--disabled", !_bleedOn);
@@ -2655,32 +2609,31 @@
     };
     const setFormat = (fmt) => {
       _exportFormat = fmt;
-      _activeTab = "marks";                       // always land on the first tab
-      title.textContent = TITLES[fmt];
       confirmLabel.textContent = LABELS[fmt];
+      if (fmtPdf)  fmtPdf.checked  = fmt === "pdf";
+      if (fmtTiff) fmtTiff.checked = fmt === "tiff";
       syncInputs();
       applyExportLayout();
+      // PDF always pre-flights (to surface un-convertible RGB images); the low-res list is
+      // additionally gated on downsample inside requestPreflight (scanImages).
+      if (fmt === "pdf") requestPreflight(); else hidePreflightImages();
     };
     const persist = () => parent.postMessage({ pluginMessage: {
       type: "save-settings", cropMarks: _cropMarks, regMarks: _regMarks, colorBars: _colorBars, preserveSpot: _preserveSpot, pdfx: _pdfx, pageInfo: _pageInfo, bleedOn: _bleedOn, bleedMm: _bleedMm,
       downsample: _downsample, downsampleDpi: _downsampleDpi, tiffDpi: _tiffDpi, tiffZip: _tiffZip,
     } }, "*");
 
-    // Ask code.js to scan the selection: always reports whether it has images (drives the tab
-    // reveal); also lists low-res images when downsampling is on. Runs while the modal is open,
-    // or while a PDF open is pending (we detect images BEFORE showing the modal).
+    // Ask code.js to scan the selection: reports whether it has images and lists low-res images
+    // when downsampling is on. Only runs while the Export view is visible.
     let _preflightTimer = null;
     const requestPreflight = () => {
-      if (!modal.classList.contains("is-open") && !_pendingOpen) return;
+      if (!exportVisible()) return;
       parent.postMessage({ pluginMessage: {
         type: "preflight-request", dpi: _downsampleDpi, scanImages: _exportFormat === "pdf" && _downsample,
       } }, "*");
     };
     const requestPreflightSoon = () => { if (_preflightTimer) clearTimeout(_preflightTimer); _preflightTimer = setTimeout(requestPreflight, 250); };
 
-    // Tab switching (PDF only, and only when the control is visible).
-    tabMarksBtn.addEventListener("click", () => { _activeTab = "marks"; applyExportLayout(); });
-    tabQualityBtn.addEventListener("click", () => { _activeTab = "quality"; applyExportLayout(); });
     toggle.addEventListener("change", () => { _cropMarks = toggle.checked; persist(); });
     regmarks.addEventListener("change", () => { _regMarks = regmarks.checked; persist(); });
     colorbars.addEventListener("change", () => { _colorBars = colorbars.checked; persist(); });
@@ -2745,67 +2698,28 @@
       syncInputs();
     };
 
-    const positionPill = () => {
-      if (!tabs.hidden && typeof updateSegPill === "function") updateSegPill(tabs);
-    };
-    // Two-step open. For PDF we run the (cheap, property-only) image scan FIRST and reveal the
-    // modal only once we know whether the selection has images — so the segmented control is
-    // already in its final state when the modal appears, never popping in afterwards. TIFF has
-    // no tabs, so it opens immediately. A short fallback timer opens anyway if the scan is slow.
-    let _pendingOpenTimer = null;
-    const finishOpen = () => {
-      _pendingOpen = false;
-      if (_pendingOpenTimer) { clearTimeout(_pendingOpenTimer); _pendingOpenTimer = null; }
-      applyExportLayout();                           // reflect the now-known hasImages…
-      if (!modal.classList.contains("is-open")) modal.classList.add("is-open");
-      requestAnimationFrame(positionPill);           // …then place the pill once measured
-    };
-    window.__finishExportOpen = finishOpen;
-    const beginOpen = (fmt) => {
-      if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; modal.classList.remove("is-closing"); }
-      if (_pendingOpenTimer) { clearTimeout(_pendingOpenTimer); _pendingOpenTimer = null; }
-      setFormat(fmt);                     // title, confirm label, _activeTab = "marks"
-      clearPreflight();                   // drop any content from a previous selection
-      _hasImages = false;                 // unknown until the fresh scan answers
-      if (fmt === "pdf") {
-        _pendingOpen = true;
-        requestPreflight();               // detect images before showing (PDF-only concern)
-        _pendingOpenTimer = setTimeout(finishOpen, 400);   // open anyway if the scan stalls
-      } else {
-        finishOpen();                     // TIFF: no image gating needed
-      }
-    };
-    window.__closeExportModal = () => {
-      if (!modal.classList.contains("is-open")) return;
-      modal.classList.add("is-closing");
-      closeTimer = setTimeout(() => { modal.classList.remove("is-open", "is-closing"); closeTimer = null; }, 160);
-    };
+    // Format radios (PDF / TIFF) — the two export paths stay separated; each shows its cards.
+    if (fmtPdf)  fmtPdf.addEventListener("change",  () => { if (fmtPdf.checked)  setFormat("pdf"); });
+    if (fmtTiff) fmtTiff.addEventListener("change", () => { if (fmtTiff.checked) setFormat("tiff"); });
 
-    // The export button opens the DS format-picker overflow (PDF vs TIFF); picking a format
-    // opens the modal titled for that format — PDF and TIFF logic stay separated.
-    const overflow = document.getElementById("export-overflow");
-    const closeOverflow = () => { overflow.hidden = true; };
-    openBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (modal.classList.contains("is-open")) return;
-      overflow.hidden = !overflow.hidden;
-    });
-    overflow.querySelectorAll(".overflowList").forEach((item) => {
-      item.addEventListener("click", (e) => {
-        e.stopPropagation();
-        closeOverflow();
-        beginOpen(item.dataset.format);
-      });
-    });
-    document.addEventListener("click", (e) => { if (!e.target.closest("#export-picker")) closeOverflow(); });
-    cancel.addEventListener("click", window.__closeExportModal);
-    modal.querySelector(".modal-overlay").addEventListener("click", window.__closeExportModal);
-    document.addEventListener("keydown", (e) => {
-      if (e.key !== "Escape") return;
-      if (modal.classList.contains("is-open")) window.__closeExportModal();
-      closeOverflow();
-    });
+    // Colors | Export view tabs. Export replaces the old flyover+modal — it's an inline view.
+    const showView = (v) => {
+      const exp = v === "export";
+      if (colorsPanel) colorsPanel.style.display = exp ? "none" : "flex";
+      exportPanel.style.display = exp ? "flex" : "none";
+      if (colorsBtn) colorsBtn.classList.toggle("selected", !exp);
+      if (exportViewBtn) exportViewBtn.classList.toggle("selected", exp);
+      if (viewTabs && typeof updateSegPill === "function") requestAnimationFrame(() => updateSegPill(viewTabs));
+      if (exp) { clearPreflight(); if (_exportFormat === "pdf") requestPreflight(); }
+      if (window._notifyResize) setTimeout(window._notifyResize, 50);
+    };
+    if (colorsBtn) colorsBtn.addEventListener("click", () => showView("colors"));
+    if (exportViewBtn) exportViewBtn.addEventListener("click", () => showView("export"));
+    window.__showExportView = () => showView("export");
+    window.__showColorsView = () => showView("colors");
+
     confirm.addEventListener("click", () => startExport(_exportFormat));
+    if (saveDefault) saveDefault.addEventListener("click", persist);   // settings also persist on every change
 
     setFormat("pdf");
     parent.postMessage({ pluginMessage: { type: "get-settings" } }, "*");
@@ -3077,16 +2991,19 @@
           : 'This file has no color variables to pair with print values.';
         document.getElementById("no-colors-state").style.display = 'flex';
         document.querySelector('.scroll-area').style.display = 'none';
-        // Nothing to export → hide the export button; keep rescan so they can refresh.
-        document.getElementById("export-picker").style.display = 'none';
+        // Nothing to export → hide the Colors|Export tabs and stay on the Colors view.
+        if (window.__showColorsView) window.__showColorsView();
+        const vtr0 = document.getElementById("view-tabs-row"); if (vtr0) vtr0.style.display = 'none';
         setTimeout(() => { if (window._notifyResize) window._notifyResize(); }, 50);
         return;
       }
 
       document.getElementById("no-colors-state").style.display = 'none';
       document.querySelector('.scroll-area').style.display = '';
-      // Without a selection there is no artwork to export — the list is reference only.
-      document.getElementById("export-picker").style.display = hasSource ? '' : 'none';
+      // Without a selection there is no artwork to export — hide the Export tab (reference-only list).
+      const vtr1 = document.getElementById("view-tabs-row");
+      if (vtr1) vtr1.style.display = hasSource ? 'flex' : 'none';
+      if (!hasSource && window.__showColorsView) window.__showColorsView();
 
       // Store scan data for reference
       window._lastScanData = msg.data;

@@ -9,6 +9,8 @@ afterEach(() => { if (ui) { ui.close(); ui = null; } });
 
 /** Let the UI's requestAnimationFrame work settle. */
 const painted = () => new Promise((r) => setTimeout(r, 50));
+// Export is now an inline view; pick a format via its radio.
+const pickFmt = (u, f) => { const r = u.$(`#fmt-${f}`); r.checked = true; r.dispatchEvent(new u.window.Event('change')); };
 
 const colour = (over = {}) => ({
   source: 'variable',
@@ -48,7 +50,7 @@ describe('tokens-to-ink UI — boot', () => {
     expect(ui.$('#empty-state')).toBeNull();
     expect(ui.$('#results-ui').style.display).toBe('flex');
     // ...but nothing is exportable until a scan says what the artwork was.
-    expect(ui.$('#export-picker').style.display).toBe('none');
+    expect(ui.$('#view-tabs-row').style.display).toBe('none');
   });
 
   it('lets you scan with nothing selected — the whole file is a valid target', () => {
@@ -130,7 +132,7 @@ describe('tokens-to-ink UI — scan results', () => {
     expect(ui.$$('#color-body tr')).toEqual([]);
     expect(ui.$('#no-colors-state').style.display).toBe('flex');
     // Nothing to export either.
-    expect(ui.$('#export-picker').style.display).toBe('none');
+    expect(ui.$('#view-tabs-row').style.display).toBe('none');
   });
 
   it('reveals the results panel once there is something to show', async () => {
@@ -148,7 +150,7 @@ describe('tokens-to-ink UI — scan results', () => {
 
     expect(ui.$('#color-body').textContent).toContain('brand/primary');
     // Nothing on canvas to render, so exporting would be meaningless.
-    expect(ui.$('#export-picker').style.display).toBe('none');
+    expect(ui.$('#view-tabs-row').style.display).toBe('none');
     expect(ui.$('#source-chips').textContent).toMatch(/all color variables/i);
   });
 
@@ -176,8 +178,7 @@ describe('tokens-to-ink UI — export', () => {
     ui.receive(scanResults());
     await painted();
 
-    ui.click('#export-btn');          // opens the format picker overflow
-    ui.click('#export-pdf-item');     // choose PDF → opens the modal
+    ui.window.__showExportView();     // open the inline Export view (PDF is the default)
     ui.click('#export-confirm-btn');
 
     expect(ui.sentOf('export-request')[0]).toMatchObject({ format: 'pdf' });
@@ -188,8 +189,8 @@ describe('tokens-to-ink UI — export', () => {
     ui.receive(scanResults());
     await painted();
 
-    ui.click('#export-btn');          // opens the format picker overflow
-    ui.click('#export-tiff-item');    // choose TIFF → opens the modal
+    ui.window.__showExportView();
+    const t = ui.$('#fmt-tiff'); t.checked = true; t.dispatchEvent(new ui.window.Event('change'));
     ui.click('#export-confirm-btn');
 
     expect(ui.sentOf('export-request')[0]).toMatchObject({ format: 'tiff' });
@@ -200,15 +201,14 @@ describe('tokens-to-ink UI — export', () => {
     ui.receive(scanResults());
     await painted();
 
-    ui.click('#export-btn');
-    ui.click('#export-pdf-item');
-    expect(ui.$('#tab-marks').hidden).toBe(false);   // marks/bleeds group by default
-    expect(ui.$('#tiff-panel').hidden).toBe(true);
+    ui.window.__showExportView();
+    expect(ui.$('#card-marks').hidden).toBe(false);  // marks/bleed card for PDF
+    expect(ui.$('#card-tiff').hidden).toBe(true);
 
-    ui.click('#export-tiff-item');                   // re-pick TIFF from the overflow
-    expect(ui.$('#tab-marks').hidden).toBe(true);    // crop marks + bleed gone
-    expect(ui.$('#tiff-panel').hidden).toBe(false);  // resolution shown
-    expect(ui.$('#export-tabs').hidden).toBe(true);  // …and no tabs for a raster export
+    const t = ui.$('#fmt-tiff'); t.checked = true; t.dispatchEvent(new ui.window.Event('change'));
+    expect(ui.$('#card-marks').hidden).toBe(true);   // crop marks + bleed gone
+    expect(ui.$('#card-output').hidden).toBe(true);  // PDF output card gone
+    expect(ui.$('#card-tiff').hidden).toBe(false);   // resolution (raster) card shown
   });
 
   it('sends the chosen TIFF export resolution with the request', async () => {
@@ -216,8 +216,8 @@ describe('tokens-to-ink UI — export', () => {
     ui.receive(scanResults());
     await painted();
 
-    ui.click('#export-btn');
-    ui.click('#export-tiff-item');
+    ui.window.__showExportView();
+    const tf = ui.$('#fmt-tiff'); tf.checked = true; tf.dispatchEvent(new ui.window.Event('change'));
     const res = ui.$('#tiff-dpi-input');
     res.value = '600';
     res.dispatchEvent(new ui.window.Event('input'));
@@ -411,13 +411,12 @@ describe('tokens-to-ink UI — crop marks option', () => {
     ui = loadUI(UI);
     ui.receive(scanResults());
     await painted();
-    ui.click('#export-btn');
-    ui.click('#export-pdf-item');
+    ui.window.__showExportView();
 
     expect(ui.$('#export-confirm-label').textContent).toBe('Export PDF');
-    ui.click('#export-tiff-item');
+    pickFmt(ui, 'tiff');
     expect(ui.$('#export-confirm-label').textContent).toBe('Export TIFF');
-    ui.click('#export-pdf-item');
+    pickFmt(ui, 'pdf');
     expect(ui.$('#export-confirm-label').textContent).toBe('Export PDF');
   });
 
@@ -425,19 +424,18 @@ describe('tokens-to-ink UI — crop marks option', () => {
     ui = loadUI(UI);
     ui.receive(scanResults());
     await painted();
-    ui.click('#export-btn');
-    ui.click('#export-pdf-item');
+    ui.window.__showExportView();
 
-    expect(ui.$('#tab-marks').hidden).toBe(false);    // PDF is the default format
-    expect(ui.$('#tiff-panel').hidden).toBe(true);
+    expect(ui.$('#card-marks').hidden).toBe(false);    // PDF is the default format
+    expect(ui.$('#card-tiff').hidden).toBe(true);
 
-    ui.click('#export-tiff-item');
-    expect(ui.$('#tab-marks').hidden).toBe(true);      // crop marks + bleed removed
-    expect(ui.$('#tiff-panel').hidden).toBe(false);    // resolution shown instead
+    pickFmt(ui, 'tiff');
+    expect(ui.$('#card-marks').hidden).toBe(true);      // crop marks + bleed removed
+    expect(ui.$('#card-tiff').hidden).toBe(false);      // resolution shown instead
 
-    ui.click('#export-pdf-item');
-    expect(ui.$('#tab-marks').hidden).toBe(false);     // restored on the way back
-    expect(ui.$('#tiff-panel').hidden).toBe(true);
+    pickFmt(ui, 'pdf');
+    expect(ui.$('#card-marks').hidden).toBe(false);     // restored on the way back
+    expect(ui.$('#card-tiff').hidden).toBe(true);
   });
 });
 

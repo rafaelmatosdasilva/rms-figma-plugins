@@ -22,7 +22,7 @@ let ui;
 afterEach(() => { if (ui) { ui.close(); ui = null; } });
 
 describe('tokens-to-ink — preflight end-to-end (real code.js → real UI)', () => {
-  it('a low-res image scanned by code.js renders in the modal image list', async () => {
+  it('a low-res image scanned by code.js renders in the export image list', async () => {
     // 1) The real backend produces the message for a low-res selection.
     const { send, postedOf } = await loadPlugin(CODE, scene());
     await send({ type: 'preflight-request', dpi: 300, scanImages: true });
@@ -31,7 +31,7 @@ describe('tokens-to-ink — preflight end-to-end (real code.js → real UI)', ()
 
     // 2) Feed that EXACT message into the real UI, mimicking the plugin's flow.
     ui = loadUI(UI);
-    ui.click('#export-btn');
+    ui.window.__showExportView();
     const t = ui.$('#downsample-toggle');
     t.checked = true; t.dispatchEvent(new ui.window.Event('change'));
     ui.receive(imagesMsg);

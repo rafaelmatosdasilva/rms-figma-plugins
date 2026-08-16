@@ -7,9 +7,10 @@ const UI = fileURLToPath(new URL('../ui.html', import.meta.url));
 let ui;
 afterEach(() => { if (ui) { ui.close(); ui = null; } });
 
-// The export button opens the DS overflow (PDF/TIFF); picking a format opens the modal.
-const openModal    = (u) => { u.click('#export-btn'); u.click('#export-pdf-item'); };
-const openModalTiff = (u) => { u.click('#export-btn'); u.click('#export-tiff-item'); };
+// Export is now an inline view (Colors | Export tabs). Show it; format defaults to PDF.
+const setFmt = (u, fmt) => { const r = u.$(`#fmt-${fmt}`); r.checked = true; r.dispatchEvent(new u.window.Event('change')); };
+const openModal    = (u) => { u.window.__showExportView(); };
+const openModalTiff = (u) => { u.window.__showExportView(); setFmt(u, 'tiff'); };
 const enableDownsample = (u) => { const t = u.$('#downsample-toggle'); t.checked = true; t.dispatchEvent(new u.window.Event('change')); };
 // The low-res image list arrives on a preflight-images message.
 const imagesMsg = (over = {}) => ({ type: 'preflight-images', target: 300, images: [], ...over });
@@ -45,24 +46,23 @@ describe('tokens-to-ink UI — export pre-flight', () => {
     ui = loadUI(UI);
     openModal(ui);
     enableDownsample(ui);
-    openModalTiff(ui);   // re-pick TIFF from the format overflow
+    openModalTiff(ui);   // switch to TIFF via the format radio
     ui.receive(imagesMsg({ hasImages: true, images: [{ id: 'i1', name: 'hero', meta: 'x' }] }));
     expect(ui.$('#preflight-images-section').hidden).toBe(true);
-    expect(ui.$('#tiff-panel').hidden).toBe(false);   // TIFF shows the resolution panel…
-    expect(ui.$('#export-tabs').hidden).toBe(true);   // …and never the tabs
+    expect(ui.$('#card-tiff').hidden).toBe(false);    // TIFF shows the raster card…
+    expect(ui.$('#card-marks').hidden).toBe(true);    // …not the PDF marks/bleed card
+    expect(ui.$('#card-output').hidden).toBe(true);   // …nor the PDF output card
   });
 
-  it('reveals the Image-quality tab only when the selection has images', () => {
+  it('keeps the downsample option in the Output card for PDF (no image-quality sub-tab)', () => {
     ui = loadUI(UI);
     openModal(ui);
-    // No images → no segmented control, just the marks/bleeds group.
+    // The new inline screen has no image-quality sub-tab — downsample lives in the Output
+    // card and is always available for PDF, regardless of whether the selection has images.
     ui.receive(imagesMsg({ hasImages: false, images: [] }));
-    expect(ui.$('#export-tabs').hidden).toBe(true);
-    expect(ui.$('#tab-marks').hidden).toBe(false);
-
-    // Images present → the "Marks and bleeds" / "Image quality" control appears.
-    ui.receive(imagesMsg({ hasImages: true, images: [] }));
-    expect(ui.$('#export-tabs').hidden).toBe(false);
+    expect(ui.$('#card-output').hidden).toBe(false);
+    expect(ui.$('#downsample-toggle')).toBeTruthy();
+    expect(ui.$('#card-marks').hidden).toBe(false);
   });
 
   it('hides the image section when the list is empty (no warning if nothing is below)', () => {
