@@ -292,46 +292,6 @@
     min-width: 0;
   }
 
-  /* ── Export button (top-right) ── */
-  .export-picker {
-    flex-shrink: 0;
-    margin-left: auto;
-  }
-  /* ── Export modal fields (in the shared DS modal slot) ── */
-  /* Export format picker (DS overflow) — a flyout anchored under the export button. */
-  .export-picker { position: relative; }
-  .export-overflow {
-    position: absolute;
-    top: calc(100% + var(--gap-s));
-    right: 0;
-    z-index: 100;
-    min-width: 172px;
-  }
-  .export-overflow[hidden] { display: none; }
-  .export-modal-card { width: 300px; display: flex; flex-direction: column; max-height: calc(100vh - 24px); }
-  /* Keep the title + footer pinned and scroll the options when the modal is taller than the plugin
-     window — so a short window never clips the modal, and the plugin is never resized to fit it. */
-  .export-modal-card > .modal-slot { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
-  /* Each panel stacks its rows with the slot's spacing; only the active one shows. Class-based
-     (not id) so the stacking override below can win on specificity. */
-  .tab-panel, #tiff-panel { display: flex; flex-direction: column; gap: var(--gap-l); width: 100%; }
-  .tab-panel[hidden], #tiff-panel[hidden] { display: none; }
-  /* The DS .segmented-control sets its own display, which beats the UA [hidden] rule — restore
-     hiding for the tabs when the selection has no images (or the format is TIFF). */
-  #export-tabs[hidden] { display: none; }
-  /* Checkbox with a secondary description line (e.g. Preserve Pantone colors). */
-  .export-spot-field { display: flex; flex-direction: column; gap: var(--gap-xs); width: 100%; }
-  .export-hint { font-size: var(--s-size); color: var(--text-secondary); line-height: 1.35; padding-left: var(--padding-xl); }
-  /* When the selection has images, the two PDF tabs share one grid cell so the modal keeps the
-     height of the TALLER tab and never resizes as you switch between them. The inactive tab is
-     kept in layout (visibility:hidden) rather than removed, so its height stays reserved. */
-  .pdf-body { width: 100%; }
-  /* align-items:start anchors both tabs to the TOP of the shared (tallest) cell, so the rows
-     don't recentre/shift when switching — the shorter tab just leaves empty space below. */
-  .pdf-body.stacked { display: grid; align-items: start; }
-  .pdf-body.stacked > .tab-panel { grid-area: 1 / 1; }
-  .pdf-body.stacked > .tab-panel[hidden] { display: flex; visibility: hidden; }
-  .export-bleed-row { display: flex; align-items: center; gap: var(--gap-m); }
   /* DS input (.inputWrap + .inputField), sized to content. Only the compact width,
      right-aligned value, and spinner removal are added here. */
   .cropmarks-bleed { min-width: 0; gap: var(--gap-xs); flex: none; }
@@ -373,14 +333,18 @@
   .export-format-radios { display: flex; gap: var(--gap-xxl); align-items: center; }
   .export-cards { display: flex; gap: var(--gap-xl); align-items: stretch; }
   .export-card-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--gap-m); }
+  /* The class's display:flex out-specifies the UA [hidden]=display:none, so restore hiding
+     explicitly — otherwise the TIFF/Raster card stays visible in PDF mode (and vice-versa). */
+  .export-card-wrap[hidden] { display: none; }
   .export-card-wrap .card { flex: 1; }
   /* Each switch fills its card row so the input-pill/info sits at the far end. */
   .card .switch { display: flex; align-self: stretch; }
   .card .switch .switch-content { flex: 1; min-width: 0; }
   .switch-row { display: flex; align-items: center; justify-content: space-between; gap: var(--gap-m); }
   .switch-row .switch { flex: 1; }
-  .export-info { cursor: help; margin-left: auto; }
-  .export-actionbar { display: flex; align-items: center; justify-content: space-between; padding: var(--padding-m) var(--padding-l); border-top: var(--thickness) solid var(--border); flex-shrink: 0; }
+  .export-info { cursor: help; }
+  /* Bottom bar IS the DS .actionbar (no custom styling) — pinned below the scroll. */
+  .export-panel > .export-bottom-bar { margin-top: 0; }
 </style>
 </head>
 <body>
@@ -496,8 +460,10 @@
         </section>
       </div>
     </div>
-    <div class="export-actionbar">
+    <!-- DS actionBar (138:16657) as the export screen's bottom bar. -->
+    <div class="actionbar export-bottom-bar">
       <button class="buttonSecondary" id="export-savedefault-btn"><span>Save as default</span></button>
+      <div style="flex:1;min-width:0;"></div>
       <button class="buttonPrimary" id="export-confirm-btn"><svg width="16" height="16"><use href="#icon-export"/></svg><span id="export-confirm-label">Export PDF</span></button>
     </div>
   </div>

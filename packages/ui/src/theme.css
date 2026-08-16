@@ -55,6 +55,7 @@
     --gap-m:       8px;
     --gap-l:       12px;
     --gap-xl:      16px;
+    --gap-xxl:     24px;   /* gap/xxl */
     --gap-xxxl:    32px;   /* gap/xxxl */
     --padding-xxs:  2px;
     --padding-xs:  4px;
@@ -242,12 +243,12 @@
     /* Card (DS 2120:62601) — bordered rounded container */
     --card-border:                  var(--neutral-700);  /* card/border L=N7 #d6d6d6, D=N7 #303030 */
     /* switch (DS 2120:3385) — toggle track + knob + description, On/Off states */
-    --switch-background-on:         var(--neutral-100);  /* switch/background/enabledOn L=N1 #0a0a0a, D→N2 override */
-    --switch-background-off:        var(--neutral-500);  /* switch/background/enabledOff N5 both */
-    --switch-knob-on:               var(--neutral-1000); /* switch/knob/enabledOn L=N10 #ffffff, D→N7 override */
-    --switch-knob-off:              var(--neutral-800);  /* switch/knob/enabledOff L=N8 #e8e8e8, D→N10 override */
-    --switch-description-on:        var(--neutral-100);  /* switch/description/enabledOn N1 both */
-    --switch-description-off:       var(--neutral-300);  /* switch/description/enabledOff N3 both */
+    --switch-background-enabledOn:         var(--neutral-100);  /* switch/background/enabledOn L=N1 #0a0a0a, D→N2 override */
+    --switch-background-enabledOff:        var(--neutral-500);  /* switch/background/enabledOff N5 both */
+    --switch-knob-enabledOn:               var(--neutral-1000); /* switch/knob/enabledOn L=N10 #ffffff, D→N7 override */
+    --switch-knob-enabledOff:              var(--neutral-800);  /* switch/knob/enabledOff L=N8 #e8e8e8, D→N10 override */
+    --switch-description-enabledOn:        var(--neutral-100);  /* switch/description/enabledOn N1 both */
+    --switch-description-enabledOff:       var(--neutral-300);  /* switch/description/enabledOff N3 both */
     /* Loader (DS 68:52296) */
     --loader-background:  var(--neutral-1000); /* loader/background N1000 both */
     --loader-spinner:     var(--neutral-600);  /* loader/spinner L=N6, D→override */
@@ -332,9 +333,9 @@
       --radioButton-border:      var(--neutral-400); /* Dark = N4 */
       --radioButton-description: var(--neutral-300); /* Dark = N3 (#b8b8b8) */
       /* switch dark overrides (per-mode split) */
-      --switch-background-on: var(--neutral-200);  /* enabledOn Dark = N2 #dbdbdb */
-      --switch-knob-on:       var(--neutral-700);  /* knob/enabledOn Dark = N7 #303030 */
-      --switch-knob-off:      var(--neutral-1000); /* knob/enabledOff Dark = N10 #1c1c1c */
+      --switch-background-enabledOn: var(--neutral-200);  /* enabledOn Dark = N2 #dbdbdb */
+      --switch-knob-enabledOn:       var(--neutral-700);  /* knob/enabledOn Dark = N7 #303030 */
+      --switch-knob-enabledOff:      var(--neutral-1000); /* knob/enabledOff Dark = N10 #1c1c1c */
       /* Input */
       --input-label: var(--neutral-300);  /* D=N3 */
       --input-icon:  var(--neutral-200);  /* D=N2 */
@@ -1055,22 +1056,22 @@
     flex-shrink: 0;
     width: 46px; height: 24px;
     border-radius: var(--radius-full);
-    background: var(--switch-background-off);
+    background: var(--switch-background-enabledOff);
     transition: background 0.15s ease;
   }
   .switch-knob {
     position: absolute; top: 4px; left: 4px;
     width: 20px; height: 16px;
     border-radius: 13px;
-    background: var(--switch-knob-off);
+    background: var(--switch-knob-enabledOff);
     transition: transform 0.15s ease, background 0.15s ease;
   }
-  .switch-input:checked + .switch-track { background: var(--switch-background-on); }
-  .switch-input:checked + .switch-track .switch-knob { background: var(--switch-knob-on); transform: translateX(18px); }
-  .switch-input:focus-visible + .switch-track { outline: var(--thickness) solid var(--input-border-focus); outline-offset: 2px; }
-  .switch-description { font-size: var(--m-size); font-weight: var(--m-weight); line-height: var(--m-lh); color: var(--switch-description-off); }
+  .switch-input:checked + .switch-track { background: var(--switch-background-enabledOn); }
+  .switch-input:checked + .switch-track .switch-knob { background: var(--switch-knob-enabledOn); transform: translateX(18px); }
+  .switch-input:focus-visible + .switch-track { outline: var(--thickness) solid var(--input-border-focus); outline-offset: 1px; }
+  .switch-description { font-size: var(--m-size); font-weight: var(--m-weight); line-height: var(--m-lh); color: var(--switch-description-enabledOff); }
   .switch-input:checked ~ .switch-content .switch-description,
-  .switch-input:checked ~ .switch-description { color: var(--switch-description-on); }
+  .switch-input:checked ~ .switch-description { color: var(--switch-description-enabledOn); }
   .switch.disabled { opacity: 0.4; pointer-events: none; }
   .switch-content { display: inline-flex; align-items: center; gap: var(--gap-xs); }
   .seg-status {
