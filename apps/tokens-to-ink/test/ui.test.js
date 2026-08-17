@@ -202,12 +202,12 @@ describe('tokens-to-ink UI — export', () => {
     await painted();
 
     ui.window.__showExportView();
-    expect(ui.$('#card-marks').hidden).toBe(false);  // marks/bleed card for PDF
+    expect(ui.$('#card-marks').hidden).toBe(false);  // marks/bleed card
     expect(ui.$('#card-tiff').hidden).toBe(true);
 
     const t = ui.$('#fmt-tiff'); t.checked = true; t.dispatchEvent(new ui.window.Event('change'));
-    expect(ui.$('#card-marks').hidden).toBe(true);   // crop marks + bleed gone
-    expect(ui.$('#card-output').hidden).toBe(true);  // PDF output card gone
+    expect(ui.$('#card-marks').hidden).toBe(false);  // marks/bleed stays for TIFF too
+    expect(ui.$('#card-output').hidden).toBe(true);  // PDF-only Output card gone
     expect(ui.$('#card-tiff').hidden).toBe(false);   // resolution (raster) card shown
   });
 
@@ -420,7 +420,7 @@ describe('tokens-to-ink UI — crop marks option', () => {
     expect(ui.$('#export-confirm-label').textContent).toBe('Export PDF');
   });
 
-  it('hides the crop/bleed options for TIFF and restores them when back on PDF', async () => {
+  it('swaps Output↔Raster by format but keeps marks/bleed visible for both', async () => {
     ui = loadUI(UI);
     ui.receive(scanResults());
     await painted();
@@ -430,11 +430,11 @@ describe('tokens-to-ink UI — crop marks option', () => {
     expect(ui.$('#card-tiff').hidden).toBe(true);
 
     pickFmt(ui, 'tiff');
-    expect(ui.$('#card-marks').hidden).toBe(true);      // crop marks + bleed removed
-    expect(ui.$('#card-tiff').hidden).toBe(false);      // resolution shown instead
+    expect(ui.$('#card-marks').hidden).toBe(false);     // marks/bleed applies to TIFF too
+    expect(ui.$('#card-tiff').hidden).toBe(false);      // raster card shown alongside
 
     pickFmt(ui, 'pdf');
-    expect(ui.$('#card-marks').hidden).toBe(false);     // restored on the way back
+    expect(ui.$('#card-marks').hidden).toBe(false);     // still there on the way back
     expect(ui.$('#card-tiff').hidden).toBe(true);
   });
 });

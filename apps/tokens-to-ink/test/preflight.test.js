@@ -50,8 +50,8 @@ describe('tokens-to-ink UI — export pre-flight', () => {
     ui.receive(imagesMsg({ hasImages: true, images: [{ id: 'i1', name: 'hero', meta: 'x' }] }));
     expect(ui.$('#preflight-images-section').hidden).toBe(true);
     expect(ui.$('#card-tiff').hidden).toBe(false);    // TIFF shows the raster card…
-    expect(ui.$('#card-marks').hidden).toBe(true);    // …not the PDF marks/bleed card
-    expect(ui.$('#card-output').hidden).toBe(true);   // …nor the PDF output card
+    expect(ui.$('#card-marks').hidden).toBe(false);   // …marks/bleed apply to TIFF too…
+    expect(ui.$('#card-output').hidden).toBe(true);   // …but not the PDF-only Output card
   });
 
   it('keeps the downsample option in the Output card for PDF (no image-quality sub-tab)', () => {

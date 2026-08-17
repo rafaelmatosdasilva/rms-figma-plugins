@@ -339,9 +339,11 @@
   .export-card-wrap .card { flex: 1; }
   /* Each switch fills its card row so the input-pill/info sits at the far end. */
   .card .switch { display: flex; align-self: stretch; }
-  .card .switch .switch-content { flex: 1; min-width: 0; }
-  .switch-row { display: flex; align-items: center; justify-content: space-between; gap: var(--gap-m); }
-  .switch-row .switch { flex: 1; }
+  .card .switch .switch-content { min-width: 0; }
+  /* Switch + its input pill (Downsample / Bleed) sit adjacent with the DS gap/s (Frame 126),
+     hugged to the left — not spread apart. */
+  .switch-row { display: flex; align-items: center; gap: var(--gap-s); }
+  .switch-row .switch { flex: 0 1 auto; }
   .export-info { cursor: help; }
   /* Bottom bar IS the DS .actionbar (no custom styling) — pinned below the scroll. */
   .export-panel > .export-bottom-bar { margin-top: 0; }
@@ -2469,20 +2471,16 @@
         parent.postMessage({ pluginMessage: { type: "focus-node", nodeId: btn.dataset.nodeId } }, "*"));
     });
   }
-  // Reconcile the export-modal layout with the current format, whether the selection has
-  // images, and which PDF tab is active. The "Marks and bleeds" / "Image quality" segmented
-  // control shows ONLY when the selection actually contains images — with no images there's
-  // nothing to downsample, so just the marks/bleeds group shows and the tabs stay hidden. TIFF
-  // is resolution-only: no tabs, no marks/bleeds, just the resolution panel.
-  // Show the right cards for the chosen format: PDF → Output + Marks-and-bleed; TIFF → the
-  // raster card only (marks/bleed and CMYK image options don't apply to a full-frame raster).
+  // Show the right cards for the chosen format. Marks-and-bleed applies to BOTH formats, so
+  // it's always visible. The Output card (PDF/X, Pantone, downsample) is PDF-only; the Raster
+  // card (resolution, compression) is TIFF-only.
   function applyExportLayout() {
     const pdf = _exportFormat === "pdf";
     const out = document.getElementById("card-output");
     const marks = document.getElementById("card-marks");
     const tiff = document.getElementById("card-tiff");
     if (out) out.hidden = !pdf;
-    if (marks) marks.hidden = !pdf;
+    if (marks) marks.hidden = false;   // marks/bleed available for PDF and TIFF
     if (tiff) tiff.hidden = pdf;
   }
   // Fill one pre-flight list section (name + meta + focus button per row). Hidden when empty.
