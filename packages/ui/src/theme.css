@@ -1074,6 +1074,31 @@
   .switch-input:checked ~ .switch-description { color: var(--switch-description-enabledOn); }
   .switch.disabled { opacity: 0.4; pointer-events: none; }
   .switch-content { display: inline-flex; align-items: center; gap: var(--gap-xs); }
+  /* radioButton (DS) — 16px circle (radioButton/border + background) with a 6px inner dot
+     (radioButton/border/selected) and an m label. Base version of Impact Atlas's .depth-* radio. */
+  .radioButton { display: inline-flex; align-items: center; gap: var(--gap-m); cursor: pointer; user-select: none; }
+  .radioButton-input { position: absolute; width: 1px; height: 1px; opacity: 0; margin: 0; pointer-events: none; }
+  .radioButton-circle {
+    flex-shrink: 0;
+    width: 16px; height: 16px;
+    border-radius: var(--radius-full);
+    border: var(--thickness) solid var(--radioButton-border);
+    background: var(--radioButton-background);
+    display: inline-flex; align-items: center; justify-content: center;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease;
+  }
+  .radioButton-circle::after {
+    content: ''; width: var(--dividerSection-height); height: var(--dividerSection-height);
+    border-radius: var(--radius-full);
+    background: var(--radioButton-border-selected);
+    transform: scale(0); transition: transform 0.15s ease;
+  }
+  .radioButton-input:checked + .radioButton-circle { border-color: var(--radioButton-border-selected); }
+  .radioButton-input:checked + .radioButton-circle::after { transform: scale(1); }
+  .radioButton-input:focus-visible + .radioButton-circle { outline: var(--thickness) solid var(--input-border-focus); outline-offset: 1px; }
+  .radioButton-label { font-size: var(--m-size); font-weight: var(--m-weight); line-height: var(--m-lh); color: var(--radioButton-text); }
+  .radioButton-input:checked ~ .radioButton-label { color: var(--radioButton-text-selected); }
   .seg-status {
     width: var(--dividerSection-height); height: var(--dividerSection-height);
     border-radius: var(--radius-full);
