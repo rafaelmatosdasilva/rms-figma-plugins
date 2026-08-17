@@ -923,7 +923,6 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    container-type: inline-size;
     gap: var(--gap-xs);            /* gap/xs between icon and label */
     padding: var(--padding-xxs) var(--padding-m); /* 2px T/B, 12px L/R */
     height: var(--button-min-height);
@@ -992,9 +991,14 @@
     color: var(--segmentedControl-icon-selected); /* segmentedControl/icon/selected */
   }
   .segmented-control button.no-icon svg { display: none; }
-  /* Full-width variant: segments share the row equally (constrained panels / modals). */
+  /* Full-width variant: segments share the row equally (constrained panels / modals).
+     container-type lives HERE, not on every button: these segments have a definite
+     flex-basis (flex:1 1 0; width:0), so inline-size containment is safe and the
+     @container label-collapse is meaningful. On an auto-width (hugging) control the
+     same containment would zero out the button's content-driven width and collapse
+     the label permanently — which is why it must never apply there. */
   .segmented-control.full-width { width: 100%; }
-  .segmented-control.full-width button { flex: 1 1 0; min-width: 0; width: 0; }
+  .segmented-control.full-width button { flex: 1 1 0; min-width: 0; width: 0; container-type: inline-size; }
 
   /* ── Checkbox (DS 1963:43561): a 16px box + label; the box fills and shows a tick when
      checked. Wrap a hidden native input so it stays keyboard- and form-accessible. ── */

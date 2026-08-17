@@ -429,7 +429,22 @@
             </div>
           </div>
         </section>
-        <!-- Marks and bleed card (PDF only) -->
+        <!-- Raster card (TIFF only) — sits in the LEFT slot (same as Output) so the Marks card
+             never shifts position when switching format. -->
+        <section class="export-card-wrap" id="card-tiff" hidden>
+          <span class="export-section-label">Raster</span>
+          <div class="card">
+            <div class="switch-row">
+              <span class="switch-description">Resolution</span>
+              <div class="inputWrap cropmarks-bleed" id="tiff-dpi-wrap">
+                <input type="number" id="tiff-dpi-input" class="inputField cropmarks-bleed-input" min="72" max="1200" step="10" value="300" aria-label="Export resolution in DPI">
+                <span class="cropmarks-unit">dpi</span>
+              </div>
+            </div>
+            <label class="switch"><input type="checkbox" id="tiff-zip-toggle" class="switch-input" checked><span class="switch-track"><span class="switch-knob"></span></span><span class="switch-content"><span class="switch-description">Compress (lossless ZIP)</span></span></label>
+          </div>
+        </section>
+        <!-- Marks and bleed card (both formats) — always the RIGHT slot. -->
         <section class="export-card-wrap" id="card-marks">
           <span class="export-section-label">Marks and bleed</span>
           <div class="card">
@@ -444,20 +459,6 @@
                 <span class="cropmarks-unit">mm</span>
               </div>
             </div>
-          </div>
-        </section>
-        <!-- TIFF options (shown only when TIFF selected) -->
-        <section class="export-card-wrap" id="card-tiff" hidden>
-          <span class="export-section-label">Raster</span>
-          <div class="card">
-            <div class="switch-row">
-              <span class="switch-description">Resolution</span>
-              <div class="inputWrap cropmarks-bleed" id="tiff-dpi-wrap">
-                <input type="number" id="tiff-dpi-input" class="inputField cropmarks-bleed-input" min="72" max="1200" step="10" value="300" aria-label="Export resolution in DPI">
-                <span class="cropmarks-unit">dpi</span>
-              </div>
-            </div>
-            <label class="switch"><input type="checkbox" id="tiff-zip-toggle" class="switch-input" checked><span class="switch-track"><span class="switch-knob"></span></span><span class="switch-content"><span class="switch-description">Compress (lossless ZIP)</span></span></label>
           </div>
         </section>
       </div>

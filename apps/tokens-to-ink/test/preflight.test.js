@@ -54,6 +54,17 @@ describe('tokens-to-ink UI — export pre-flight', () => {
     expect(ui.$('#card-output').hidden).toBe(true);   // …but not the PDF-only Output card
   });
 
+  it('keeps Marks in the right slot for both formats (Raster shares the Output/left slot)', () => {
+    ui = loadUI(UI);
+    openModal(ui);
+    // DOM order must be [output|raster] then [marks] so the Marks card never shifts when the
+    // format changes: PDF shows output (left) + marks (right); TIFF shows raster (left, same
+    // slot) + marks (right). The format-specific card is always earlier in the DOM than marks.
+    const cards = ui.$$('.export-cards .export-card-wrap').map((c) => c.id);
+    expect(cards.indexOf('card-tiff')).toBeLessThan(cards.indexOf('card-marks'));
+    expect(cards.indexOf('card-output')).toBeLessThan(cards.indexOf('card-marks'));
+  });
+
   it('keeps the downsample option in the Output card for PDF (no image-quality sub-tab)', () => {
     ui = loadUI(UI);
     openModal(ui);
