@@ -324,7 +324,7 @@
   .preflight-focus-btn { flex-shrink: 0; }   /* buttonTertiary icon button — "Focus in canvas" */
 
   /* ── Inline Export screen (DS 2120:48124) ── */
-  .view-tabs-row { display: flex; justify-content: center; padding: var(--gap-m) var(--padding-l) 0; }
+  /* #view-tabs-row is a bare DS .actionbar (48px, padding/m t+b) — geometry from the base. */
   #view-tabs { width: auto; }
   .export-panel { display: flex; flex-direction: column; flex: 1; min-height: 0; }
   .export-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: var(--padding-l); display: flex; flex-direction: column; gap: var(--gap-xl); }
@@ -365,8 +365,10 @@
     </button>
   </div>
   <div class="dividerLine"></div>
-  <!-- Colors | Export view tabs (DS segmented control). Export replaces the old flyover+modal. -->
-  <div class="view-tabs-row" id="view-tabs-row" style="display:none;">
+  <!-- Colors | Export view tabs — the DS hosts the segmented control in a bare actionBar
+       (2120:28369: 48px, padding/m top+bottom, background+border off). Export replaces the
+       old flyover+modal. -->
+  <div class="actionbar actionbar--plain" id="view-tabs-row" style="display:none;">
     <div class="segmented-control" id="view-tabs">
       <div class="seg-pill"></div>
       <button type="button" id="view-colors-btn" class="selected"><svg width="16" height="16"><use href="#icon-var-color"/></svg><span class="tab-label">Colors</span></button>
@@ -2674,7 +2676,14 @@
       exportPanel.style.display = exp ? "flex" : "none";
       if (colorsBtn) colorsBtn.classList.toggle("selected", !exp);
       if (exportViewBtn) exportViewBtn.classList.toggle("selected", exp);
-      if (viewTabs && typeof updateSegPill === "function") requestAnimationFrame(() => updateSegPill(viewTabs));
+      // Slide the pill to the newly selected tab, then reconcile on the next frame: the
+      // panel display-swap reflows the row, and a single measurement can land mid-layout
+      // and collapse the pill to a sliver (the "not selecting on first try" symptom). The
+      // immediate call animates; the rAF call re-measures once layout has settled.
+      if (viewTabs && typeof updateSegPill === "function") {
+        updateSegPill(viewTabs);
+        requestAnimationFrame(() => updateSegPill(viewTabs));
+      }
       if (exp) { clearPreflight(); if (_exportFormat === "pdf") requestPreflight(); }
       if (window._notifyResize) setTimeout(window._notifyResize, 50);
     };
@@ -2969,6 +2978,18 @@
       const vtr1 = document.getElementById("view-tabs-row");
       if (vtr1) vtr1.style.display = hasSource ? 'flex' : 'none';
       if (!hasSource && window.__showColorsView) window.__showColorsView();
+      // The row was display:none until now, so the pill was last measured at size 0. The
+      // base ResizeObserver does not reliably fire on the none→flex reveal, so snap the pill
+      // onto the selected tab explicitly. The synchronous call forces layout on the freshly
+      // shown row (reading offsetWidth) and positions it now; the rAF reconciles once the
+      // rows below finish rendering, in case that reflow shifts the measurement.
+      if (hasSource) {
+        const vt = document.getElementById("view-tabs");
+        if (vt && typeof updateSegPill === "function") {
+          updateSegPill(vt, true);
+          requestAnimationFrame(() => updateSegPill(vt, true));
+        }
+      }
 
       // Store scan data for reference
       window._lastScanData = msg.data;

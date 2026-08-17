@@ -784,6 +784,15 @@
        border-box globally, so the height is unaffected). */
     border-bottom: var(--thickness) solid var(--actionbar-border);
   }
+
+  /* actionBar with the Background and Border boolean props toggled off (DS 2120:28369):
+     a bare 48px bar — same padding/min-height geometry, no fill, no divider. Used to host
+     a centred control (e.g. the Colors|Export segmented control) with DS breathing room. */
+  .actionbar--plain {
+    background: transparent;
+    border-bottom: none;
+    justify-content: center;
+  }
   #rescan-btn, .export-picker { margin-top: 0; align-self: center; }
   .buttonRescan {
     width: var(--button-min-height);

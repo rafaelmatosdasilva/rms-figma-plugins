@@ -564,7 +564,15 @@ window.addEventListener('resize', function () {
 if (typeof ResizeObserver !== 'undefined') {
   var _segPillRO = new ResizeObserver(function (entries) {
     entries.forEach(function (entry) {
-      if (entry.target.offsetParent) updateSegPill(entry.target, true);
+      if (!entry.target.offsetParent) return;
+      // Snap now, then reconcile on the next frame. A display:none → visible reveal
+      // fires this mid-layout, where offsetWidth can still read 0 and collapse the pill
+      // to a sliver over the selected tab — the "tab looks unselected until you click
+      // it twice" bug. The second, post-layout measurement lands on the real box.
+      updateSegPill(entry.target, true);
+      requestAnimationFrame(function () {
+        if (entry.target.offsetParent) updateSegPill(entry.target, true);
+      });
     });
   });
   document.querySelectorAll('.segmented-control').forEach(function (c) { _segPillRO.observe(c); });
