@@ -1177,23 +1177,25 @@
   // CMYK byte values: 0 = no ink, 255 = full ink
   // For paired variables, use the stored values directly
   // For calculated, use standard RGB→CMYK with ink threshold cleanup
-  // Reference RGB→CMYK for image pixels (writeCmyk below is the fast, byte-identical twin).
-  // Subtractive CMYK with under-colour removal, WITHOUT the (1-k) normalisation. The textbook
-  // normalised form c=(1-r-k)/(1-k) divides by a value that goes to 0 as the pixel approaches
-  // black, so a 1–2/255 colour cast on a near-black pixel explodes into 50%+ ink — adjacent
-  // dark pixels then swing between 0 and 128 and the image's shadows break into blocky colour
-  // noise (visible against Figma's own clean PDF). The un-normalised form c=(1-r)-k is stable
-  // all the way to black: highlights and mid-tones are within ~2% of the normalised result,
-  // and shadows stay smooth. Pure/edge colours (R/G/B, white, black, gray) are identical.
   function rgbPixelToCmyk(r, g, b, cl) {
     const hex = "#" + [r,g,b].map(v=>v.toString(16).padStart(2,"0")).join("").toUpperCase();
     if (cl && cl[hex]) {
       const m = cl[hex];
       return [Math.round(m.c * 2.55), Math.round(m.m * 2.55), Math.round(m.y * 2.55), Math.round(m.k * 2.55)];
     }
-    const c0 = 1 - r / 255, m0 = 1 - g / 255, y0 = 1 - b / 255;
-    const k = Math.min(c0, m0, y0);
-    return [Math.round((c0 - k) * 255), Math.round((m0 - k) * 255), Math.round((y0 - k) * 255), Math.round(k * 255)];
+    const rn = r / 255, gn = g / 255, bn = b / 255;
+    if (rn === 0 && gn === 0 && bn === 0) return [0, 0, 0, 255];
+    const k = 1 - Math.max(rn, gn, bn);
+    const c = (1 - rn - k) / (1 - k);
+    const m = (1 - gn - k) / (1 - k);
+    const y = (1 - bn - k) / (1 - k);
+    let cb = Math.round(c * 255), mb = Math.round(m * 255),
+        yb = Math.round(y * 255), kb = Math.round(k * 255);
+    // Remove trace ink < ~1.2% that causes visible screen color casts
+    if (cb <= 3) cb = 0;
+    if (mb <= 3) mb = 0;
+    if (yb <= 3) yb = 0;
+    return [cb, mb, yb, kb];
   }
 
   // Fast path for the per-pixel image loops. buildCmykLut turns the export colour map into a
@@ -1213,11 +1215,11 @@
   function writeCmyk(out, o, r, g, b, lut) {
     const hit = lut.get((r << 16) | (g << 8) | b);
     if (hit) { out[o] = hit[0]; out[o + 1] = hit[1]; out[o + 2] = hit[2]; out[o + 3] = hit[3]; return; }
-    // Un-normalised subtractive CMYK — see rgbPixelToCmyk for why the (1-k) division is dropped
-    // (it exploded near-black casts into blocky shadow noise). Byte-identical to that reference.
-    const c0 = 1 - r / 255, m0 = 1 - g / 255, y0 = 1 - b / 255, k = Math.min(c0, m0, y0);
-    out[o] = Math.round((c0 - k) * 255); out[o + 1] = Math.round((m0 - k) * 255);
-    out[o + 2] = Math.round((y0 - k) * 255); out[o + 3] = Math.round(k * 255);
+    if (r === 0 && g === 0 && b === 0) { out[o] = 0; out[o + 1] = 0; out[o + 2] = 0; out[o + 3] = 255; return; }
+    const rn = r / 255, gn = g / 255, bn = b / 255, k = 1 - Math.max(rn, gn, bn), ik = 1 - k;
+    let c = Math.round((1 - rn - k) / ik * 255), m = Math.round((1 - gn - k) / ik * 255), y = Math.round((1 - bn - k) / ik * 255);
+    if (c <= 3) c = 0; if (m <= 3) m = 0; if (y <= 3) y = 0;
+    out[o] = c; out[o + 1] = m; out[o + 2] = y; out[o + 3] = Math.round(k * 255);
   }
 
   // Load PNG into canvas and return raw RGBA pixel data
