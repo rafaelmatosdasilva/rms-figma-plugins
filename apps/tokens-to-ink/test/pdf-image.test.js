@@ -238,6 +238,23 @@ describe('tokens-to-ink — CMYK pixel conversion (fast-path parity)', () => {
     }
   });
 
+  it('does not explode a near-black colour cast into ink (no blocky shadow artifacts)', () => {
+    ui = bootUI();
+    const { rgbPixelToCmyk } = ui.window;
+    // A near-black pixel with a 1–4/255 cast used to divide by (1-k)≈0 and blow up to ~50% ink,
+    // so adjacent dark pixels swung between 0 and 128 → blocky colour noise in image shadows.
+    // Each channel must now stay a low-single-digit percentage, monotonic with the cast.
+    for (const [r, g, b] of [[2, 2, 4], [4, 4, 6], [8, 8, 10], [12, 12, 14], [20, 30, 40]]) {
+      const [c, m, y] = rgbPixelToCmyk(r, g, b, null);
+      expect(Math.max(c, m, y)).toBeLessThan(40);   // was up to 191 with the old normalised form
+    }
+    // Pure and edge colours are unchanged by the new formula.
+    expect(rgbPixelToCmyk(255, 0, 0, null)).toEqual([0, 255, 255, 0]);   // red
+    expect(rgbPixelToCmyk(0, 0, 0, null)).toEqual([0, 0, 0, 255]);       // black
+    expect(rgbPixelToCmyk(255, 255, 255, null)).toEqual([0, 0, 0, 0]);   // white
+    expect(rgbPixelToCmyk(128, 128, 128, null)).toEqual([0, 0, 0, 127]); // neutral gray → K only
+  });
+
   it('convertImageToCmyka maps known pixels to CMYK+alpha (TIFF path)', async () => {
     ui = bootUI();
     // Stub the canvas decode (jsdom has none): 2×2 = red, black, white, fully transparent.
