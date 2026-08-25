@@ -253,6 +253,37 @@ describe('tokens-to-ink UI — export', () => {
   });
 });
 
+describe('tokens-to-ink UI — save as default', () => {
+  const openExport = async (u) => { u.receive(scanResults()); await painted(); u.window.__showExportView(); };
+  const settingsMsg = (over = {}) => ({
+    type: 'settings', cropMarks: false, regMarks: false, colorBars: false, preserveSpot: true,
+    pdfx: true, pageInfo: false, bleedOn: false, bleedMm: 3, downsample: false, downsampleDpi: 300,
+    tiffDpi: 300, tiffZip: true, ...over,
+  });
+
+  it('disables the button while options equal the saved defaults, enables on change', async () => {
+    ui = loadUI(UI);
+    await openExport(ui);
+    ui.receive(settingsMsg());
+    await painted();
+    expect(ui.$('#export-savedefault-btn').disabled).toBe(true);   // nothing to save yet
+    const t = ui.$('#cropmarks-toggle'); t.checked = true; t.dispatchEvent(new ui.window.Event('change'));
+    expect(ui.$('#export-savedefault-btn').disabled).toBe(false);  // changed → can save
+  });
+
+  it('confirms with a toast and re-disables after saving', async () => {
+    ui = loadUI(UI);
+    await openExport(ui);
+    ui.receive(settingsMsg());
+    await painted();
+    const t = ui.$('#regmarks-toggle'); t.checked = true; t.dispatchEvent(new ui.window.Event('change'));
+    ui.click('#export-savedefault-btn');
+    expect(ui.$('#toast-container').textContent).toContain('saved as default');
+    expect(ui.$('#export-savedefault-btn').disabled).toBe(true);   // current options are now the defaults
+    expect(ui.sentOf('save-settings').pop()).toMatchObject({ regMarks: true });
+  });
+});
+
 describe('tokens-to-ink UI — toast safety (shared base)', () => {
   it('escapes HTML in a toast, so a document name cannot run code', () => {
     ui = loadUI(UI);

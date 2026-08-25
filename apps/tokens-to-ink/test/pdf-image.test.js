@@ -120,6 +120,36 @@ function buildVectorPdf() {
   ]);
 }
 
+describe('tokens-to-ink — downsample keeps base image and its soft-mask in sync', () => {
+  it('does not shrink the SMask when the base fails to decode (image would otherwise vanish)', async () => {
+    ui = bootUI();
+    // Base is a DCTDecode image whose decode fails (stub) — e.g. a CMYK JPEG. Its SMask is a
+    // decodable DeviceGray/Flate. The old order resized the mask first, then the base decode
+    // failed, leaving a 10px mask against a 40px base → the image clipped/vanished.
+    ui.window.decodeImageToRgba = async () => null;
+    const W = 40, H = 40;
+    const gray = new Uint8Array(W * H); for (let i = 0; i < gray.length; i++) gray[i] = (i * 7) & 0xff;
+    const smZlib = await deflateRaw(gray);
+    const jpegBase = enc('\xff\xd8\xffnot-a-real-jpeg\xff\xd9');
+    const content = enc('10 0 0 10 0 0 cm /X1 Do\n');   // placed at 10×10 pt → shrink target < 40px
+    const pdf = concatU8([
+      enc('%PDF-1.7\n'),
+      enc('1 0 obj<< /Type /Catalog /Pages 2 0 R >>endobj\n'),
+      enc('2 0 obj<< /Type /Pages /Kids [3 0 R] /Count 1 >>endobj\n'),
+      enc('3 0 obj<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << /XObject << /X1 4 0 R >> >> /Contents 5 0 R >>endobj\n'),
+      enc(`4 0 obj<< /Type /XObject /Subtype /Image /Width ${W} /Height ${H} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /SMask 6 0 R /Length ${jpegBase.length} >>stream\n`), jpegBase, enc('\nendstream endobj\n'),
+      enc(`5 0 obj<< /Length ${content.length} >>stream\n`), content, enc('\nendstream endobj\n'),
+      enc(`6 0 obj<< /Type /XObject /Subtype /Image /Width ${W} /Height ${H} /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode /Length ${smZlib.length} >>stream\n`), smZlib, enc('\nendstream endobj\n'),
+      enc('trailer<< /Root 1 0 R /Size 7 >>\nstartxref\n0\n%%EOF'),
+    ]);
+    const out = latin1(await ui.window.convertPdfToCmyk(pdf, {}, { downsample: true, downsampleDpi: 72 }));
+    const smask = objBody(out, 6);
+    expect(smask).toMatch(/\/Width\s+40\b/);    // mask untouched — still matches the full-size base
+    expect(smask).toMatch(/\/Height\s+40\b/);
+    expect((ui.window._lastPdfImageFailures || []).some((f) => f.obj === 4)).toBe(true); // base left as RGB, reported
+  });
+});
+
 describe('tokens-to-ink — PDF/X-4 press-ready', () => {
   it('embeds an ICC output intent, XMP identifier, per-page TrimBox and /ID when pdfx is on', async () => {
     ui = bootUI();

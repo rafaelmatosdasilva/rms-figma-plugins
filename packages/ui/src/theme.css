@@ -243,9 +243,9 @@
     /* Card (DS 2120:62601) — bordered rounded container */
     --card-border:                  var(--neutral-700);  /* card/border L=N7 #d6d6d6, D=N7 #303030 */
     /* switch (DS 2120:3385) — toggle track + knob + description, On/Off states */
-    --switch-background-enabledOn:         var(--neutral-100);  /* switch/background/enabledOn L=N1 #0a0a0a, D→N2 override */
+    --switch-background-enabledOn:         var(--radioButton-border-selected);  /* DS aliases switch/background/enabledOn → radioButton/border/selected (N100: L #0a0a0a, D #f5f5f5) */
     --switch-background-enabledOff:        var(--neutral-500);  /* switch/background/enabledOff N5 both */
-    --switch-knob-enabledOn:               var(--neutral-1000); /* switch/knob/enabledOn L=N10 #ffffff, D→N7 override */
+    --switch-knob-enabledOn:               var(--radioButton-background-selected); /* DS aliases switch/knob/enabledOn → radioButton/background/selected (N1000: L #ffffff, D #1c1c1c) */
     --switch-knob-enabledOff:              var(--neutral-800);  /* switch/knob/enabledOff L=N8 #e8e8e8, D→N10 override */
     --switch-description-enabledOn:        var(--neutral-100);  /* switch/description/enabledOn N1 both */
     --switch-description-enabledOff:       var(--neutral-300);  /* switch/description/enabledOff N3 both */
@@ -332,10 +332,10 @@
       --emptyState-icon-neutral: var(--neutral-400);         /* Dark = N400 */
       --radioButton-border:      var(--neutral-400); /* Dark = N4 */
       --radioButton-description: var(--neutral-300); /* Dark = N3 (#b8b8b8) */
-      /* switch dark overrides (per-mode split) */
-      --switch-background-enabledOn: var(--neutral-200);  /* enabledOn Dark = N2 #dbdbdb */
-      --switch-knob-enabledOn:       var(--neutral-700);  /* knob/enabledOn Dark = N7 #303030 */
-      --switch-knob-enabledOff:      var(--neutral-1000); /* knob/enabledOff Dark = N10 #1c1c1c */
+      /* switch dark override. background/enabledOn (→N100 #f5f5f5) and knob/enabledOn
+         (→N1000 #1c1c1c) already resolve correctly from their base neutral per mode — no
+         override. Only knob/enabledOff needs one: base N800 (#e8e8e8) → DS dark wants N1000. */
+      --switch-knob-enabledOff:      var(--neutral-1000); /* switch/knob/enabledOff Dark = N1000 #1c1c1c */
       /* Input */
       --input-label: var(--neutral-300);  /* D=N3 */
       --input-icon:  var(--neutral-200);  /* D=N2 */
@@ -1101,13 +1101,19 @@
     box-sizing: border-box;
     transition: border-color 0.15s ease;
   }
+  /* Selected radio (DS 711:18574): the whole 16px disc fills with border/selected (light in
+     dark mode) and an 8px centre dot shows background/selected (dark) — a light disc with a
+     dark centre, not a dark circle with a small light dot. */
   .radioButton-circle::after {
-    content: ''; width: var(--dividerSection-height); height: var(--dividerSection-height);
+    content: ''; width: 8px; height: 8px;
     border-radius: var(--radius-full);
-    background: var(--radioButton-border-selected);
+    background: var(--radioButton-background-selected);
     transform: scale(0); transition: transform 0.15s ease;
   }
-  .radioButton-input:checked + .radioButton-circle { border-color: var(--radioButton-border-selected); }
+  .radioButton-input:checked + .radioButton-circle {
+    background: var(--radioButton-border-selected);
+    border-color: var(--radioButton-border-selected);
+  }
   .radioButton-input:checked + .radioButton-circle::after { transform: scale(1); }
   .radioButton-input:focus-visible + .radioButton-circle { outline: var(--thickness) solid var(--input-border-focus); outline-offset: 1px; }
   .radioButton-label { font-size: var(--m-size); font-weight: var(--m-weight); line-height: var(--m-lh); color: var(--radioButton-text); }

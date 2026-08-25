@@ -410,8 +410,8 @@
       <div class="export-cards">
         <!-- Output card -->
         <section class="export-card-wrap" id="card-output">
-          <span class="export-section-label">Output</span>
           <div class="card">
+            <span class="export-section-label">Output</span>
             <label class="switch"><input type="checkbox" id="pdfx-toggle" class="switch-input" checked><span class="switch-track"><span class="switch-knob"></span></span><span class="switch-content"><span class="switch-description">PDF/X-4 Press-ready</span><span class="tooltipButton export-info" data-tip="Embed a FOGRA39 CMYK output intent so the file is press-certified. Turn off for a plain PDF 1.4."><svg width="12" height="12"><use href="#icon-info"/></svg></span></span></label>
             <label class="switch"><input type="checkbox" id="preservespot-toggle" class="switch-input" checked><span class="switch-track"><span class="switch-knob"></span></span><span class="switch-content"><span class="switch-description">Preserve Pantone Colors</span><span class="tooltipButton export-info" data-tip="Keep assigned Pantone colors as Spot Colors. Turn off to use their CMYK values."><svg width="12" height="12"><use href="#icon-info"/></svg></span></span></label>
             <div class="switch-row">
@@ -434,8 +434,8 @@
         <!-- Raster card (TIFF only) — sits in the LEFT slot (same as Output) so the Marks card
              never shifts position when switching format. -->
         <section class="export-card-wrap" id="card-tiff" hidden>
-          <span class="export-section-label">Raster</span>
           <div class="card">
+            <span class="export-section-label">Raster</span>
             <div class="switch-row">
               <span class="switch-description">Resolution</span>
               <div class="inputWrap cropmarks-bleed" id="tiff-dpi-wrap">
@@ -448,8 +448,8 @@
         </section>
         <!-- Marks and bleed card (both formats) — always the RIGHT slot. -->
         <section class="export-card-wrap" id="card-marks">
-          <span class="export-section-label">Marks and bleed</span>
           <div class="card">
+            <span class="export-section-label">Marks and bleed</span>
             <label class="switch"><input type="checkbox" id="cropmarks-toggle" class="switch-input"><span class="switch-track"><span class="switch-knob"></span></span><span class="switch-content"><span class="switch-description">Crop Marks</span></span></label>
             <label class="switch"><input type="checkbox" id="regmarks-toggle" class="switch-input"><span class="switch-track"><span class="switch-knob"></span></span><span class="switch-content"><span class="switch-description">Registration Marks</span></span></label>
             <label class="switch"><input type="checkbox" id="colorbars-toggle" class="switch-input"><span class="switch-track"><span class="switch-knob"></span></span><span class="switch-content"><span class="switch-description">Color bars</span></span></label>
@@ -551,7 +551,9 @@
   // short fallback confirms it instead. Either way the toast never shows while the dialog is up.
   function confirmExportSaved() {
     const message = 'Artwork exported successfully';
-    const say = () => { try { if (document.getElementById('toast-container')) showToast(message); } catch (_) {} };
+    // Never confirm success once the user has cancelled — the toast can be scheduled a beat
+    // before a cancel lands (or while a save dialog is up), so gate the actual show on it.
+    const say = () => { if (_exportCancelled) return; try { if (document.getElementById('toast-container')) showToast(message); } catch (_) {} };
     // Show a short beat AFTER we decide to, so the toast's slide-in animation plays on a fresh
     // paint once the save dialog has fully closed and the window has repainted — otherwise the
     // animation runs unseen behind the dialog and the toast just "appears".
@@ -621,6 +623,8 @@
   function _showExportProgress(text) {
     showProgress(text, { cancel: () => {
       _exportCancelled = true;
+      // Kill any pending success toast (a batch that just finished may have one queued).
+      if (_exportToastTimer) { clearTimeout(_exportToastTimer); _exportToastTimer = null; }
       parent.postMessage({ pluginMessage: { type: 'cancel-export' } }, '*');
       dismissProgress();
       setExportBusy(false);
@@ -1171,6 +1175,10 @@
   // CMYK byte values: 0 = no ink, 255 = full ink
   // For paired variables, use the stored values directly
   // For calculated, use standard RGB→CMYK with ink threshold cleanup
+  // Below this brightness the (1-k) denominator is floored (see rgbPixelToCmyk). Pixels
+  // brighter than this are converted byte-for-byte as before — only genuinely dark pixels
+  // are affected. 0.25 ≈ RGB max of 64/255; raise it if deep shadows still show noise.
+  const CMYK_SHADOW_FLOOR = 0.25;
   function rgbPixelToCmyk(r, g, b, cl) {
     const hex = "#" + [r,g,b].map(v=>v.toString(16).padStart(2,"0")).join("").toUpperCase();
     if (cl && cl[hex]) {
@@ -1180,9 +1188,15 @@
     const rn = r / 255, gn = g / 255, bn = b / 255;
     if (rn === 0 && gn === 0 && bn === 0) return [0, 0, 0, 255];
     const k = 1 - Math.max(rn, gn, bn);
-    const c = (1 - rn - k) / (1 - k);
-    const m = (1 - gn - k) / (1 - k);
-    const y = (1 - bn - k) / (1 - k);
+    // Floor the (1-k) divisor. As a pixel nears black, (1-k)→0, so the textbook
+    // c=(1-r-k)/(1-k) blows a 1-2/255 colour cast up to 50%+ ink — adjacent dark pixels then
+    // swing between 0 and ~128 and shadows break into blocky colour noise. Flooring the
+    // divisor caps that amplification; for any pixel brighter than the floor (1-k ≥ floor)
+    // the value is unchanged.
+    const ik = Math.max(1 - k, CMYK_SHADOW_FLOOR);
+    const c = (1 - rn - k) / ik;
+    const m = (1 - gn - k) / ik;
+    const y = (1 - bn - k) / ik;
     let cb = Math.round(c * 255), mb = Math.round(m * 255),
         yb = Math.round(y * 255), kb = Math.round(k * 255);
     // Remove trace ink < ~1.2% that causes visible screen color casts
@@ -1210,7 +1224,7 @@
     const hit = lut.get((r << 16) | (g << 8) | b);
     if (hit) { out[o] = hit[0]; out[o + 1] = hit[1]; out[o + 2] = hit[2]; out[o + 3] = hit[3]; return; }
     if (r === 0 && g === 0 && b === 0) { out[o] = 0; out[o + 1] = 0; out[o + 2] = 0; out[o + 3] = 255; return; }
-    const rn = r / 255, gn = g / 255, bn = b / 255, k = 1 - Math.max(rn, gn, bn), ik = 1 - k;
+    const rn = r / 255, gn = g / 255, bn = b / 255, k = 1 - Math.max(rn, gn, bn), ik = Math.max(1 - k, CMYK_SHADOW_FLOOR);   // floored divisor — see rgbPixelToCmyk
     let c = Math.round((1 - rn - k) / ik * 255), m = Math.round((1 - gn - k) / ik * 255), y = Math.round((1 - bn - k) / ik * 255);
     if (c <= 3) c = 0; if (m <= 3) m = 0; if (y <= 3) y = 0;
     out[o] = c; out[o + 1] = m; out[o + 2] = y; out[o + 3] = Math.round(k * 255);
@@ -1581,40 +1595,53 @@
         if (dh < h) th = dh;
       }
       let shrink = (tw !== w || th !== h);
-      // A base image and its soft-mask image must stay the same size, or Illustrator
-      // mis-scales the mask (image half-clipped or invisible). Resize the mask to match;
-      // if it can't be resized, keep the base at full size so the pair stays consistent.
+      // Decode the base image to RGBA at a target size (dw×dh). Kept as a closure so it can be
+      // retried at full size if the soft-mask turns out un-resizable (below).
+      const decodeBase = async (dw, dh) => {
+        const willShrink = (dw !== w || dh !== h);
+        try {
+          if (/\/DCTDecode\b/.test(obj.dict)) {
+            const px = await decodeImageToRgba(obj.streamRaw, dw, dh, 'image/jpeg');
+            return px ? { rgba: px } : { why: 'JPEG decode returned no pixels' };
+          }
+          if (obj.isFlate) {
+            let d = await inflateBuf(obj.streamRaw);
+            d = undoFlatePredictor(objs, obj.dict, d, w);   // strip a PNG/TIFF predictor if present
+            d = flateSamplesTo8bit(obj.dict, d);            // 16-bit → 8-bit
+            const px = w * h;
+            // Expand the raw samples to RGBA. Handle the channel counts Figma actually emits at
+            // 8bpc: RGBA(4), RGB(3), DeviceGray(1) and Gray+Alpha(2). Grayscale replicates the one
+            // sample across R/G/B — DeviceGray images were the "left as RGB" case in the wild.
+            let full = null;
+            if (d.length === px * 4) full = d;
+            else if (d.length === px * 3) { full = new Uint8Array(px * 4); for (let i = 0, j = 0; i < d.length; i += 3, j += 4) { full[j] = d[i]; full[j+1] = d[i+1]; full[j+2] = d[i+2]; full[j+3] = 255; } }
+            else if (d.length === px) { full = new Uint8Array(px * 4); for (let i = 0, j = 0; i < px; i++, j += 4) { const g = d[i]; full[j] = g; full[j+1] = g; full[j+2] = g; full[j+3] = 255; } }
+            else if (d.length === px * 2) { full = new Uint8Array(px * 4); for (let i = 0, j = 0; i < d.length; i += 2, j += 4) { const g = d[i]; full[j] = g; full[j+1] = g; full[j+2] = g; full[j+3] = d[i+1]; } }
+            if (!full) return { why: info.predictor
+              ? 'FlateDecode uses a predictor (row filters) — not yet supported'
+              : `pixel data is ${d.length} bytes, not a whole multiple of ${w}×${h} — likely 16-bit or indexed (bpc=${info.bpc || '?'}, cs=${info.colorSpace})` };
+            return { rgba: willShrink ? resizeRgbaBox(full, w, h, dw, dh) : full };
+          }
+          return { why: `filter ${info.filter} isn't decodable here` };
+        } catch (e) { return { why: 'decode threw: ' + ((e && e.message) || e) }; }
+      };
+      // Decode the base FIRST — before touching the soft-mask. If the base can't convert it is
+      // left as RGB, and the mask MUST stay untouched too: a shrunk mask against a full-size
+      // base renders the image clipped or invisible. That ordering was the "some images vanish
+      // when downsampling is on" bug — the mask was resized, then the base decode failed.
+      let dec = await decodeBase(tw, th);
+      if (!dec.rgba) { fail(dec.why || 'undecodable', w, h); continue; } // left intact (RGB); warn
+      // Base is good. If shrinking, bring its soft-mask to the same size; if the mask can't be
+      // resized, keep the PAIR at full resolution by re-decoding the base un-shrunk.
       if (shrink) {
         const smRef = obj.dict.match(/\/SMask\s+(\d+)\s+0\s+R/);
-        if (smRef && !(await downsampleGrayImage(objs[+smRef[1]], tw, th))) { tw = w; th = h; shrink = false; }
-      }
-      let rgba = null, why = null;
-      try {
-        if (/\/DCTDecode\b/.test(obj.dict)) {
-          rgba = await decodeImageToRgba(obj.streamRaw, tw, th, 'image/jpeg');
-          if (!rgba) why = 'JPEG decode returned no pixels';
-        } else if (obj.isFlate) {
-          let d = await inflateBuf(obj.streamRaw);
-          d = undoFlatePredictor(objs, obj.dict, d, w);   // strip a PNG/TIFF predictor if present
-          d = flateSamplesTo8bit(obj.dict, d);            // 16-bit → 8-bit
-          const px = w * h;
-          // Expand the raw samples to RGBA. Handle the channel counts Figma actually emits at
-          // 8bpc: RGBA(4), RGB(3), DeviceGray(1) and Gray+Alpha(2). Grayscale replicates the one
-          // sample across R/G/B — DeviceGray images were the "left as RGB" case in the wild.
-          let full = null;
-          if (d.length === px * 4) full = d;
-          else if (d.length === px * 3) { full = new Uint8Array(px * 4); for (let i = 0, j = 0; i < d.length; i += 3, j += 4) { full[j] = d[i]; full[j+1] = d[i+1]; full[j+2] = d[i+2]; full[j+3] = 255; } }
-          else if (d.length === px) { full = new Uint8Array(px * 4); for (let i = 0, j = 0; i < px; i++, j += 4) { const g = d[i]; full[j] = g; full[j+1] = g; full[j+2] = g; full[j+3] = 255; } }
-          else if (d.length === px * 2) { full = new Uint8Array(px * 4); for (let i = 0, j = 0; i < d.length; i += 2, j += 4) { const g = d[i]; full[j] = g; full[j+1] = g; full[j+2] = g; full[j+3] = d[i+1]; } }
-          if (full) rgba = shrink ? resizeRgbaBox(full, w, h, tw, th) : full;
-          else why = info.predictor
-            ? 'FlateDecode uses a predictor (row filters) — not yet supported'
-            : `pixel data is ${d.length} bytes, not a whole multiple of ${w}×${h} — likely 16-bit or indexed (bpc=${info.bpc || '?'}, cs=${info.colorSpace})`;
-        } else {
-          why = `filter ${info.filter} isn't decodable here`;
+        if (smRef && !(await downsampleGrayImage(objs[+smRef[1]], tw, th))) {
+          tw = w; th = h; shrink = false;
+          dec = await decodeBase(w, h);
+          if (!dec.rgba) { fail(dec.why || 'undecodable', w, h); continue; }
         }
-      } catch (e) { rgba = null; why = 'decode threw: ' + ((e && e.message) || e); }
-      if (!rgba) { fail(why || 'undecodable', w, h); continue; } // left intact (RGB); warn the user
+      }
+      const rgba = dec.rgba;
       const cmyk = new Uint8Array(tw * th * 4);
       for (let p = 0, q = 0; p < tw * th * 4; p += 4, q += 4) writeCmyk(cmyk, q, rgba[p], rgba[p+1], rgba[p+2], lut);
       obj.streamRaw = await deflateBuf(cmyk);
@@ -2585,10 +2612,21 @@
       // additionally gated on downsample inside requestPreflight (scanImages).
       if (fmt === "pdf") requestPreflight(); else hidePreflightImages();
     };
-    const persist = () => parent.postMessage({ pluginMessage: {
-      type: "save-settings", cropMarks: _cropMarks, regMarks: _regMarks, colorBars: _colorBars, preserveSpot: _preserveSpot, pdfx: _pdfx, pageInfo: _pageInfo, bleedOn: _bleedOn, bleedMm: _bleedMm,
+    // Snapshot of the current option values, used to decide whether "Save as default" has
+    // anything to save. `_defaultsSnapshot` holds the values as of the last load / explicit save.
+    let _defaultsSnapshot = null;
+    const settingsSnapshot = () => JSON.stringify({
+      cropMarks: _cropMarks, regMarks: _regMarks, colorBars: _colorBars, preserveSpot: _preserveSpot,
+      pdfx: _pdfx, pageInfo: _pageInfo, bleedOn: _bleedOn, bleedMm: _bleedMm,
       downsample: _downsample, downsampleDpi: _downsampleDpi, tiffDpi: _tiffDpi, tiffZip: _tiffZip,
-    } }, "*");
+    });
+    // Disable "Save as default" while the current options already equal the saved defaults —
+    // there is nothing to save (DS 2155:25145 shows the button in its disabled state).
+    const syncSaveDefaultBtn = () => { if (saveDefault) saveDefault.disabled = (_defaultsSnapshot !== null && settingsSnapshot() === _defaultsSnapshot); };
+    const persist = () => {
+      parent.postMessage({ pluginMessage: { type: "save-settings", ...JSON.parse(settingsSnapshot()) } }, "*");
+      syncSaveDefaultBtn();
+    };
 
     // Ask code.js to scan the selection: reports whether it has images and lists low-res images
     // when downsampling is on. Only runs while the Export view is visible.
@@ -2663,6 +2701,9 @@
       tiffDpi.value = String(_tiffDpi);
       if (tiffZip) tiffZip.checked = _tiffZip;
       syncInputs();
+      // These loaded values ARE the current defaults → nothing to save yet.
+      _defaultsSnapshot = settingsSnapshot();
+      syncSaveDefaultBtn();
     };
 
     // Format radios (PDF / TIFF) — the two export paths stay separated; each shows its cards.
@@ -2693,7 +2734,14 @@
     window.__showColorsView = () => showView("colors");
 
     confirm.addEventListener("click", () => startExport(_exportFormat));
-    if (saveDefault) saveDefault.addEventListener("click", persist);   // settings also persist on every change
+    // Settings already persist on every change; the button gives an explicit confirmation and,
+    // once clicked, becomes the new "defaults" baseline so it disables until something changes.
+    if (saveDefault) saveDefault.addEventListener("click", () => {
+      persist();
+      _defaultsSnapshot = settingsSnapshot();
+      syncSaveDefaultBtn();
+      try { if (document.getElementById('toast-container')) showToast("Export settings saved as default"); } catch (_) {}
+    });
 
     setFormat("pdf");
     parent.postMessage({ pluginMessage: { type: "get-settings" } }, "*");
