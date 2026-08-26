@@ -1905,6 +1905,29 @@
   // every page a TrimBox. Mutates objs/nums; version bump + trailer /ID happen in the rebuild.
   // The profile is the bundled FOGRA39 (window.__ICC_FOGRA39: base64, pre-deflated, CMYK/prtr).
   // Returns true once the intent is embedded, false if no profile is bundled (caller stays 1.4).
+  // Stamp the document date onto the PDF's /Info dict. Figma's export has none, so viewers show
+  // a bogus 30 Nov 1979 default. Updates an existing /Info in place, otherwise creates one and
+  // returns its object number (to reference from the trailer); returns null when it updated one.
+  function stampPdfDate(objs, nums, trailerDict, now) {
+    const d = (now && typeof now.getFullYear === 'function') ? now : new Date();
+    const p2 = (x) => String(x).padStart(2, '0');
+    const off = -d.getTimezoneOffset();
+    const tz = (off >= 0 ? '+' : '-') + p2(Math.floor(Math.abs(off) / 60)) + "'" + p2(Math.abs(off) % 60) + "'";
+    const pdfDate = 'D:' + d.getFullYear() + p2(d.getMonth() + 1) + p2(d.getDate()) +
+      p2(d.getHours()) + p2(d.getMinutes()) + p2(d.getSeconds()) + tz;
+    const existing = trailerDict.match(/\/Info\s+(\d+)\s+0\s+R/);
+    if (existing && objs[+existing[1]] && objs[+existing[1]].type === 'plain') {
+      const io = objs[+existing[1]];
+      io.body = (/\/CreationDate/.test(io.body) ? io.body.replace(/\/CreationDate\s*\([^)]*\)/, `/CreationDate (${pdfDate})`) : io.body.replace(/>>\s*$/, ` /CreationDate (${pdfDate}) >>`));
+      io.body = (/\/ModDate/.test(io.body) ? io.body.replace(/\/ModDate\s*\([^)]*\)/, `/ModDate (${pdfDate})`) : io.body.replace(/>>\s*$/, ` /ModDate (${pdfDate}) >>`));
+      return null;
+    }
+    const infoNum = Math.max(...nums) + 1;
+    objs[infoNum] = { type: 'plain', body: `<< /CreationDate (${pdfDate}) /ModDate (${pdfDate}) /Producer (Tokens to Ink) >>` };
+    nums.push(infoNum);
+    return infoNum;
+  }
+
   function applyPdfX(objs, nums, trailerDict, s2b){
     const b64=(typeof window!=='undefined'&&window.__ICC_FOGRA39)||'';
     if(!b64) return false;
@@ -2325,6 +2348,8 @@
     // ── PDF/X-4 press-ready: embed the ICC output intent + XMP + per-page TrimBox ──
     const isPdfX = !!(opts && opts.pdfx) && applyPdfX(objs, nums, trailerDict, s2b);
 
+    const infoNum = stampPdfDate(objs, nums, trailerDict, opts && opts.now);   // document date (see helper)
+
     // ── Rebuild PDF ──
     const parts=[],newOff={};
     // Default version is PDF 1.4 — the highest fully supported by Illustrator CS6. PDF/X-4 needs 1.6
@@ -2351,6 +2376,7 @@
     for(let i=1;i<=maxObj;i++)
       xr+=newOff[i]!=null?newOff[i].toString().padStart(10,'0')+' 00000 n \n':'0000000000 00000 f \n';
     let nTr=trailerDict.replace(/\/Size\s+\d+/,'/Size '+(maxObj+1)).replace(/\/Prev\s+\d+/,'');
+    if(infoNum!=null&&!/\/Info\s+\d+\s+0\s+R/.test(nTr)) nTr+=` /Info ${infoNum} 0 R`;   // document date
     if(isPdfX&&!/\/ID\s*\[/.test(nTr)){const id=pdfxId();nTr+=` /ID [ <${id}> <${id}> ]`;}   // PDF/X requires /ID
     xr+='trailer\n<<'+nTr+'>>\nstartxref\n'+xrS+'\n%%EOF';
     parts.push(s2b(xr));

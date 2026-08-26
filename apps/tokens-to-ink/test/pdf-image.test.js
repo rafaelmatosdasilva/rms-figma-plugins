@@ -175,6 +175,16 @@ describe('tokens-to-ink — downsample ignores a degenerate placement measuremen
   });
 });
 
+describe('tokens-to-ink — document date', () => {
+  it('stamps /CreationDate + /ModDate so viewers do not show a 1979 default', async () => {
+    ui = bootUI();
+    const out = latin1(await ui.window.convertPdfToCmyk(buildVectorPdf(), {}, { now: new Date(2026, 7, 25, 14, 30, 0) }));
+    expect(out).toMatch(/\/Info\s+\d+\s+0\s+R/);                 // trailer references an /Info dict
+    expect(out).toMatch(/\/CreationDate\s*\(D:20260825143000/);  // real export date, not empty
+    expect(out).toMatch(/\/ModDate\s*\(D:20260825143000/);
+  });
+});
+
 describe('tokens-to-ink — PDF/X-4 press-ready', () => {
   it('embeds an ICC output intent, XMP identifier, per-page TrimBox and /ID when pdfx is on', async () => {
     ui = bootUI();
