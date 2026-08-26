@@ -325,7 +325,9 @@
 
   /* ── Inline Export screen (DS 2120:48124) ── */
   /* #view-tabs-row is a bare DS .actionbar (48px, padding/m t+b) — geometry from the base. */
-  #view-tabs { width: auto; }
+  /* DS segmentedControl in this actionBar is 296px wide (2 × 148px segments), not hugging. */
+  #view-tabs { width: 296px; }
+  #view-tabs button { flex: 1 1 0; min-width: 0; }
   .export-panel { display: flex; flex-direction: column; flex: 1; min-height: 0; }
   .export-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: var(--padding-l); display: flex; flex-direction: column; gap: var(--gap-xl); }
   .export-section-label { font-size: var(--s-size); font-weight: var(--s-weight); line-height: var(--s-lh); color: var(--text-secondary); }
