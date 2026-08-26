@@ -150,6 +150,31 @@ describe('tokens-to-ink — downsample keeps base image and its soft-mask in syn
   });
 });
 
+describe('tokens-to-ink — downsample ignores a degenerate placement measurement', () => {
+  it('keeps an image at full resolution when its measured on-page size is near-zero', async () => {
+    ui = bootUI();
+    ui.window.decodeImageToRgba = async (bytes, w, h) => new Uint8Array(w * h * 4).fill(200);
+    const W = 400, H = 400;
+    const jpeg = enc('\xff\xd8\xffX\xff\xd9');
+    // Unit matrix → the content walker measures the image at ~1pt (the Form-XObject / name
+    // collision failure mode). Old behaviour: downsample to ~1px → the image vanishes.
+    const content = enc('1 0 0 1 0 0 cm /X1 Do\n');
+    const pdf = concatU8([
+      enc('%PDF-1.7\n'),
+      enc('1 0 obj<< /Type /Catalog /Pages 2 0 R >>endobj\n'),
+      enc('2 0 obj<< /Type /Pages /Kids [3 0 R] /Count 1 >>endobj\n'),
+      enc('3 0 obj<< /Type /Page /Parent 2 0 R /MediaBox [0 0 600 600] /Resources << /XObject << /X1 4 0 R >> >> /Contents 5 0 R >>endobj\n'),
+      enc(`4 0 obj<< /Type /XObject /Subtype /Image /Width ${W} /Height ${H} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpeg.length} >>stream\n`), jpeg, enc('\nendstream endobj\n'),
+      enc(`5 0 obj<< /Length ${content.length} >>stream\n`), content, enc('\nendstream endobj\n'),
+      enc('trailer<< /Root 1 0 R /Size 6 >>\nstartxref\n0\n%%EOF'),
+    ]);
+    const out = latin1(await ui.window.convertPdfToCmyk(pdf, {}, { downsample: true, downsampleDpi: 72 }));
+    const img = objBody(out, 4);
+    expect(img).toMatch(/\/Width\s+400\b/);              // NOT shrunk to a few px
+    expect(img).toMatch(/\/ColorSpace\s*\/DeviceCMYK/);  // still converted to CMYK
+  });
+});
+
 describe('tokens-to-ink — PDF/X-4 press-ready', () => {
   it('embeds an ICC output intent, XMP identifier, per-page TrimBox and /ID when pdfx is on', async () => {
     ui = bootUI();

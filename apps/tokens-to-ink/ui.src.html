@@ -1591,10 +1591,21 @@
       // Never enlarge (downsampling only) and never drop below 1px.
       let tw = w, th = h;
       if (ds && ds.dpi > 0 && ds.sizes && ds.sizes[n]) {
-        const dw = Math.max(1, Math.round((ds.sizes[n].wPt / 72) * ds.dpi));
-        const dh = Math.max(1, Math.round((ds.sizes[n].hPt / 72) * ds.dpi));
-        if (dw < w) tw = dw;
-        if (dh < h) th = dh;
+        const wPt = ds.sizes[n].wPt, hPt = ds.sizes[n].hPt;
+        // Guard against a DEGENERATE placement measurement (~1pt). An image nested inside a
+        // Form XObject, or a resource-name collision between a form and an image, makes the
+        // content walker read the image's UNIT square (~1pt) instead of its real on-page size —
+        // downsampling to that shrinks the image to a few pixels and it disappears from the
+        // print (the "technical drawing not showing" bug). Nothing meaningfully printed is a
+        // point wide, so treat a sub-MIN_PLACEMENT_PT read as unreliable and keep full
+        // resolution (the image is still converted to CMYK, just not downsampled).
+        const MIN_PLACEMENT_PT = 4;
+        if (wPt >= MIN_PLACEMENT_PT && hPt >= MIN_PLACEMENT_PT) {
+          const dw = Math.max(1, Math.round((wPt / 72) * ds.dpi));
+          const dh = Math.max(1, Math.round((hPt / 72) * ds.dpi));
+          if (dw < w) tw = dw;
+          if (dh < h) th = dh;
+        }
       }
       let shrink = (tw !== w || th !== h);
       // Decode the base image to RGBA at a target size (dw×dh). Kept as a closure so it can be
