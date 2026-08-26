@@ -183,6 +183,13 @@ describe('tokens-to-ink — document date', () => {
     expect(out).toMatch(/\/CreationDate\s*\(D:20260825143000/);  // real export date, not empty
     expect(out).toMatch(/\/ModDate\s*\(D:20260825143000/);
   });
+
+  it('also stamps the XMP date for PDF/X — macOS/Preview read XMP in preference to /Info', async () => {
+    ui = bootUI();
+    const out = latin1(await ui.window.convertPdfToCmyk(buildVectorPdf(), {}, { pdfx: true, now: new Date(2026, 7, 25, 14, 30, 0) }));
+    expect(out).toMatch(/<xmp:CreateDate>2026-08-25T14:30:00/);
+    expect(out).toMatch(/<xmp:ModifyDate>2026-08-25T14:30:00/);
+  });
 });
 
 describe('tokens-to-ink — PDF/X-4 press-ready', () => {

@@ -1899,16 +1899,23 @@
   // every page a TrimBox. Mutates objs/nums; version bump + trailer /ID happen in the rebuild.
   // The profile is the bundled FOGRA39 (window.__ICC_FOGRA39: base64, pre-deflated, CMYK/prtr).
   // Returns true once the intent is embedded, false if no profile is bundled (caller stays 1.4).
+  // Both date formats an exported PDF needs: the /Info dict wants `D:YYYYMMDDHHmmSS+HH'mm'`,
+  // the XMP packet wants ISO-8601 `YYYY-MM-DDTHH:mm:ss+HH:mm`. Same instant, one source.
+  function pdfDateStrings(now) {
+    const d = (now && typeof now.getFullYear === 'function') ? now : new Date();
+    const p2 = (x) => String(x).padStart(2, '0');
+    const off = -d.getTimezoneOffset(), sgn = off >= 0 ? '+' : '-';
+    const oh = p2(Math.floor(Math.abs(off) / 60)), om = p2(Math.abs(off) % 60);
+    const Y = d.getFullYear(), M = p2(d.getMonth() + 1), D = p2(d.getDate());
+    const h = p2(d.getHours()), m = p2(d.getMinutes()), s = p2(d.getSeconds());
+    return { pdf: `D:${Y}${M}${D}${h}${m}${s}${sgn}${oh}'${om}'`, xmp: `${Y}-${M}-${D}T${h}:${m}:${s}${sgn}${oh}:${om}` };
+  }
+
   // Stamp the document date onto the PDF's /Info dict. Figma's export has none, so viewers show
   // a bogus 30 Nov 1979 default. Updates an existing /Info in place, otherwise creates one and
   // returns its object number (to reference from the trailer); returns null when it updated one.
   function stampPdfDate(objs, nums, trailerDict, now) {
-    const d = (now && typeof now.getFullYear === 'function') ? now : new Date();
-    const p2 = (x) => String(x).padStart(2, '0');
-    const off = -d.getTimezoneOffset();
-    const tz = (off >= 0 ? '+' : '-') + p2(Math.floor(Math.abs(off) / 60)) + "'" + p2(Math.abs(off) % 60) + "'";
-    const pdfDate = 'D:' + d.getFullYear() + p2(d.getMonth() + 1) + p2(d.getDate()) +
-      p2(d.getHours()) + p2(d.getMinutes()) + p2(d.getSeconds()) + tz;
+    const pdfDate = pdfDateStrings(now).pdf;
     const existing = trailerDict.match(/\/Info\s+(\d+)\s+0\s+R/);
     if (existing && objs[+existing[1]] && objs[+existing[1]].type === 'plain') {
       const io = objs[+existing[1]];
@@ -1922,16 +1929,18 @@
     return infoNum;
   }
 
-  function applyPdfX(objs, nums, trailerDict, s2b){
+  function applyPdfX(objs, nums, trailerDict, s2b, now){
     const b64=(typeof window!=='undefined'&&window.__ICC_FOGRA39)||'';
     if(!b64) return false;
     const addStream=(dict,raw)=>{const nn=Math.max(...nums)+1;objs[nn]={type:'stream',dict,streamRaw:raw};nums.push(nn);return nn;};
     const icc=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));   // already zlib-deflated → FlateDecode
     const iccNum=addStream(`<< /N 4 /Filter /FlateDecode /Length ${icc.length} >>`, icc);
+    const iso=pdfDateStrings(now).xmp;   // macOS/Preview read the XMP date over /Info — stamp it here too
     const xmp='<?xpacket begin="" id="W5M0MpCehiHzreSzNTczkc9d"?>\n'
       +'<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">'
       +'<rdf:Description rdf:about="" xmlns:pdfxid="http://www.npes.org/pdfx/ns/id/" xmlns:xmp="http://ns.adobe.com/xap/1.0/">'
       +'<pdfxid:GTS_PDFXVersion>PDF/X-4</pdfxid:GTS_PDFXVersion><xmp:CreatorTool>tokens-to-ink</xmp:CreatorTool>'
+      +`<xmp:CreateDate>${iso}</xmp:CreateDate><xmp:ModifyDate>${iso}</xmp:ModifyDate><xmp:MetadataDate>${iso}</xmp:MetadataDate>`
       +'</rdf:Description></rdf:RDF></x:xmpmeta>\n<?xpacket end="w"?>';
     const metaNum=addStream('<< /Type /Metadata /Subtype /XML /Length '+s2b(xmp).length+' >>', s2b(xmp));
     const rm=trailerDict.match(/\/Root\s+(\d+)\s+0\s+R/);
@@ -2340,7 +2349,7 @@
     if(opts&&(opts.cropMarks||opts.regMarks||opts.pageInfo||opts.colorBars||opts.bleedPt>0))addPrintMarks(objs,nums,opts.bleedPt,opts.trimBox,opts.cropMarks,opts.regMarks,opts.pageInfo,opts.pageInfoLeft,opts.pageInfoRight,opts.colorBars);
 
     // ── PDF/X-4 press-ready: embed the ICC output intent + XMP + per-page TrimBox ──
-    const isPdfX = !!(opts && opts.pdfx) && applyPdfX(objs, nums, trailerDict, s2b);
+    const isPdfX = !!(opts && opts.pdfx) && applyPdfX(objs, nums, trailerDict, s2b, opts && opts.now);
 
     const infoNum = stampPdfDate(objs, nums, trailerDict, opts && opts.now);   // document date (see helper)
 
