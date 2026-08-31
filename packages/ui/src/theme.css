@@ -69,8 +69,9 @@
        (transparent; only hover/selected carry a background). */
     --node-background-hover:                var(--neutral-900);  /* node/background/default L=N900 #f7f7f7, D→override */
     --node-background-selected:       var(--neutral-1000); /* node/background/selected N1000 */
-    /* node/border/default removed — DS Idle state has no stroke; the resting .node border
-       is transparent. Only hover/selected/unselected/disabled carry a border color. */
+    /* node/border/default — DS State=Default (the resting card) carries a stroke again; the
+       resting .node uses it as its border (L=N700 #d6d6d6, D→N600 override). */
+    --node-border-default:    var(--neutral-700);
     --node-border-hover:      var(--neutral-700);  /* node/border/hover N400 */
     --node-border-selected:   var(--neutral-100);  /* node/border/selected N100 */
     --node-border-disabled:   var(--neutral-700);  /* node/border/disabled L=N700, D=N600 */
@@ -342,6 +343,7 @@
       --tooltipButton-icon: var(--neutral-300); /* tooltipButton/icon Dark = N300 #bfbfbf (light uses N400 — split alias) */
       /* Node additional states */
       --node-border-idle: var(--neutral-700); /* D=N7 #303030 (rebound from N6 2026-08) */
+      --node-border-default: var(--neutral-600); /* node/border/default Dark = N600 #454545 */
       --node-icon-selected:   var(--neutral-300);   /* D=N3 */
       --node-icon-idle:       var(--neutral-500);   /* Dark = N500 #5e5e5e (was N400; DS rebound via buttonList/iconPrimary) */
       --node-icon-hover:      var(--neutral-300);   /* Dark = N300 #b8b8b8 — same alias chain as selected (node/icon/hover → node/icon/selected → Neutral 300) */
@@ -408,11 +410,10 @@
     display: flex;
     align-items: center;
     gap: var(--gap-s);
-    background: transparent; /* node/background/idle retired — resting node is transparent (shows the panel) */
-    /* Idle state (DS node 544:51070) has NO stroke — border-color stays transparent at
-       rest and is only colored by the interactive/selection states below. The width is
+    background: transparent; /* DS State=Default has no fill — resting node is transparent (shows the panel) */
+    /* DS State=Default (the resting card) carries node/border/default. The width is
        reserved (var(--thickness)) so hover/select never shifts layout. */
-    border: var(--thickness) solid transparent;
+    border: var(--thickness) solid var(--node-border-default);
     border-radius: var(--radius-full);
     padding: 0 var(--padding-s);
     min-height: 40px;
