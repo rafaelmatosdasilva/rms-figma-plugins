@@ -1,16 +1,8 @@
-// ── DPR-aware border thickness ────────────────────────────────────────────────
-// Figma DS specifies --thickness: 1.5px (general/thickness). At sub-pixel DPRs, 1.5px spans a
-// non-integer number of physical pixels and gets anti-aliased, so we snap to a whole-physical-
-// pixel boundary for crisp borders. Snap UP (ceil), never down: Math.round rounded 1.5× down to
-// 1.33px, which reads visibly THINNER than the designed 1.5px. ceil keeps every border ≥ 1.5px.
-//
-// DPR mapping:  1× → 2px (2 phys)  1.5× → 2px (3 phys)  2× → 1.5px (3 phys, exact!)  3× → 1.67px (5 phys)
-// Integer DPRs (1×, 2×, 3× — the headless-test envs) are identical to the old rounding.
-(function () {
-  var dpr = window.devicePixelRatio || 1;
-  var snapped = Math.ceil(1.5 * dpr) / dpr;
-  document.documentElement.style.setProperty('--thickness', snapped.toFixed(4) + 'px');
-})();
+// ── Border thickness ──────────────────────────────────────────────────────────
+// --thickness is the DS general/thickness value (1.5px), defined statically in theme.css.
+// We deliberately DON'T snap it to physical pixels by DPR: rounding distorts the designed
+// weight (round → 1.33px on 1.5× = too thin; ceil → 2px = too thick). Keep the exact DS 1.5px
+// and let the browser anti-alias it. (No JS override.)
 
 // ── Variable type icon symbols ────────────────────────────────────────────────
 // Centralised SVG <symbol> definitions for Figma variable types.

@@ -665,7 +665,8 @@ body.browser-empty .right-panel {
 /* ─── Status bar ────────────────────────────────────────────────────────── */
 
 #status-bar {
-  border-bottom: var(--thickness) solid var(--border);  /* dividerLine (N700 both modes) */
+  /* No border here — the divider is the DS statusBar component's own border-bottom
+     (base .statusBar). Adding one on the wrapper doubled the line (789:38388). */
   display: flex;
   flex-direction: column;
   flex-shrink: 0;

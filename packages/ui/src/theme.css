@@ -1470,7 +1470,8 @@
 
   /* ── Status bar ── DS statusBar 789:38384: h=56 (24 content + padding/l × 2), all padding padding/l,
      root gap gap/xl between slot groups (flattened — flex spacer separates groups; visible inter-item
-     gap is the DS Content-level gap/m). Bottom divider drawn by the consumer's wrapper. */
+     gap is the DS Content-level gap/m). Bottom divider is this component's own
+     border-bottom (below) — consumers must NOT add another on a wrapper. */
   .statusBar {
     height: 48px; /* 24px content + padding/m × 2 (tb rebound padding/l→padding/m 2026-08); implemented as fixed height + 0 vertical padding */
     display: flex;
