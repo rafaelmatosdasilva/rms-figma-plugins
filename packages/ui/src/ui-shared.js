@@ -1,15 +1,14 @@
 // ── DPR-aware border thickness ────────────────────────────────────────────────
-// Figma DS specifies --thickness: 1.2px. At sub-pixel DPRs (especially 2×
-// Retina), 1.2px spans a non-integer number of physical pixels and gets
-// anti-aliased, making borders look thinner than designed. This snaps the value
-// to the nearest physical-pixel boundary so borders render crisply at any DPR.
+// Figma DS specifies --thickness: 1.5px (general/thickness). At sub-pixel DPRs, 1.5px spans a
+// non-integer number of physical pixels and gets anti-aliased, so we snap to a whole-physical-
+// pixel boundary for crisp borders. Snap UP (ceil), never down: Math.round rounded 1.5× down to
+// 1.33px, which reads visibly THINNER than the designed 1.5px. ceil keeps every border ≥ 1.5px.
 //
-// DPR mapping:  1× → 2px (2 phys px)  1.5× → 1.33px (2 phys)
-//               2× → 1.5px (3 phys, exact!)  3× → 1.67px (5 phys)
-// At 2× Retina (standard Figma env): 1.5 × 2 = 3 physical px — already exact, no rounding loss.
+// DPR mapping:  1× → 2px (2 phys)  1.5× → 2px (3 phys)  2× → 1.5px (3 phys, exact!)  3× → 1.67px (5 phys)
+// Integer DPRs (1×, 2×, 3× — the headless-test envs) are identical to the old rounding.
 (function () {
   var dpr = window.devicePixelRatio || 1;
-  var snapped = Math.round(1.5 * dpr) / dpr;
+  var snapped = Math.ceil(1.5 * dpr) / dpr;
   document.documentElement.style.setProperty('--thickness', snapped.toFixed(4) + 'px');
 })();
 
