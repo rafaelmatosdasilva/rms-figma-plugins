@@ -65,16 +65,45 @@ async function buildGrayPdf(w = 4, h = 4) {
   ]);
 }
 
-describe('tokens-to-ink — grayscale images convert to CMYK', () => {
-  it('re-encodes an 8-bit DeviceGray FlateDecode image as DeviceCMYK (was left as RGB)', async () => {
+describe('tokens-to-ink — photos stay in their original colour space (never CMYK)', () => {
+  it('leaves an 8-bit DeviceGray image untouched — never converts it to CMYK', async () => {
     ui = bootUI();
+    // Photos are deliberately kept in RGB/Gray: a textbook RGB→CMYK warms reds to orange and
+    // was inconsistent. With no downsampling, the image must be left byte-for-byte in its space.
     const out = latin1(await ui.window.convertPdfToCmyk(await buildGrayPdf(), {}));
     const img = imageDicts(out).find((d) => /\/Width\s+4\b/.test(d));
     expect(img).toBeTruthy();
-    expect(img).toMatch(/\/ColorSpace\s*\/DeviceCMYK/);   // gray → CMYK, not left as gray/RGB
+    expect(img).toMatch(/\/ColorSpace\s*\/DeviceGray/);   // stays grey — NOT CMYK
+    expect(img).not.toMatch(/DeviceCMYK/);
+  });
+});
+
+describe('tokens-to-ink — "Convert images to CMYK" toggle (opt-in)', () => {
+  it('converts an image to DeviceCMYK when imagesCmyk is on', async () => {
+    ui = bootUI();
+    const out = latin1(await ui.window.convertPdfToCmyk(await buildGrayPdf(), {}, { imagesCmyk: true }));
+    const img = imageDicts(out).find((d) => /\/Width\s+4\b/.test(d));
+    expect(img).toBeTruthy();
+    expect(img).toMatch(/\/ColorSpace\s*\/DeviceCMYK/);   // opt-in → converted
     expect(img).toMatch(/\/Filter\s*\/FlateDecode/);
-    // Nothing was left un-converted.
-    expect(ui.window._lastPdfImageFailures || []).toHaveLength(0);
+  });
+
+  it('reports images that could not be converted (kept as RGB) only in CMYK mode', async () => {
+    ui = bootUI();
+    ui.window.decodeImageToRgba = async () => { throw new Error('no canvas'); }; // force decode failure
+    const out = latin1(await ui.window.convertPdfToCmyk(pdfBytes(), {}, { imagesCmyk: true }));
+    // The photo (DCTDecode) couldn't decode, so it stays RGB and is counted for the warning.
+    expect(ui.window._lastPdfImagesUnconverted).toBeGreaterThan(0);
+    const main = imageDicts(out).find((d) => /\/ColorSpace\s+8\s+0\s+R/.test(d));
+    expect(main).toBeTruthy();                            // left in its ICCBased RGB space
+    expect(main).not.toMatch(/DeviceCMYK/);
+  });
+
+  it('leaves images in RGB and reports none when imagesCmyk is off (default)', async () => {
+    ui = bootUI();
+    ui.window.decodeImageToRgba = async () => { throw new Error('no canvas'); };
+    await ui.window.convertPdfToCmyk(pdfBytes(), {});     // default: RGB
+    expect(ui.window._lastPdfImagesUnconverted).toBe(0);
   });
 });
 
@@ -146,7 +175,10 @@ describe('tokens-to-ink — downsample keeps base image and its soft-mask in syn
     const smask = objBody(out, 6);
     expect(smask).toMatch(/\/Width\s+40\b/);    // mask untouched — still matches the full-size base
     expect(smask).toMatch(/\/Height\s+40\b/);
-    expect((ui.window._lastPdfImageFailures || []).some((f) => f.obj === 4)).toBe(true); // base left as RGB, reported
+    const base = objBody(out, 4);
+    expect(base).toMatch(/\/Width\s+40\b/);     // base kept full-size too (decode failed → left intact)
+    expect(base).toMatch(/\/DCTDecode/);        // not re-encoded
+    expect(base).not.toMatch(/DeviceCMYK/);     // never CMYK
   });
 });
 
@@ -171,7 +203,8 @@ describe('tokens-to-ink — downsample ignores a degenerate placement measuremen
     const out = latin1(await ui.window.convertPdfToCmyk(pdf, {}, { downsample: true, downsampleDpi: 72 }));
     const img = objBody(out, 4);
     expect(img).toMatch(/\/Width\s+400\b/);              // NOT shrunk to a few px
-    expect(img).toMatch(/\/ColorSpace\s*\/DeviceCMYK/);  // still converted to CMYK
+    expect(img).toMatch(/\/ColorSpace\s*\/DeviceRGB/);   // left in RGB (never CMYK)
+    expect(img).not.toMatch(/DeviceCMYK/);
   });
 });
 
@@ -332,7 +365,7 @@ describe('tokens-to-ink — CMYK pixel conversion (fast-path parity)', () => {
   });
 });
 
-describe('tokens-to-ink — CMYK PDF keeps images', () => {
+describe('tokens-to-ink — PDF keeps photos in RGB', () => {
   it('does not clobber an image ICCBased colour space to /DeviceGray', async () => {
     ui = bootUI();
     // No canvas in jsdom → the decoder throws → the image is preserved intact,
@@ -347,39 +380,26 @@ describe('tokens-to-ink — CMYK PDF keeps images', () => {
     expect(imgs.some(d => /\/ColorSpace\s+8\s+0\s+R/.test(d))).toBe(true);
   });
 
-  it('re-encodes a decodable RGB image as a FlateDecode DeviceCMYK image, keeping its SMask', async () => {
+  it('leaves a decodable RGB photo in its RGB space — no downsample means byte-for-byte intact', async () => {
     ui = bootUI();
-    // Stand in for the browser canvas: hand back opaque mid-grey pixels.
+    // Stand in for the browser canvas (unused here since we do not touch the image without a
+    // downsample, but set it so nothing throws): opaque mid-grey pixels.
     ui.window.decodeImageToRgba = async (_bytes, w, h) => new Uint8Array(w * h * 4).fill(180);
     const out = await ui.window.convertPdfToCmyk(pdfBytes(), {});
     const s = latin1(out);
-    const imgs = imageDicts(s);
-    // The main (RGB→CMYK) image is now DeviceCMYK + FlateDecode…
-    const cmyk = imgs.find(d => /\/ColorSpace\s*\/DeviceCMYK/.test(d));
-    expect(cmyk).toBeTruthy();
-    expect(cmyk).toMatch(/\/Filter\s*\/FlateDecode/);
-    expect(cmyk).not.toMatch(/DCTDecode/);
-    // …and its transparency SMask reference is preserved.
-    expect(cmyk).toMatch(/\/SMask\s+\d+\s+0\s+R/);
+    // The photo keeps its ICCBased RGB colour space (indirect ref 8 0 R), its original JPEG
+    // filter, and its SMask — it is never converted to CMYK.
+    const main = imageDicts(s).find(d => /\/ColorSpace\s+8\s+0\s+R/.test(d));
+    expect(main).toBeTruthy();
+    expect(main).toMatch(/\/DCTDecode/);
+    expect(main).not.toMatch(/DeviceCMYK/);
+    expect(main).toMatch(/\/SMask\s+\d+\s+0\s+R/);
   });
 
-  it('warns when an image cannot be converted to CMYK (kept as RGB)', async () => {
+  it('never shows a CMYK-conversion warning — photos are kept in RGB by design', async () => {
     ui = bootUI();
     ui.window.downloadFile = () => {};                 // don't touch the filesystem in jsdom
-    ui.window.decodeImageToRgba = async () => { throw new Error('no canvas'); }; // force the RGB fallback
-    ui.receive({ type: 'export-batch-start', total: 1, format: 'pdf' });
-    await ui.receive({
-      type: 'export-data', format: 'pdf', pdfBytes: pdfBytes(),
-      colorLookup: {}, frameName: 'Artwork', index: 0, total: 1,
-    });
-    await new Promise((r) => setTimeout(r, 50));
-    expect(ui.$('#toast-container').textContent).toMatch(/couldn.t be converted to CMYK/i);
-  });
-
-  it('does not warn when the image converts cleanly', async () => {
-    ui = bootUI();
-    ui.window.downloadFile = () => {};
-    ui.window.decodeImageToRgba = async (_b, w, h) => new Uint8Array(w * h * 4).fill(180);
+    ui.window.decodeImageToRgba = async () => { throw new Error('no canvas'); };
     ui.receive({ type: 'export-batch-start', total: 1, format: 'pdf' });
     await ui.receive({
       type: 'export-data', format: 'pdf', pdfBytes: pdfBytes(),
@@ -412,25 +432,29 @@ describe('tokens-to-ink — CMYK PDF keeps images', () => {
     expect(ui.$('#toast-container .toast')).toBeTruthy();
   });
 
-  // The fixture's image (obj 9) is 24×24 px placed over the full 64pt frame
-  // (content stream: `64 0 0 64 … cm /X1 Do`) → ~27 DPI on the page.
-  const cmykImageDims = (s) => {
-    const d = imageDicts(s).find((x) => /\/ColorSpace\s*\/DeviceCMYK/.test(x));
+  // The fixture's photo (obj 9) is 24×24 px placed over the full 64pt frame
+  // (content stream: `64 0 0 64 … cm /X1 Do`) → ~27 DPI on the page. It is the image that
+  // references a soft-mask; the mask image itself does not, so this picks the photo.
+  const mainImageDims = (s) => {
+    const d = imageDicts(s).find((x) => /\/SMask\s+\d+\s+0\s+R/.test(x));
     if (!d) return null;
     const w = d.match(/\/Width\s+(\d+)/), h = d.match(/\/Height\s+(\d+)/);
     return { w: w && +w[1], h: h && +h[1] };
   };
 
-  it('downsamples an image whose on-page DPI exceeds the target', async () => {
+  it('downsamples an over-DPI photo but keeps it in RGB (never CMYK)', async () => {
     ui = bootUI();
     ui.window.decodeImageToRgba = async (_b, w, h) => new Uint8Array(w * h * 4).fill(180);
     // 64pt frame at 12 DPI → 64/72*12 ≈ 10.7 → 11 px, below the source's 24 px.
     const out = await ui.window.convertPdfToCmyk(pdfBytes(), {}, { downsample: true, downsampleDpi: 12 });
     const s = latin1(out);
-    const dims = cmykImageDims(s);
-    expect(dims).toBeTruthy();
-    expect(dims.w).toBe(11);
-    expect(dims.h).toBe(11);
+    const dims = mainImageDims(s);
+    expect(dims).toEqual({ w: 11, h: 11 });
+    // Re-encoded to FlateDecode, but STILL its ICCBased RGB space (ref 8 0 R) — not CMYK.
+    const main = imageDicts(s).find((x) => /\/SMask\s+\d+\s+0\s+R/.test(x));
+    expect(main).toMatch(/\/ColorSpace\s+8\s+0\s+R/);
+    expect(main).not.toMatch(/DeviceCMYK/);
+    expect(main).toMatch(/\/Filter\s*\/FlateDecode/);
     // The soft-mask image (obj 4) must be resized in lockstep — a base/mask size
     // mismatch makes Illustrator mis-scale the mask and drop or shift the image.
     const smask = objBody(s, 4);
@@ -444,14 +468,14 @@ describe('tokens-to-ink — CMYK PDF keeps images', () => {
     ui.window.decodeImageToRgba = async (_b, w, h) => new Uint8Array(w * h * 4).fill(180);
     // 64pt frame at 300 DPI → ~267 px target, far above the source's 24 px.
     const out = await ui.window.convertPdfToCmyk(pdfBytes(), {}, { downsample: true, downsampleDpi: 300 });
-    expect(cmykImageDims(latin1(out))).toEqual({ w: 24, h: 24 });
+    expect(mainImageDims(latin1(out))).toEqual({ w: 24, h: 24 });
   });
 
   it('leaves image dimensions untouched when downsampling is off', async () => {
     ui = bootUI();
     ui.window.decodeImageToRgba = async (_b, w, h) => new Uint8Array(w * h * 4).fill(180);
     const out = await ui.window.convertPdfToCmyk(pdfBytes(), {}, { downsample: false, downsampleDpi: 12 });
-    expect(cmykImageDims(latin1(out))).toEqual({ w: 24, h: 24 });
+    expect(mainImageDims(latin1(out))).toEqual({ w: 24, h: 24 });
   });
 
   it('leaves the DeviceGray SMask image stream intact (never colour-converted)', async () => {

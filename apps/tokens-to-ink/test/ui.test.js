@@ -318,12 +318,10 @@ describe('tokens-to-ink UI — export failure reporting', () => {
     expect(ui.$('#toast-container').textContent).toContain('Poster A');
   });
 
-  it('names the frames whose images stayed RGB, not just a count', async () => {
+  it('names the frames whose images stayed RGB in CMYK mode', async () => {
     ui = loadUI(UI);
     ui.window.downloadFile = () => {};
-
-    // Stand in for the real PDF conversion, reporting per-frame how many images
-    // it couldn't convert (the count the export handler reads after each frame).
+    // Stand in for the PDF conversion, reporting per-frame how many images stayed RGB.
     const unconverted = { Logo: 2, Banner: 0, Hero: 1 };
     const order = ['Logo', 'Banner', 'Hero'];
     let call = 0;
@@ -331,7 +329,6 @@ describe('tokens-to-ink UI — export failure reporting', () => {
       ui.window._lastPdfImagesUnconverted = unconverted[order[call++]] ?? 0;
       return new Uint8Array([1]);
     };
-
     ui.receive({ type: 'export-batch-start', total: order.length, format: 'pdf' });
     for (let i = 0; i < order.length; i++) {
       await ui.receive({
@@ -340,12 +337,39 @@ describe('tokens-to-ink UI — export failure reporting', () => {
       });
     }
     await painted();
-
     const toast = ui.$('#toast-container').textContent;
-    expect(toast).toContain('Logo');       // 2 images couldn't convert
-    expect(toast).toContain('Hero');       // 1 image couldn't convert
+    expect(toast).toContain('Logo');       // 2 images stayed RGB
+    expect(toast).toContain('Hero');       // 1 image stayed RGB
     expect(toast).not.toContain('Banner'); // clean frame is never named
     expect(toast).toContain('3 images');   // 2 + 1 across the batch
+  });
+});
+
+describe('tokens-to-ink UI — Convert images to CMYK toggle', () => {
+  it('defaults off and passes imagesCmyk:false to the exporter', async () => {
+    ui = loadUI(UI);
+    ui.window.downloadFile = () => {};
+    let captured = null;
+    ui.window.convertPdfToCmyk = async (_b, _l, opts) => { captured = opts; return new Uint8Array([1]); };
+    expect(ui.$('#cmyk-images-toggle').checked).toBe(false);
+    ui.receive({ type: 'export-batch-start', total: 1, format: 'pdf' });
+    await ui.receive({ type: 'export-data', format: 'pdf', pdfBytes: new Uint8Array([1]), colorLookup: {}, frameName: 'A', index: 0, total: 1 });
+    await painted();
+    expect(captured.imagesCmyk).toBe(false);
+  });
+
+  it('passes imagesCmyk:true once the toggle is switched on', async () => {
+    ui = loadUI(UI);
+    ui.window.downloadFile = () => {};
+    let captured = null;
+    ui.window.convertPdfToCmyk = async (_b, _l, opts) => { captured = opts; return new Uint8Array([1]); };
+    const t = ui.$('#cmyk-images-toggle');
+    t.checked = true;
+    t.dispatchEvent(new ui.window.Event('change'));
+    ui.receive({ type: 'export-batch-start', total: 1, format: 'pdf' });
+    await ui.receive({ type: 'export-data', format: 'pdf', pdfBytes: new Uint8Array([1]), colorLookup: {}, frameName: 'A', index: 0, total: 1 });
+    await painted();
+    expect(captured.imagesCmyk).toBe(true);
   });
 });
 

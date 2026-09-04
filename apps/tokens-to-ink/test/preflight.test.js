@@ -145,12 +145,19 @@ describe('tokens-to-ink UI — export pre-flight', () => {
     expect(rows[0].textContent).toContain('new.jpg');
   });
 
-  it('lists images that will stay RGB (independent of downsample) and focuses on click', () => {
+  it('lists images that will stay RGB — only when "Convert images to CMYK" is on — and focuses on click', () => {
     ui = loadUI(UI);
     openModal(ui);
     const bad = [{ id: 'b1', name: 'logo.jpg', meta: 'CMYK JPEG' }];
 
-    // Shown even with downsample OFF — the CMYK conversion always runs.
+    // Default (toggle OFF): images are kept in RGB by design, so there is nothing to warn about.
+    ui.receive(imagesMsg({ hasImages: true, unconvertible: bad }));
+    expect(ui.$('#preflight-cmyk-section').hidden).toBe(true);
+
+    // Turn on "Convert images to CMYK" → now un-convertible images are worth flagging.
+    const toggle = ui.$('#cmyk-images-toggle');
+    toggle.checked = true;
+    toggle.dispatchEvent(new ui.window.Event('change'));
     ui.receive(imagesMsg({ hasImages: true, unconvertible: bad }));
     expect(ui.$('#preflight-cmyk-section').hidden).toBe(false);
     const rows = ui.$$('#preflight-cmyk .preflight-row');
@@ -166,6 +173,7 @@ describe('tokens-to-ink UI — export pre-flight', () => {
   it('hides the RGB-warning list when none are reported, and for TIFF', () => {
     ui = loadUI(UI);
     openModal(ui);
+    const on = ui.$('#cmyk-images-toggle'); on.checked = true; on.dispatchEvent(new ui.window.Event('change'));
     ui.receive(imagesMsg({ hasImages: true, unconvertible: [] }));
     expect(ui.$('#preflight-cmyk-section').hidden).toBe(true);
 

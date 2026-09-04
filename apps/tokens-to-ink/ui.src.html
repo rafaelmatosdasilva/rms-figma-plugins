@@ -416,6 +416,7 @@
             <span class="export-section-label">Output</span>
             <label class="switch"><input type="checkbox" id="pdfx-toggle" class="switch-input" checked><span class="switch-track"><span class="switch-knob"></span></span><span class="switch-content"><span class="switch-description">PDF/X-4 Press-ready</span><span class="tooltipButton export-info" data-tip="Embed a FOGRA39 CMYK output intent so the file is press-certified. Turn off for a plain PDF 1.4."><svg width="12" height="12"><use href="#icon-info"/></svg></span></span></label>
             <label class="switch"><input type="checkbox" id="preservespot-toggle" class="switch-input" checked><span class="switch-track"><span class="switch-knob"></span></span><span class="switch-content"><span class="switch-description">Preserve Pantone Colors</span><span class="tooltipButton export-info" data-tip="Keep assigned Pantone colors as Spot Colors. Turn off to use their CMYK values."><svg width="12" height="12"><use href="#icon-info"/></svg></span></span></label>
+            <label class="switch"><input type="checkbox" id="cmyk-images-toggle" class="switch-input"><span class="switch-track"><span class="switch-knob"></span></span><span class="switch-content"><span class="switch-description">Convert images to CMYK</span><span class="tooltipButton export-info" data-tip="Convert embedded photos to CMYK. Off keeps them in RGB (recommended) — reds stay true and the RIP color-manages them via the PDF/X output intent."><svg width="12" height="12"><use href="#icon-info"/></svg></span></span></label>
             <div class="switch-row">
               <label class="switch"><input type="checkbox" id="downsample-toggle" class="switch-input"><span class="switch-track"><span class="switch-knob"></span></span><span class="switch-content"><span class="switch-description">Downsample images to</span></span></label>
               <div class="inputWrap cropmarks-bleed" id="dpi-wrap">
@@ -507,19 +508,15 @@
   // Per-frame export failures, reported as ONE toast when the batch ends —
   // a toast per failed frame would stampede on a big selection.
   let _exportFailures = [];
-  // Raster images that couldn't be converted to CMYK across the batch (kept as RGB).
-  // Surfaced at batch end so a non-CMYK image never ships silently in a print file.
+  // Only relevant when the "Convert images to CMYK" toggle is ON: images the decoder can't touch
+  // stay RGB, so a "CMYK" file holds a few RGB images — surface that at batch end. Stays 0 in the
+  // default RGB mode (images are meant to stay RGB, nothing to warn about).
   let _exportRgbImages = 0;
-  // The frames that shipped at least one such image, so the warning can name the
-  // artwork the user has to look at — a bare count leaves them hunting.
   let _exportRgbFrames = [];
-  // Set by convertPdfToCmyk after each frame; read by the export handler.
-  window._lastPdfImagesUnconverted = 0;
+  window._lastPdfImagesUnconverted = 0;   // set by convertPdfToCmyk per frame; read by the handler
 
-  // One frame failing names it; several report the count, since the toast is a
-  // single line and a list of names would overflow it. A failure takes priority over
-  // the RGB-image warning (only one toast shows at a time); otherwise, if some images
-  // stayed RGB, warn about that.
+  // One frame failing names it; several report the count, since the toast is a single line and a
+  // list of names would overflow it. A frame failure takes priority over the RGB-image warning.
   function reportExportFailures() {
     if (_exportFailures.length) {
       const f = _exportFailures;
@@ -527,20 +524,17 @@
         ? `Failed to export ${f[0].name} — ${f[0].message}`
         : `${f.length} of ${exportTotal} frames failed to export`);
       _exportFailures = [];
-      _exportRgbImages = 0;
-      _exportRgbFrames = [];
+      _exportRgbImages = 0; _exportRgbFrames = [];
       return;
     }
     if (_exportRgbImages > 0) {
       const imgWord = _exportRgbImages === 1 ? `1 image` : `${_exportRgbImages} images`;
-      const names = _exportRgbFrames.map(n => `"${n}"`);
-      let where;
-      if (names.length === 1)      where = ` in ${names[0]}`;
-      else if (names.length <= 3)  where = ` across ${names.length} frames (${names.join(', ')})`;
-      else                         where = ` across ${names.length} frames (${names.slice(0, 3).join(', ')}, +${names.length - 3} more)`;
+      const names = _exportRgbFrames.map((n) => `"${n}"`);
+      const where = names.length === 1 ? ` in ${names[0]}`
+        : names.length <= 3 ? ` across ${names.length} frames (${names.join(', ')})`
+        : ` across ${names.length} frames (${names.slice(0, 3).join(', ')}, +${names.length - 3} more)`;
       showError(`${imgWord}${where} couldn't be converted to CMYK — left as RGB`);
-      _exportRgbImages = 0;
-      _exportRgbFrames = [];
+      _exportRgbImages = 0; _exportRgbFrames = [];
     }
   }
 
@@ -590,6 +584,7 @@
   let _colorBars = false;       // add CMYK colour bars + grayscale wedge in the top slug — off by default
   let _preserveSpot = true;     // keep Pantone-tagged colours as spot separations — on by default
   let _pdfx = true;             // export as press-ready PDF/X-4 (ICC output intent) — on by default
+  let _imagesCmyk = false;      // convert embedded photos to CMYK — OFF by default (kept in RGB so reds stay true; RIP colour-manages via the FOGRA39 intent)
   let _pageInfo = false;        // print the file name + timestamp in the slug — off by default
   let _bleedOn = false;         // add a bleed margin around the trim — off by default
   let _bleedMm = 3;             // configurable bleed amount, in millimetres (used only when _bleedOn)
@@ -1565,41 +1560,31 @@
     return out;
   }
 
-  async function convertRgbImagesToCmyk(objs, imgNums, colorLookup, ds) {
-    // Every image left as RGB, with the reason — logged so a print operator (or we) can see
-    // exactly WHY, instead of a bare count. Read by the export handler via _lastPdfImageFailures.
-    const failures = [];
-    const dictInfo = (dict) => {
-      const fm = dict.match(/\/Filter\s*(\/\w+|\[[^\]]*\])/);
-      const csm = dict.match(/\/ColorSpace\s*(\/\w+|\[[^\]]*\]|\d+\s+0\s+R)/);
-      const bpc = dict.match(/\/BitsPerComponent\s+(\d+)/);
-      return { filter: fm ? fm[1].replace(/\s+/g, ' ').trim() : '(none)',
-               colorSpace: csm ? csm[1].replace(/\s+/g, ' ').trim() : '(none)',
-               bpc: bpc ? +bpc[1] : null, predictor: /\/Predictor\s+(\d+)/.test(dict) };
-    };
-    let unconverted = 0;
-    const lut = buildCmykLut(colorLookup);   // packed-int colour table, built once for all pixels
+  async function convertPdfImages(objs, imgNums, ds, iccGray, colorLookup, toCmyk) {
+    // Two modes, chosen by the "Convert images to CMYK" toggle:
+    //  • toCmyk=false (DEFAULT): photos are LEFT in their original RGB/Gray space. A textbook
+    //    per-pixel RGB→DeviceCMYK warms reds toward orange (magenta ~87% not ~100%, plus stray K),
+    //    so we don't. Token/vector colours are still CMYK, and the FOGRA39 OutputIntent lets the
+    //    RIP colour-manage the photos with a real profile. The only reason to touch an image is
+    //    downsampling — and then we re-encode in the SAME space (RGB or Gray), never CMYK.
+    //  • toCmyk=true (opt-in): every image is converted to DeviceCMYK (with downsampling folded
+    //    in). Images we can't decode stay RGB and are counted so the export can warn.
+    const wantDownsample = !!(ds && ds.dpi > 0 && ds.sizes);
+    if (!toCmyk && !wantDownsample) return { downsampled: 0, unconverted: 0 };  // nothing to do
+    const lut = toCmyk ? buildCmykLut(colorLookup) : null;
+    let downsampled = 0, unconverted = 0;
     for (const n of imgNums) {
       const obj = objs[n];
-      const info = (obj && obj.dict) ? dictInfo(obj.dict) : { filter: '(none)', colorSpace: '(none)', bpc: null, predictor: false };
-      const fail = (reason, w, h) => { unconverted++; failures.push({ obj: +n, w: w || 0, h: h || 0, reason, ...info }); };
-      if (!obj || obj.type !== 'stream') { fail('not an image stream'); continue; }
+      if (!obj || obj.type !== 'stream') continue;
       const wm = obj.dict.match(/\/Width\s+(\d+)/), hm = obj.dict.match(/\/Height\s+(\d+)/);
-      if (!wm || !hm) { fail('missing /Width or /Height'); continue; }
-      const w = parseInt(wm[1]), h = parseInt(hm[1]); if (!w || !h) { fail('zero dimensions', w, h); continue; }
-      // Target pixel size: shrink to the requested DPI at the image's on-page size.
-      // Never enlarge (downsampling only) and never drop below 1px.
+      if (!wm || !hm) continue;
+      const w = parseInt(wm[1]), h = parseInt(hm[1]); if (!w || !h) continue;
+      // Downsample target — only from a valid, non-degenerate placement. A ~1pt read (image nested
+      // in a Form XObject, or a resource-name collision) would shrink the image to a few px and
+      // make it vanish ("technical drawing not showing"), so ignore any sub-MIN_PLACEMENT_PT read.
       let tw = w, th = h;
-      if (ds && ds.dpi > 0 && ds.sizes && ds.sizes[n]) {
-        const wPt = ds.sizes[n].wPt, hPt = ds.sizes[n].hPt;
-        // Guard against a DEGENERATE placement measurement (~1pt). An image nested inside a
-        // Form XObject, or a resource-name collision between a form and an image, makes the
-        // content walker read the image's UNIT square (~1pt) instead of its real on-page size —
-        // downsampling to that shrinks the image to a few pixels and it disappears from the
-        // print (the "technical drawing not showing" bug). Nothing meaningfully printed is a
-        // point wide, so treat a sub-MIN_PLACEMENT_PT read as unreliable and keep full
-        // resolution (the image is still converted to CMYK, just not downsampled).
-        const MIN_PLACEMENT_PT = 4;
+      if (wantDownsample && ds.sizes[n]) {
+        const wPt = ds.sizes[n].wPt, hPt = ds.sizes[n].hPt, MIN_PLACEMENT_PT = 4;
         if (wPt >= MIN_PLACEMENT_PT && hPt >= MIN_PLACEMENT_PT) {
           const dw = Math.max(1, Math.round((wPt / 72) * ds.dpi));
           const dh = Math.max(1, Math.round((hPt / 72) * ds.dpi));
@@ -1608,13 +1593,20 @@
         }
       }
       let shrink = (tw !== w || th !== h);
-      // Decode the base image to RGBA at a target size (dw×dh). Kept as a closure so it can be
-      // retried at full size if the soft-mask turns out un-resizable (below).
-      const decodeBase = async (dw, dh) => {
-        const willShrink = (dw !== w || dh !== h);
+      if (!toCmyk && !shrink) continue;                   // RGB mode: nothing to do unless downsampling
+      // Grey source? Re-encode 1 channel and keep the Gray space — 3-channel RGB against a
+      // DeviceGray/ICC-N1 space would corrupt it. (Only used by the RGB branch.)
+      const csm = obj.dict.match(/\/ColorSpace\s*(\/\w+|\[[^\]]*\]|\d+\s+0\s+R)/);
+      const csRaw = csm ? csm[1] : '';
+      const csNums = (csRaw.match(/\d+/g) || []).map(Number);
+      const isGray = /DeviceGray|CalGray/.test(csRaw) || (iccGray && csNums.some(x => iccGray.has(x)));
+      // Decode the base to RGBA at a target size. Closure so it can retry at full size if the
+      // soft-mask turns out un-resizable (below).
+      const decodeBase = async (dw2, dh2) => {
+        const willShrink = (dw2 !== w || dh2 !== h);
         try {
           if (/\/DCTDecode\b/.test(obj.dict)) {
-            const px = await decodeImageToRgba(obj.streamRaw, dw, dh, 'image/jpeg');
+            const px = await decodeImageToRgba(obj.streamRaw, dw2, dh2, 'image/jpeg');
             return px ? { rgba: px } : { why: 'JPEG decode returned no pixels' };
           }
           if (obj.isFlate) {
@@ -1622,63 +1614,50 @@
             d = undoFlatePredictor(objs, obj.dict, d, w);   // strip a PNG/TIFF predictor if present
             d = flateSamplesTo8bit(obj.dict, d);            // 16-bit → 8-bit
             const px = w * h;
-            // Expand the raw samples to RGBA. Handle the channel counts Figma actually emits at
-            // 8bpc: RGBA(4), RGB(3), DeviceGray(1) and Gray+Alpha(2). Grayscale replicates the one
-            // sample across R/G/B — DeviceGray images were the "left as RGB" case in the wild.
-            let full = null;
+            let full = null;   // expand raw samples → RGBA: RGBA(4), RGB(3), Gray(1), Gray+Alpha(2)
             if (d.length === px * 4) full = d;
             else if (d.length === px * 3) { full = new Uint8Array(px * 4); for (let i = 0, j = 0; i < d.length; i += 3, j += 4) { full[j] = d[i]; full[j+1] = d[i+1]; full[j+2] = d[i+2]; full[j+3] = 255; } }
             else if (d.length === px) { full = new Uint8Array(px * 4); for (let i = 0, j = 0; i < px; i++, j += 4) { const g = d[i]; full[j] = g; full[j+1] = g; full[j+2] = g; full[j+3] = 255; } }
             else if (d.length === px * 2) { full = new Uint8Array(px * 4); for (let i = 0, j = 0; i < d.length; i += 2, j += 4) { const g = d[i]; full[j] = g; full[j+1] = g; full[j+2] = g; full[j+3] = d[i+1]; } }
-            if (!full) return { why: info.predictor
-              ? 'FlateDecode uses a predictor (row filters) — not yet supported'
-              : `pixel data is ${d.length} bytes, not a whole multiple of ${w}×${h} — likely 16-bit or indexed (bpc=${info.bpc || '?'}, cs=${info.colorSpace})` };
-            return { rgba: willShrink ? resizeRgbaBox(full, w, h, dw, dh) : full };
+            if (!full) return { why: 'undecodable samples' };
+            return { rgba: willShrink ? resizeRgbaBox(full, w, h, dw2, dh2) : full };
           }
-          return { why: `filter ${info.filter} isn't decodable here` };
+          return { why: `filter isn't decodable here` };
         } catch (e) { return { why: 'decode threw: ' + ((e && e.message) || e) }; }
       };
-      // Decode the base FIRST — before touching the soft-mask. If the base can't convert it is
-      // left as RGB, and the mask MUST stay untouched too: a shrunk mask against a full-size
-      // base renders the image clipped or invisible. That ordering was the "some images vanish
-      // when downsampling is on" bug — the mask was resized, then the base decode failed.
+      // Decode base FIRST — before touching the soft-mask. If it fails the image is LEFT INTACT
+      // (mask untouched too, or a shrunk mask vs full-size base renders it clipped/invisible).
       let dec = await decodeBase(tw, th);
-      if (!dec.rgba) { fail(dec.why || 'undecodable', w, h); continue; } // left intact (RGB); warn
-      // Base is good. If shrinking, bring its soft-mask to the same size; if the mask can't be
-      // resized, keep the PAIR at full resolution by re-decoding the base un-shrunk.
+      if (!dec.rgba) { if (toCmyk) unconverted++; continue; }   // undecodable → stays RGB
       if (shrink) {
         const smRef = obj.dict.match(/\/SMask\s+(\d+)\s+0\s+R/);
         if (smRef && !(await downsampleGrayImage(objs[+smRef[1]], tw, th))) {
-          tw = w; th = h; shrink = false;
+          if (!toCmyk) continue;                          // RGB: keep base+mask at full res
+          tw = w; th = h; shrink = false;                 // CMYK: convert at full res instead
           dec = await decodeBase(w, h);
-          if (!dec.rgba) { fail(dec.why || 'undecodable', w, h); continue; }
+          if (!dec.rgba) { unconverted++; continue; }
         }
       }
       const rgba = dec.rgba;
-      const cmyk = new Uint8Array(tw * th * 4);
-      for (let p = 0, q = 0; p < tw * th * 4; p += 4, q += 4) writeCmyk(cmyk, q, rgba[p], rgba[p+1], rgba[p+2], lut);
-      obj.streamRaw = await deflateBuf(cmyk);
-      obj.dict = obj.dict.replace(/\/ColorSpace\s*(\/\w+|\[[^\]]*\]|\d+\s+0\s+R)/, '/ColorSpace /DeviceCMYK');
+      if (toCmyk) {                                        // → DeviceCMYK (opt-in)
+        const cmyk = new Uint8Array(tw * th * 4);
+        for (let p = 0, q = 0; p < tw * th * 4; p += 4, q += 4) writeCmyk(cmyk, q, rgba[p], rgba[p+1], rgba[p+2], lut);
+        obj.streamRaw = await deflateBuf(cmyk);
+        obj.dict = obj.dict.replace(/\/ColorSpace\s*(\/\w+|\[[^\]]*\]|\d+\s+0\s+R)/, '/ColorSpace /DeviceCMYK');
+      } else {                                             // re-encode in the ORIGINAL space (Gray=1, else RGB=3)
+        const chan = isGray ? 1 : 3;
+        const out = new Uint8Array(tw * th * chan);
+        if (isGray) { for (let p = 0, q = 0; q < out.length; p += 4, q += 1) out[q] = rgba[p]; }
+        else { for (let p = 0, q = 0; q < out.length; p += 4, q += 3) { out[q] = rgba[p]; out[q+1] = rgba[p+1]; out[q+2] = rgba[p+2]; } }
+        obj.streamRaw = await deflateBuf(out);             // ColorSpace deliberately left as-is
+      }
       obj.dict = obj.dict.replace(/\/Filter\s*(\/\w+|\[[^\]]*\])/, '/Filter /FlateDecode');
       obj.dict = obj.dict.replace(/\/DecodeParms\s*(<<[\s\S]*?>>|\[[^\]]*\]|\d+\s+0\s+R)/, '');
       obj.dict = obj.dict.replace(/\/Decode\s*\[[^\]]*\]/, '');
-      if (shrink) {
-        obj.dict = obj.dict.replace(/\/Width\s+\d+/, '/Width ' + tw);
-        obj.dict = obj.dict.replace(/\/Height\s+\d+/, '/Height ' + th);
-      }
+      if (shrink) { obj.dict = obj.dict.replace(/\/Width\s+\d+/, '/Width ' + tw).replace(/\/Height\s+\d+/, '/Height ' + th); downsampled++; }
       obj.dict = obj.dict.replace(/\/Length\s+\d+(\s+0\s+R)?/, '/Length ' + obj.streamRaw.length);
     }
-    // Expose the per-image reasons for this frame (read by the export handler) and log them, so
-    // "2 images couldn't be converted" is explainable instead of a mystery.
-    window._lastPdfImageFailures = failures;
-    if (failures.length) {
-      try {
-        console.warn('[tokens-to-ink] Left as RGB (could not convert to CMYK):\n' +
-          failures.map(f => `  • obj #${f.obj}  ${f.w}×${f.h}px  filter=${f.filter}  colorspace=${f.colorSpace}` +
-            `${f.bpc ? `  ${f.bpc}bpc` : ''}${f.predictor ? '  +predictor' : ''}\n      → ${f.reason}`).join('\n'));
-      } catch (_) { /* console may be unavailable */ }
-    }
-    return unconverted;
+    return { downsampled, unconverted };
   }
 
   // Content-stream ops for the registration targets — a circle + long crosshair centred on each
@@ -2339,11 +2318,12 @@
     if(usedSpots.size) injectSpotColorSpaces(objs, nums, usedSpots, fmtF, balancedDict);
     if(preserveSpot) logSpotSummary(colorLookup, usedSpots, spotSeen);
 
-    // ── Convert RGB raster images → DeviceCMYK (optionally downsampling to a DPI) ──
+    // ── Raster images: RGB by default (reds stay true; FOGRA39 intent colour-manages them); the
+    // "Convert images to CMYK" toggle opts into per-pixel CMYK. Downsample either way. ──
     let ds=null;
     if(opts&&opts.downsample&&opts.downsampleDpi>0)
       ds={dpi:opts.downsampleDpi,sizes:await imageDisplaySizes(objs,allImg)};
-    window._lastPdfImagesUnconverted = await convertRgbImagesToCmyk(objs,imgNums,colorLookup,ds);
+    window._lastPdfImagesUnconverted = (await convertPdfImages(objs,imgNums,ds,iccGray,colorLookup,!!(opts&&opts.imagesCmyk))).unconverted;  // >0 only in CMYK mode
 
     // ── Crop / trim marks (print) — added last so they emit as clean DeviceCMYK ──
     if(opts&&(opts.cropMarks||opts.regMarks||opts.pageInfo||opts.colorBars||opts.bleedPt>0))addPrintMarks(objs,nums,opts.bleedPt,opts.trimBox,opts.cropMarks,opts.regMarks,opts.pageInfo,opts.pageInfoLeft,opts.pageInfoRight,opts.colorBars);
@@ -2590,8 +2570,9 @@
     const hdr = document.getElementById("preflight-images-header");
     if (hdr && imgs.length) hdr.textContent = `Images under ${target} dpi:`;
     fillPreflightSection("preflight-images-section", "preflight-images", imgs);
-    // Un-convertible list: independent of downsampling (the CMYK conversion always runs).
-    const bad = (_exportFormat === "pdf") ? (msg.unconvertible || []) : [];
+    // Un-convertible list: only meaningful when the CMYK-images toggle is ON (RGB mode never
+    // converts, so nothing "stays RGB unexpectedly").
+    const bad = (_exportFormat === "pdf" && _imagesCmyk) ? (msg.unconvertible || []) : [];
     fillPreflightSection("preflight-cmyk-section", "preflight-cmyk", bad);
   }
   // Clear a warning immediately (no scan round-trip) — used when downsampling is switched off.
@@ -2627,6 +2608,7 @@
     const colorbars = document.getElementById("colorbars-toggle");
     const preservespot = document.getElementById("preservespot-toggle");
     const pdfxToggle = document.getElementById("pdfx-toggle");
+    const cmykImages = document.getElementById("cmyk-images-toggle");
     const pageinfo = document.getElementById("pageinfo-toggle");
     const bleedOn = document.getElementById("bleed-toggle");
     const bleed   = document.getElementById("bleed-input");
@@ -2665,7 +2647,7 @@
     let _defaultsSnapshot = null;
     const settingsSnapshot = () => JSON.stringify({
       cropMarks: _cropMarks, regMarks: _regMarks, colorBars: _colorBars, preserveSpot: _preserveSpot,
-      pdfx: _pdfx, pageInfo: _pageInfo, bleedOn: _bleedOn, bleedMm: _bleedMm,
+      pdfx: _pdfx, imagesCmyk: _imagesCmyk, pageInfo: _pageInfo, bleedOn: _bleedOn, bleedMm: _bleedMm,
       downsample: _downsample, downsampleDpi: _downsampleDpi, tiffDpi: _tiffDpi, tiffZip: _tiffZip,
     });
     // Disable "Save as default" while the current options already equal the saved defaults —
@@ -2692,6 +2674,10 @@
     colorbars.addEventListener("change", () => { _colorBars = colorbars.checked; persist(); });
     if (preservespot) preservespot.addEventListener("change", () => { _preserveSpot = preservespot.checked; persist(); });
     if (pdfxToggle) pdfxToggle.addEventListener("change", () => { _pdfx = pdfxToggle.checked; persist(); });
+    if (cmykImages) cmykImages.addEventListener("change", () => {
+      _imagesCmyk = cmykImages.checked; persist();
+      if (_imagesCmyk) requestPreflight(); else hidePreflightCmyk();   // "stays RGB" list only applies in CMYK mode
+    });
     pageinfo.addEventListener("change", () => { _pageInfo = pageinfo.checked; persist(); });
     bleedOn.addEventListener("change", () => { _bleedOn = bleedOn.checked; syncInputs(); persist(); });
     downsample.addEventListener("change", () => {
@@ -2729,6 +2715,7 @@
       _colorBars = !!s.colorBars;
       if (typeof s.preserveSpot === "boolean") _preserveSpot = s.preserveSpot;
       if (typeof s.pdfx === "boolean") _pdfx = s.pdfx;
+      if (typeof s.imagesCmyk === "boolean") _imagesCmyk = s.imagesCmyk;
       _pageInfo = !!s.pageInfo;
       _bleedOn = !!s.bleedOn;
       _downsample = !!s.downsample;
@@ -2741,6 +2728,7 @@
       colorbars.checked = _colorBars;
       if (preservespot) preservespot.checked = _preserveSpot;
       if (pdfxToggle) pdfxToggle.checked = _pdfx;
+      if (cmykImages) cmykImages.checked = _imagesCmyk;
       pageinfo.checked = _pageInfo;
       bleedOn.checked = _bleedOn;
       downsample.checked = _downsample;
@@ -3504,11 +3492,11 @@
           const stamp = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
           fileBytes = await convertPdfToCmyk(msg.pdfBytes, _exportLookup,
             { cropMarks: _cropMarks, regMarks: _regMarks, colorBars: _colorBars, preserveSpot: _preserveSpot, pdfx: _pdfx, bleedPt: _bleedOn ? _bleedMm * 72 / 25.4 : 0,
-              downsample: _downsample, downsampleDpi: _downsampleDpi, trimBox: msg.trimBox,
+              downsample: _downsample, downsampleDpi: _downsampleDpi, imagesCmyk: _imagesCmyk, trimBox: msg.trimBox,
               pageInfo: _pageInfo,
               pageInfoLeft: [msg.fileName, msg.frameName].filter(Boolean).join("  ·  "),
               pageInfoRight: stamp });
-          _exportRgbImages += window._lastPdfImagesUnconverted;
+          _exportRgbImages += window._lastPdfImagesUnconverted;   // CMYK mode only: undecodable images stayed RGB
           if (window._lastPdfImagesUnconverted > 0) _exportRgbFrames.push(msg.frameName);
           fileName = `${safe}_CMYK.pdf`; fileMime = "application/pdf";
         } else {

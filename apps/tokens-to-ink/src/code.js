@@ -512,6 +512,7 @@ figma.ui.onmessage = async (msg) => {
         tiffZip: s.tiffZip !== false,
         preserveSpot: s.preserveSpot !== false,
         pdfx: s.pdfx !== false,
+        imagesCmyk: !!s.imagesCmyk,
       });
     }
     return;
@@ -531,6 +532,7 @@ figma.ui.onmessage = async (msg) => {
       tiffZip: msg.tiffZip !== false,
       preserveSpot: msg.preserveSpot !== false,
       pdfx: msg.pdfx !== false,
+      imagesCmyk: !!msg.imagesCmyk,
     });
     return;
   }
