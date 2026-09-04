@@ -419,7 +419,7 @@
             <span class="export-section-label">Output</span>
             <label class="switch"><input type="checkbox" id="pdfx-toggle" class="switch-input" checked><span class="switch-track"><span class="switch-knob"></span></span><span class="switch-content"><span class="switch-description">PDF/X-4 Press-ready</span><span class="tooltipButton export-info" data-tip="Embed a FOGRA39 CMYK output intent so the file is press-certified. Turn off for a plain PDF 1.4."><svg width="12" height="12"><use href="#icon-info"/></svg></span></span></label>
             <label class="switch"><input type="checkbox" id="preservespot-toggle" class="switch-input" checked><span class="switch-track"><span class="switch-knob"></span></span><span class="switch-content"><span class="switch-description">Preserve Pantone Colors</span><span class="tooltipButton export-info" data-tip="Keep assigned Pantone colors as Spot Colors. Turn off to use their CMYK values."><svg width="12" height="12"><use href="#icon-info"/></svg></span></span></label>
-            <label class="switch"><input type="checkbox" id="cmyk-images-toggle" class="switch-input"><span class="switch-track"><span class="switch-knob"></span></span><span class="switch-content"><span class="switch-description">Convert images to CMYK</span><span class="tooltipButton export-info" data-tip="Convert embedded photos to CMYK. Off keeps them in RGB (recommended) — reds stay true and the RIP color-manages them via the PDF/X output intent."><svg width="12" height="12"><use href="#icon-info"/></svg></span></span></label>
+            <label class="switch"><input type="checkbox" id="cmyk-images-toggle" class="switch-input"><span class="switch-track"><span class="switch-knob"></span></span><span class="switch-content"><span class="switch-description">Convert RGB images to CMYK</span><span class="tooltipButton export-info" data-tip="Convert RGB images to CMYK. Images already in CMYK are left as they are. When off, RGB images stay in RGB and the printer converts them using the PDF/X output intent."><svg width="12" height="12"><use href="#icon-info"/></svg></span></span></label>
             <div class="switch-row">
               <label class="switch"><input type="checkbox" id="downsample-toggle" class="switch-input"><span class="switch-track"><span class="switch-knob"></span></span><span class="switch-content"><span class="switch-description">Downsample images to</span></span></label>
               <div class="inputWrap cropmarks-bleed" id="dpi-wrap">
@@ -441,7 +441,7 @@
              never shifts position when switching format. -->
         <section class="export-card-wrap" id="card-tiff" hidden>
           <div class="card">
-            <span class="export-section-label">Raster</span>
+            <span class="export-section-label">Output</span>
             <div class="switch-row">
               <span class="switch-description">Resolution</span>
               <div class="inputWrap cropmarks-bleed" id="tiff-dpi-wrap">
