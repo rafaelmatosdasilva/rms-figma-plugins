@@ -670,7 +670,9 @@
     padding: 0;
     background: none;
     border: none;
-    cursor: default;
+    /* It carries a data-tip and reveals help/info on hover, so the help cursor (?) is the
+       right affordance for every tooltip trigger — kept here in the base so all plugins match. */
+    cursor: help;
     color: var(--tooltipButton-icon);
   }
   .tooltipButton svg { color: var(--tooltipButton-icon); display: block; }
