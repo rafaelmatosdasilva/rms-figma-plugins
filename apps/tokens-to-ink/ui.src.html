@@ -2770,7 +2770,14 @@
         updateSegPill(viewTabs);
         requestAnimationFrame(() => updateSegPill(viewTabs));
       }
-      if (exp) { clearPreflight(); if (_exportFormat === "pdf") requestPreflight(); }
+      if (exp) {
+        clearPreflight();
+        // Defer the scan so the tab switch PAINTS first. requestPreflight makes the backend call
+        // getSizeAsync/getBytesAsync, which decode the bitmaps on Figma's MAIN thread — the same
+        // thread that paints this iframe — so running it inline freezes the segmented control
+        // mid-switch (the "pill doesn't move" lag). Two rAFs let the switched tab commit first.
+        if (_exportFormat === "pdf") requestAnimationFrame(() => requestAnimationFrame(requestPreflight));
+      }
       if (window._notifyResize) setTimeout(window._notifyResize, 50);
     };
     if (colorsBtn) colorsBtn.addEventListener("click", () => showView("colors"));
