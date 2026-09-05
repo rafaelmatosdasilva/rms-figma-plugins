@@ -586,7 +586,7 @@
     font-size: var(--m-size);
     font-weight: var(--m-weight);
     padding: 0 var(--padding-xs);
-    gap: var(--gap-s);  /* gap/s = 4px */
+    gap: 0;  /* DS root is flush (rootGap 0); label↔icon spacing is the span's padding/xs, mirroring the DS LabelContainer */
     transition: border-color 0.15s ease, color 0.15s ease;
   }
   .buttonSecondary:hover { border-color: var(--buttonSecondary-border-hover); color: var(--buttonSecondary-text); background: var(--buttonSecondary-background-hover); }
@@ -620,7 +620,7 @@
     justify-content: center;
     height: var(--button-min-height);
     padding: 0 var(--padding-xs);  /* padding/xs = 4px LR per DS component */
-    gap: var(--gap-s);
+    gap: 0;  /* DS root flush (rootGap 0) — label↔icon spacing is the span padding only */
     background: var(--buttonTertiary-background);
     border: var(--thickness) solid var(--buttonTertiary-background);
     border-radius: var(--radius-full);
@@ -683,7 +683,7 @@
     justify-content: center;
     min-height: var(--button-min-height);
     padding: 0 var(--padding-xs);
-    gap: var(--gap-s);
+    gap: 0;  /* DS root flush (rootGap 0) — label↔icon spacing is the span padding only */
     background: transparent;
     border: none;
     outline: none;
@@ -748,7 +748,7 @@
   .buttonPrimary {
     display: inline-flex;
     align-items: center;
-    gap: var(--gap-s);
+    gap: 0;  /* DS root flush (rootGap 0) — label↔icon spacing is the span padding only */
     /* DS buttonPrimary is h=24 (structure-contract). Text-only buttons already
        landed there via padding; the explicit height keeps icon+label ones honest. */
     height: var(--button-min-height);
