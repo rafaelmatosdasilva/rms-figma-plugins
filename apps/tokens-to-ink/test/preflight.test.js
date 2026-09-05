@@ -118,9 +118,14 @@ describe('tokens-to-ink UI — export pre-flight', () => {
     expect(reqs.pop()).toMatchObject({ dpi: 150 });
   });
 
-  it('requests a scan when the modal opens', () => {
+  it('does not scan on open with both toggles off, but scans once a toggle turns on', () => {
     ui = loadUI(UI);
     openModal(ui);
+    // Both scan-driven toggles are off → nothing to pre-flight → no backend round-trip. This is the
+    // fix for the Colors↔Export interaction lag: no per-image walk on a switch that shows nothing.
+    expect(ui.sentOf('preflight-request').length).toBe(0);
+    // Turning on downsampling gives the low-res list something to scan for → a request is sent.
+    enableDownsample(ui);
     expect(ui.sentOf('preflight-request').length).toBeGreaterThan(0);
     expect(ui.sentOf('preflight-request').pop()).toMatchObject({ dpi: 300 });
   });

@@ -2669,8 +2669,15 @@
     let _preflightTimer = null;
     const requestPreflight = () => {
       if (!exportVisible()) return;
+      // Nothing to pre-flight unless a scan feeds a visible list: the low-res list needs downsampling,
+      // the "stays RGB" list needs the Convert-images-to-CMYK toggle. With both off there is nothing to
+      // show, so skip the whole backend round-trip + per-image walk — otherwise every Colors↔Export
+      // switch re-scans a frame's images for no visible result (the interaction lag).
+      if (!_downsample && !_imagesCmyk) { hidePreflightImages(); hidePreflightCmyk(); return; }
       parent.postMessage({ pluginMessage: {
-        type: "preflight-request", dpi: _downsampleDpi, scanImages: _exportFormat === "pdf" && _downsample,
+        type: "preflight-request", dpi: _downsampleDpi,
+        scanImages: _exportFormat === "pdf" && _downsample,
+        scanCmyk:   _exportFormat === "pdf" && _imagesCmyk,
       } }, "*");
     };
     const requestPreflightSoon = () => { if (_preflightTimer) clearTimeout(_preflightTimer); _preflightTimer = setTimeout(requestPreflight, 250); };

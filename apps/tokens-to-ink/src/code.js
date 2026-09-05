@@ -644,11 +644,12 @@ figma.ui.onmessage = async (msg) => {
     figma.ui.postMessage({ type: "preflight-selection", hasImages });
     if (superseded()) return;
 
-    // Images that won't convert to CMYK (stay RGB). Always checked for PDF (independent of
-    // downsampling), since conversion always runs. Sniff each UNIQUE hash's stored bytes once,
+    // Images that won't convert to CMYK (stay RGB). Only relevant when the user opted into CMYK
+    // conversion (msg.scanCmyk) — reading every image's bytes (getBytesAsync) is the heavy part, so
+    // it must not run when the "stays RGB" list isn't even shown. Sniff each UNIQUE hash once,
     // through the same small pool that caps peak memory, and keep one row per node.
     let unconvertible = [];
-    if (hasImages) {
+    if (hasImages && msg.scanCmyk) {
       const needFmt = [...new Set(fills.map(f => f.imageHash))].filter(h => !_preflightFormatCache.has(h));
       await mapPool(needFmt, PREFLIGHT_DECODE_POOL, async (h) => {
         try {

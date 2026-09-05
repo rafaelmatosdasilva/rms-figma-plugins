@@ -67,12 +67,29 @@ describe('tokens-to-ink — preflight scan (code.js)', () => {
       'h-gif': { width: 100, height: 100, bytes: gif },          // GIF → rasterised to RGB → fine
     };
     const { send, lastOf } = await loadPlugin(ENTRY, { pages: [page], images });
-    await send({ type: 'preflight-request', dpi: 300, scanImages: false });
+    // scanCmyk gates the byte-reading CMYK sniff — the "stays RGB" list only runs when the user
+    // opted into CMYK conversion; scanImages stays off (this test is about format, not DPI).
+    await send({ type: 'preflight-request', dpi: 300, scanImages: false, scanCmyk: true });
 
     const msg = lastOf('preflight-images');
     const byId = Object.fromEntries((msg.unconvertible || []).map((u) => [u.id, u.meta]));
     expect(Object.keys(byId)).toEqual(['cmyk']);
     expect(byId.cmyk).toBe('CMYK JPEG');
+  });
+
+  it('skips the (costly) CMYK byte-scan when scanCmyk is off — no bytes read, no list', async () => {
+    // Perf gate: reading every image's bytes (getBytesAsync) must not run when the "stays RGB" list
+    // is not shown. With scanCmyk off, a CMYK JPEG is NOT flagged (and no bytes are read).
+    const jpegSOF = (comps) => Uint8Array.from([0xFF, 0xD8, 0xFF, 0xC0, 0x00, 0x11, 0x08, 0x00, 0x10, 0x00, 0x10, comps]);
+    const rect = makeNode('RECTANGLE', { id: 'cmyk', name: 'cmyk', width: 100, height: 100, fills: [imageFill('h-cmyk')] });
+    const frame = makeNode('FRAME', { id: 'f', name: 'Art', width: 400, height: 400 });
+    frame.appendChild(rect);
+    const page = makePage('Page 1'); page.appendChild(frame); page.selection = [frame];
+    const images = { 'h-cmyk': { width: 100, height: 100, bytes: jpegSOF(4) } };
+    const { send, lastOf } = await loadPlugin(ENTRY, { pages: [page], images });
+    await send({ type: 'preflight-request', dpi: 300, scanImages: false /* scanCmyk omitted → off */ });
+    // The CMYK JPEG is NOT flagged because the sniff is gated off — the list stays empty.
+    expect((lastOf('preflight-images').unconvertible || [])).toHaveLength(0);
   });
 
   it('answers hasImages immediately (a preflight-selection message) before the slower scans', async () => {
