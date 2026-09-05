@@ -25,6 +25,12 @@ const _preflightSizeCache = new Map();
 // imageHash → a short reason string if the image will NOT convert to CMYK on PDF export (it
 // stays RGB), or null if it converts fine. Sniffed once per hash from the stored bytes.
 const _preflightFormatCache = new Map();
+// The image-fill tree walk (collectImageFills over the whole selection) does NO bitmap loads, but
+// on a large image frame it still costs real time — and it re-ran on every preflight-request, i.e.
+// on every Colors<->Export switch. Cache the walked+scaled fills keyed by the scanned-selection
+// signature; a fresh scan (selection change or edit) clears it, so it only dedupes repeat
+// preflights on an unchanged selection (the tab-switch case). { sig, fills } | null.
+let _preflightFillsCache = null;
 let _scanCancelled = false;
 
 // Sniff an image's stored bytes to predict whether the CMYK PDF converter will leave it as RGB.
@@ -205,6 +211,7 @@ async function runScan(fromAuto) {
 
 async function _runScan(fromAuto, seq) {
   _scanCancelled = false;
+  _preflightFillsCache = null;   // the selection (or its contents) may have changed — re-walk next preflight
   let selection;
   if (fromAuto) {
     if (_allVarsMode) return _scanAllVariables(seq, true);
@@ -625,17 +632,26 @@ figma.ui.onmessage = async (msg) => {
         ? { x: Math.hypot(at[0][0], at[1][0]) || 1, y: Math.hypot(at[0][1], at[1][1]) || 1 }
         : { x: 1, y: 1 };
     };
-    const fills = [];
-    for (const n of selection) {
-      if (superseded()) return;
-      const rootFills = [];
-      await collectImageFills(n, rootFills, superseded);
-      const rs = scaleOf(n);
-      for (const f of rootFills) {
-        f.boxW = f.boxW * ((f.absScaleX || 1) / rs.x);
-        f.boxH = f.boxH * ((f.absScaleY || 1) / rs.y);
-        fills.push(f);
+    // The walk is deterministic for a given selection tree, so reuse it across repeat preflights
+    // on the same scanned selection (every Colors<->Export switch) — only a fresh scan invalidates.
+    const sig = selection.map(n => n.id).join(",");
+    let fills;
+    if (_preflightFillsCache && _preflightFillsCache.sig === sig) {
+      fills = _preflightFillsCache.fills;
+    } else {
+      fills = [];
+      for (const n of selection) {
+        if (superseded()) return;
+        const rootFills = [];
+        await collectImageFills(n, rootFills, superseded);
+        const rs = scaleOf(n);
+        for (const f of rootFills) {
+          f.boxW = f.boxW * ((f.absScaleX || 1) / rs.x);
+          f.boxH = f.boxH * ((f.absScaleY || 1) / rs.y);
+          fills.push(f);
+        }
       }
+      _preflightFillsCache = { sig, fills };   // only reached if the walk finished (not superseded)
     }
     const hasImages = fills.length > 0;
     // Answer "does the selection have images?" IMMEDIATELY (this walk was property-only, no bitmap

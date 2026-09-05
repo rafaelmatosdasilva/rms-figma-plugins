@@ -187,6 +187,27 @@ describe('tokens-to-ink — preflight scan (code.js)', () => {
     expect(peak).toBeLessThanOrEqual(4);   // …but capped at the pool size
   });
 
+  it('reuses the walked image-fill list across repeat preflights on the same selection (no re-walk on a tab switch)', async () => {
+    // Colors<->Export switches fire a fresh preflight-request each time. The tree walk that finds
+    // image fills is pure structure (no bitmap loads) but scales with node count — on a big image
+    // frame it was the per-switch lag. It must run once per selection, then be reused.
+    const { send, figma, lastOf } = await loadPlugin(ENTRY, scene());
+    const frame = figma.currentPage.selection[0];
+    const photo = frame.children.find((c) => c.id === 'photo');
+    let fillReads = 0;
+    const realFills = photo.fills;
+    Object.defineProperty(photo, 'fills', { configurable: true, get() { fillReads += 1; return realFills; } });
+
+    await send({ type: 'preflight-request', dpi: 300, scanImages: true });
+    const afterFirst = fillReads;
+    expect(afterFirst).toBeGreaterThan(0);   // the first switch walks the tree
+
+    // A second preflight on the SAME selection (another tab switch) must NOT re-walk.
+    await send({ type: 'preflight-request', dpi: 150, scanImages: true });
+    expect(fillReads).toBe(afterFirst);
+    expect(lastOf('preflight-images')).toBeTruthy();
+  });
+
   it('reuses the cached bitmap size on a re-scan (no second getSizeAsync)', async () => {
     const { send, figma, lastOf } = await loadPlugin(ENTRY, scene());
     let sizeCalls = 0;
