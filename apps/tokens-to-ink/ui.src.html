@@ -333,8 +333,10 @@
   .export-section-label { font-size: var(--s-size); font-weight: var(--s-weight); line-height: var(--s-lh); color: var(--text-secondary); }
   .export-format { display: flex; flex-direction: column; gap: var(--gap-m); }
   .export-format-radios { display: flex; gap: var(--gap-xxl); align-items: center; }
-  .export-cards { display: flex; gap: var(--gap-xl); align-items: stretch; }
-  .export-card-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--gap-m); }
+  /* Two side-by-side cards when there's room; below ~two comfortable columns they wrap to a
+     single stacked column (flex-basis is the wrap threshold, grow fills the row once wrapped). */
+  .export-cards { display: flex; flex-wrap: wrap; gap: var(--gap-xl); align-items: stretch; }
+  .export-card-wrap { flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: var(--gap-m); }
   /* The class's display:flex out-specifies the UA [hidden]=display:none, so restore hiding
      explicitly — otherwise the TIFF/Raster card stays visible in PDF mode (and vice-versa). */
   .export-card-wrap[hidden] { display: none; }
