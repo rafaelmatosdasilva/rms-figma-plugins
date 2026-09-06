@@ -5,12 +5,13 @@
     /* Type scale — mirrors Figma font-scale variables m / s / l */
     --m-size:   11px;
     --m-weight: 600;
-    --m-lh:     17.3px;
+    --m-lh:     16px;
     --s-size:   10px;
     --s-weight: 700;
-    --s-lh:     15.1px;
+    --s-lh:     15px;
     --l-size:   13px;
     --l-weight: 600;
+    --l-lh:     17px;
 
     /* Radius scale — aligned to Figma DS */
     --radius-full:    24px;  /* pill: buttons, nodes, inputs, badges (radii/button, radii/input) */
@@ -1421,7 +1422,7 @@
   .modal.is-closing .modal-card { animation: modal-out var(--modal-duration-out) var(--modal-easing-out) both; }
   .modal-card h2, .modal-title {
     margin: 0;
-    font-size: var(--l-size); font-weight: var(--m-weight);   /* DS title 13px Semi Bold */
+    font-size: var(--l-size); font-weight: var(--m-weight); line-height: var(--l-lh);   /* DS title 13px Semi Bold */
     color: var(--modal-title);
   }
   .modal-slot { display: flex; flex-direction: column; gap: var(--gap-l); width: 100%; }   /* DS Slot itemSpacing = 12 */
