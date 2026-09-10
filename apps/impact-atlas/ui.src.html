@@ -265,7 +265,7 @@ body.browser-empty .right-panel {
 .scroll-area .dividerSection {
   position: sticky;
   top: 0;
-  height: 44px; /* DS dividerSection h — fixed (equals base hug: 24+16+4) so Gate [16] can assert it in hidden views */
+  height: 24px; /* DS dividerSection h — compact (2026-09-09); fixed so Gate [16] can assert it in hidden views */
   margin-left: -12px;
   margin-right: -8px;
   padding-left: var(--padding-m);
@@ -348,7 +348,7 @@ body.browser-empty .right-panel {
 #graph-col-headers .dividerSection {
   flex: 1;
   position: static; /* wrapper is the sticky element */
-  height: 44px; /* DS dividerSection h — same fixed height as the list contexts */
+  height: 24px; /* DS dividerSection h — compact (2026-09-09), same as list contexts */
   margin: 0;
   padding-left: var(--padding-l);
   padding-right: var(--padding-l);

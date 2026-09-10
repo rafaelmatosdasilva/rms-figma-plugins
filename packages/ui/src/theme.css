@@ -210,6 +210,16 @@
     --dividerSection-title:   var(--neutral-400);  /* dividerSection/title/color L=N4, D→override */
     --dividerSection-number:  var(--neutral-500);  /* dividerSection/number/color L=N5, D→override */
     --dividerSection-divider: var(--neutral-600);  /* dividerSection/divider/color L=N6 */
+    /* Highlight (a red highlight pill) + highlightSelector (a small selection marker).
+       All alias mode-aware base vars, so no dark override is needed. */
+    --highlight-background:    var(--semantic-negative); /* highlight/background → semantic/negative → red */
+    --highlight-text:          var(--neutral-1000);      /* highlight/text → Neutral 1000 */
+    --highlight-icon:          var(--neutral-1000);      /* highlight/icon → Neutral 1000 */
+    --highlightSelector-border: var(--semantic-negative);/* highlightSelector/border → highlight/background → semantic/negative */
+    /* listItem (DS 503:49751) — a list row: icon + title(m) + description(s), split-alias per mode. */
+    --listItem-icon:        var(--neutral-600); /* listItem/icon L=N600, D→N400 override */
+    --listItem-title:       var(--neutral-100); /* listItem/title N100 both modes */
+    --listItem-description: var(--neutral-400); /* listItem/description L=N400, D→N300 override */
     /* Badge neutral (mode-aware) */
     --badge-neutral: var(--neutral-700);  /* badge/background/neutral/color L=N700, D→override */
     /* Status bar */
@@ -332,6 +342,8 @@
       --overflowList-label-hover:      var(--neutral-100); /* D=N100 */
       --badge-neutral: var(--neutral-300);           /* Dark = N300 */
       --emptyState-icon-neutral: var(--neutral-400);         /* Dark = N400 */
+      --listItem-icon:        var(--neutral-400); /* Dark = N400 */
+      --listItem-description: var(--neutral-300); /* Dark = N300 */
       --radioButton-border:      var(--neutral-400); /* Dark = N4 */
       --radioButton-description: var(--neutral-300); /* Dark = N3 (#b8b8b8) */
       /* switch dark override. background/enabledOn (→N100 #f5f5f5) and knob/enabledOn
@@ -402,6 +414,10 @@
     transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
   }
   button:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+  /* DS Disabled variants carry a specific opacity per button (Figma 2026-09-09):
+     buttonPrimary 0.16, buttonSecondary/buttonTertiary 0.24. These override the generic 0.5. */
+  .buttonPrimary:disabled { opacity: 0.16; }
+  .buttonSecondary:disabled, .buttonTertiary:disabled { opacity: 0.24; }
   .buttonTertiary:disabled:hover, .buttonSecondary:disabled:hover, .buttonPrimary:disabled:hover, .buttonQuaternary:disabled:hover, .overflowList:disabled:hover { background: initial; color: initial; outline: none; }
   .buttonQuaternary:disabled:hover::before { background: transparent; }
   #scan-btn:disabled { opacity: 0.24; }
@@ -542,7 +558,7 @@
   .empty-state-content .empty-state-desc {
     max-width: 200px; margin: 0 auto;
     font-size: var(--s-size); font-weight: var(--s-weight); line-height: var(--s-lh);
-    color: var(--text-secondary); /* neutral-300 — emptyState description */
+    color: var(--emptyState-description); /* emptyState/description/color (N300) — dedicated var */
   }
   /* DS Content group: icon → text sit gap/s (4px) apart, not the generic gap/xl. */
   .empty-state-content > svg + .empty-state-text { margin-top: var(--gap-s); }
@@ -1053,6 +1069,45 @@
   .checkBoxGroup { display: flex; flex-direction: column; gap: var(--gap-m); }
   .checkBoxGroup-label { font-size: var(--s-size); font-weight: var(--s-weight); line-height: var(--s-lh); color: var(--text-secondary); }
   .checkBoxGroup-slot { display: flex; flex-direction: column; gap: var(--gap-s); }
+  /* radioButtonGroup (DS 239-…) — a labelled group of radios laid in a ROW. Label
+     (s style, content/secondary) sits gap/m above a Slot that spaces the radios at gap/xxxl. */
+  .radioButtonGroup { display: flex; flex-direction: column; gap: var(--gap-m); }
+  .radioButtonGroup-label { font-size: var(--s-size); font-weight: var(--s-weight); line-height: var(--s-lh); color: var(--text-secondary); }
+  .radioButtonGroup-slot { display: flex; flex-direction: row; gap: var(--gap-xxxl); }
+  /* highlight (DS) — a red highlight pill: bg highlight/background, s text, gap/xs, padding/s LR, h24. */
+  .highlight {
+    display: inline-flex; align-items: center; gap: var(--gap-xs);
+    height: 24px; padding: 0 var(--padding-s);
+    background: var(--highlight-background);
+    color: var(--highlight-text);
+    font-size: var(--s-size); font-weight: var(--s-weight); line-height: var(--s-lh);
+    flex-shrink: 0;
+  }
+  .highlight svg { color: var(--highlight-icon); }
+  /* highlightSelector (DS) — a 10px selection marker: red fill + 2px highlightSelector/border ring. */
+  .highlightSelector {
+    width: 10px; height: 10px; box-sizing: border-box;
+    background: var(--highlight-background);
+    border: 2px solid var(--highlightSelector-border);
+    flex-shrink: 0;
+  }
+  /* buttonStepper (DS) — a −/value/+ row: two buttonSecondary flanking an input, gap/xs.
+     Pure layout wrapper; the children are the DS .buttonSecondary + input components. */
+  .buttonStepper { display: inline-flex; align-items: center; gap: var(--gap-xs); }
+  /* listItem (DS 503:49751) — a list row: Icon + Main(title m / description s), with a trailing dividerLine. */
+  .listItem { display: flex; flex-direction: column; gap: var(--gap-m); }
+  .listItem-row { display: flex; align-items: center; gap: var(--gap-m); }
+  .listItem-icon { display: inline-flex; flex-shrink: 0; color: var(--listItem-icon); }
+  .listItem-main { display: flex; flex-direction: column; gap: var(--padding-s); min-width: 0; }
+  .listItem-title { font-size: var(--m-size); font-weight: var(--m-weight); line-height: var(--m-lh); color: var(--listItem-title); }
+  .listItem-desc { font-size: var(--s-size); font-weight: var(--s-weight); line-height: var(--s-lh); color: var(--listItem-description); }
+  /* overlay (DS) — a full-cover scrim centring a Slot (e.g. a loader). */
+  .overlay {
+    position: absolute; inset: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    padding: var(--padding-l);
+    background: var(--overlay-bg);
+  }
   /* Card (DS 2120:62601) — bordered rounded container. Padding bound to gap/xl (16),
      items stacked at gap/l (12), 1.5px card/border, radii/card (12). */
   .card {
@@ -1321,7 +1376,7 @@
 
   .dividerSection {
     display: flex; align-items: center; gap: var(--gap-m);  /* DS 135:46577 root gap/m = 8px */
-    padding: var(--padding-l) 0 var(--padding-xs); /* DS 135:46577 — top l(16), bottom xs(4); horizontal from parent */
+    padding: 0; /* DS 135:46577 (2026-09-09): compact — root has no padding; vertical rhythm is the Content's padding/xs. Was padding/l top + padding/xs bottom (h44); now h24. */
     font-size: var(--s-size); font-weight: var(--s-weight); line-height: var(--s-lh);
     color: var(--dividerSection-title); /* dividerSection/title/color */
     flex-shrink: 0;
